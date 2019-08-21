@@ -25,3 +25,9 @@
 **3.** Click "**Next**"
  
 **4.** Profit!
+
+
+
+**REQUIREMENTS:**
+
+* `OpenSSL >0.9.8b`
