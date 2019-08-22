@@ -3,7 +3,7 @@
 	by z22
 	
 	Compile with OpenSSL libs, modify to suit your needs.
-	http://www.slproweb.com/download/Win32OpenSSL-v0.9.8b.exe
+	http://gnuwin32.sourceforge.net/packages/openssl.htm
 
 	History:
 	0.03	Stack corruptionerror on exit fixed (now pkey is large enough)
