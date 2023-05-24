@@ -6,15 +6,12 @@
 #include <openssl/rand.h>
 #include <assert.h>
 
-typedef unsigned char U8;
-typedef unsigned long U32;
-
-U8 cset[] = "BCDFGHJKMPQRTVWXY2346789";
+uint8_t cset[] = "BCDFGHJKMPQRTVWXY2346789";
 
 #define FIELD_BITS_2003 512
 #define FIELD_BYTES_2003 64
 
-void unpack2003(U32 *osfamily, U32 *hash, U32 *sig, U32 *prefix, U32 *raw)
+void unpack2003(uint32_t *osfamily, uint32_t *hash, uint32_t *sig, uint32_t *prefix, uint32_t *raw)
 {
 	osfamily[0] = raw[0] & 0x7ff;
 	hash[0] = ((raw[0] >> 11) | (raw[1] << 21)) & 0x7fffffff;
@@ -23,7 +20,7 @@ void unpack2003(U32 *osfamily, U32 *hash, U32 *sig, U32 *prefix, U32 *raw)
 	prefix[0] = (raw[3] >> 8) & 0x3ff;
 }
 
-void pack2003(U32 *raw, U32 *osfamily, U32 *hash, U32 *sig, U32 *prefix)
+void pack2003(uint32_t *raw, uint32_t *osfamily, uint32_t *hash, uint32_t *sig, uint32_t *prefix)
 {
 	raw[0] = osfamily[0] | (hash[0] << 11);
 	raw[1] = (hash[0] >> 21) | (sig[0] << 10);
@@ -31,18 +28,18 @@ void pack2003(U32 *raw, U32 *osfamily, U32 *hash, U32 *sig, U32 *prefix)
 	raw[3] = (sig[1] >> 22) | (prefix[0] << 8);
 }
 
-static void endian(U8 *x, int n)
+static void endian(uint8_t *x, int n)
 {
 	int i;
 	for (i = 0; i < n/2; i++) {
-		U8 t;
+		uint8_t t;
 		t = x[i];
 		x[i] = x[n-i-1];
 		x[n-i-1] = t;
 	}
 }
 
-void unbase24(U32 *x, U8 *c)
+void unbase24(uint32_t *x, uint8_t *c)
 {
 	memset(x, 0, 16);
 	int i, n;
@@ -56,15 +53,15 @@ void unbase24(U32 *x, U8 *c)
 		BN_add_word(y, c[i]);
 	}
 	n = BN_num_bytes(y);
-	BN_bn2bin(y, (U8 *)x);
+	BN_bn2bin(y, (uint8_t *)x);
 	BN_free(y);
 	
-	endian((U8 *)x, n);
+	endian((uint8_t *)x, n);
 }
 
-void base24(U8 *c, U32 *x)
+void base24(uint8_t *c, uint32_t *x)
 {
-	U8 y[16];
+	uint8_t y[16];
 	int i;
 	
 	BIGNUM *z;
@@ -75,16 +72,16 @@ void base24(U8 *c, U32 *x)
 	
 	c[25] = 0;
 	for (i = 24; i >= 0; i--) {
-		U8 t = BN_div_word(z, 24);
+		uint8_t t = BN_div_word(z, 24);
 		c[i] = cset[t];
 	}
 	BN_free(z);
 }
 
-void print_product_key(U8 *pk)
+void print_product_key(uint8_t *pk)
 {
 	int i;
-	assert(strlen(pk) == 25);
+	assert(strlen((const char *)pk) == 25);
 	for (i = 0; i < 25; i++) {
 		putchar(pk[i]);
 		if (i != 24 && i % 5 == 4) putchar('-');
@@ -93,7 +90,7 @@ void print_product_key(U8 *pk)
 
 void verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey)
 {
-	U8 key[25];
+	uint8_t key[25];
 	int i, j, k;
 	
 	BN_CTX *ctx = BN_CTX_new();
@@ -109,16 +106,16 @@ void verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *c
 		if (k >= 25) break;
 	}
 	
-	U32 bkey[4] = {0};
-	U32 osfamily[1], hash[1], sig[2], prefix[1];
+	uint32_t bkey[4] = {0};
+	uint32_t osfamily[1], hash[1], sig[2], prefix[1];
 	unbase24(bkey, key);
 	printf("%.8x %.8x %.8x %.8x\n", bkey[3], bkey[2], bkey[1], bkey[0]);
 	unpack2003(osfamily, hash, sig, prefix, bkey);
 	
 	printf("OS Family: %u\nHash: %.8x\nSig: %.8x %.8x\nPrefix: %.8x\n", osfamily[0], hash[0], sig[1], sig[0], prefix[0]);
 	
-	U8 buf[FIELD_BYTES_2003], md[20];
-	U32 h1[2];
+	uint8_t buf[FIELD_BYTES_2003], md[20];
+	uint32_t h1[2];
 	SHA_CTX h_ctx;
 	
 	/* h1 = SHA-1(5D || OS Family || Hash || Prefix || 00 00) */
@@ -143,10 +140,10 @@ void verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *c
 	BIGNUM *s, *h, *x, *y;
 	x = BN_new();
 	y = BN_new();
-	endian((U8 *)sig, 8);
-	endian((U8 *)h1, 8);
-	s = BN_bin2bn((U8 *)sig, 8, NULL);
-	h = BN_bin2bn((U8 *)h1, 8, NULL);
+	endian((uint8_t *)sig, 8);
+	endian((uint8_t *)h1, 8);
+	s = BN_bin2bn((uint8_t *)sig, 8, NULL);
+	h = BN_bin2bn((uint8_t *)h1, 8, NULL);
 
 	EC_POINT *r = EC_POINT_new(ec);
 	EC_POINT *t = EC_POINT_new(ec);
@@ -157,7 +154,7 @@ void verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *c
 	EC_POINT_mul(ec, r, NULL, r, s, ctx);
 	EC_POINT_get_affine_coordinates_GFp(ec, r, x, y, ctx);
 	
-	U32 h2[1];
+	uint32_t h2[1];
 	/* h2 = SHA-1(79 || OS Family || r.x || r.y) */
 	SHA1_Init(&h_ctx);
 	buf[0] = 0x79;
@@ -167,12 +164,12 @@ void verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *c
 	
 	memset(buf, 0, FIELD_BYTES_2003);
 	BN_bn2bin(x, buf);
-	endian((U8 *)buf, FIELD_BYTES_2003);
+	endian((uint8_t *)buf, FIELD_BYTES_2003);
 	SHA1_Update(&h_ctx, buf, FIELD_BYTES_2003);
 	
 	memset(buf, 0, FIELD_BYTES_2003);
 	BN_bn2bin(y, buf);
-	endian((U8 *)buf, FIELD_BYTES_2003);
+	endian((uint8_t *)buf, FIELD_BYTES_2003);
 	SHA1_Update(&h_ctx, buf, FIELD_BYTES_2003);
 	
 	SHA1_Final(md, &h_ctx);
@@ -191,7 +188,7 @@ void verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *c
 	BN_CTX_free(ctx);
 }
 
-void generate2003(U8 *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, BIGNUM *priv, U32 *osfamily, U32 *prefix)
+void generate2003(uint8_t *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, BIGNUM *priv, uint32_t *osfamily, uint32_t *prefix)
 {
 	BN_CTX *ctx = BN_CTX_new();
 
@@ -202,10 +199,10 @@ void generate2003(U8 *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, BI
 	BIGNUM *b = BN_new();
 	EC_POINT *r = EC_POINT_new(ec);
 
-	U32 bkey[4];
-	U8 buf[FIELD_BYTES_2003], md[20];
-	U32 h1[2];
-	U32 hash[1], sig[2];
+	uint32_t bkey[4];
+	uint8_t buf[FIELD_BYTES_2003], md[20];
+	uint32_t h1[2];
+	uint32_t hash[1], sig[2];
 	
 	SHA_CTX h_ctx;
 	
@@ -224,12 +221,12 @@ void generate2003(U8 *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, BI
 		
 		memset(buf, 0, FIELD_BYTES_2003);
 		BN_bn2bin(x, buf);
-		endian((U8 *)buf, FIELD_BYTES_2003);
+		endian((uint8_t *)buf, FIELD_BYTES_2003);
 		SHA1_Update(&h_ctx, buf, FIELD_BYTES_2003);
 		
 		memset(buf, 0, FIELD_BYTES_2003);
 		BN_bn2bin(y, buf);
-		endian((U8 *)buf, FIELD_BYTES_2003);
+		endian((uint8_t *)buf, FIELD_BYTES_2003);
 		SHA1_Update(&h_ctx, buf, FIELD_BYTES_2003);
 		
 		SHA1_Final(md, &h_ctx);
@@ -255,8 +252,8 @@ void generate2003(U8 *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, BI
 		printf("h1: %.8x %.8x\n", h1[1], h1[0]);
 	
 		/* s = ( -h1*priv + sqrt( (h1*priv)^2 + 4k ) ) / 2 */
-		endian((U8 *)h1, 8);
-		BN_bin2bn((U8 *)h1, 8, b);
+		endian((uint8_t *)h1, 8);
+		BN_bin2bn((uint8_t *)h1, 8, b);
 		BN_mod_mul(b, b, priv, order, ctx);
 		BN_copy(s, b);
 		BN_mod_sqr(s, s, order, ctx);
@@ -269,8 +266,8 @@ void generate2003(U8 *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, BI
 		}
 		BN_rshift1(s, s);
 		sig[0] = sig[1] = 0;
-		BN_bn2bin(s, (U8 *)sig);
-		endian((U8 *)sig, BN_num_bytes(s));
+		BN_bn2bin(s, (uint8_t *)sig);
+		endian((uint8_t *)sig, BN_num_bytes(s));
 		if (sig[1] < 0x40000000) break;
 	}
 	pack2003(bkey, osfamily, hash, sig, prefix);
@@ -325,15 +322,15 @@ int main()
 	assert(EC_POINT_is_on_curve(ec, g, ctx) == 1);
 	assert(EC_POINT_is_on_curve(ec, pub, ctx) == 1);
 	
-	U8 pkey[25];
-	U32 osfamily[1], prefix[1];
+	uint8_t pkey[25];
+	uint32_t osfamily[1], prefix[1];
 	
 	osfamily[0] = 1280;
-	RAND_pseudo_bytes((U8 *)prefix, 4);
+	RAND_pseudo_bytes((uint8_t *)prefix, 4);
 	prefix[0] &= 0x3ff;
 	generate2003(pkey, ec, g, n, priv, osfamily, prefix);
 	print_product_key(pkey); printf("\n\n");
-	verify2003(ec, g, pub, pkey);
+	verify2003(ec, g, pub, (char*)pkey);
 
 	BN_CTX_free(ctx);
 	

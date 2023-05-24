@@ -9,7 +9,7 @@
 
 * **How does it work?**
 
- This program is based on [this paper](https://www.licenturion.com/xp/fully-licensed-wpa.txt) Basically,
+ This program is based on [this paper](fully-licensed-wpa.txt) Basically,
  it uses a cracked private key from Microsoft to sign some stuff encoded in the 25-digit product key. It also does this process in reverse to check for the validation of the keys.
 
 * **How do I use it?**

@@ -25,10 +25,10 @@
 
 #define FIELD_BITS 384
 #define FIELD_BYTES 48
-unsigned char cset[] = "BCDFGHJKMPQRTVWXY2346789";
+uint8_t cset[] = "BCDFGHJKMPQRTVWXY2346789";
 
 
-static void unpack(unsigned long *pid, unsigned long *hash, unsigned long *sig, unsigned long *raw)
+static void unpack(uint32_t *pid, uint32_t *hash, uint32_t *sig, uint32_t *raw)
 {
  // pid = Bit 0..30 
 	pid[0] = raw[0] & 0x7fffffff;
@@ -41,7 +41,7 @@ static void unpack(unsigned long *pid, unsigned long *hash, unsigned long *sig, 
 	sig[1] = (raw[2] >> 27) | (raw[3] << 5);
 }
 
-static void pack(unsigned long *raw, unsigned long *pid, unsigned long *hash, unsigned long *sig)
+static void pack(uint32_t *raw, uint32_t *pid, uint32_t *hash, uint32_t *sig)
 {
 	raw[0] = pid[0] | ((hash[0] & 1) << 31);
 	raw[1] = (hash[0] >> 1) | ((sig[0] & 0x1f) << 27);
@@ -50,18 +50,18 @@ static void pack(unsigned long *raw, unsigned long *pid, unsigned long *hash, un
 }
 
 // Reverse data
-static void endian(unsigned char *data, int len)
+static void endian(uint8_t *data, int len)
 {
 	int i;
 	for (i = 0; i < len/2; i++) {
-		unsigned char temp;
+		uint8_t temp;
 		temp = data[i];
 		data[i] = data[len-i-1];
 		data[len-i-1] = temp;
 	}
 }
 
-void unbase24(unsigned long *x, unsigned char *c)
+void unbase24(uint32_t *x, uint8_t *c)
 {
 
 	memset(x, 0, 16);
@@ -76,15 +76,15 @@ void unbase24(unsigned long *x, unsigned char *c)
 		BN_add_word(y, c[i]);
 	}
 	n = BN_num_bytes(y);
-	BN_bn2bin(y, (unsigned char *)x);
+	BN_bn2bin(y, (uint8_t *)x);
 	BN_free(y);
 	
-	endian((unsigned char *)x, n);
+	endian((uint8_t *)x, n);
 }
 
-void base24(unsigned char *c, unsigned long *x)
+void base24(uint8_t *c, uint32_t *x)
 {
-	unsigned char y[16];
+	uint8_t y[16];
 	int i;
 	BIGNUM *z;
 
@@ -98,14 +98,14 @@ void base24(unsigned char *c, unsigned long *x)
  // Divide z by 24 and convert remainder with cset to Base24-CDKEY Char
 	c[25] = 0;
 	for (i = 24; i >= 0; i--) {
-		unsigned char t = BN_div_word(z, 24);
+		uint8_t t = BN_div_word(z, 24);
 		c[i] = cset[t];
 	}
 
 	BN_free(z);
 }
 
-void print_product_id(unsigned long *pid)
+void print_product_id(uint32_t *pid)
 {
 	char raw[12];
 	char b[6], c[8];
@@ -134,7 +134,7 @@ void print_product_id(unsigned long *pid)
 	printf("Product ID: 55274-%s-%s-23xxx\n", b, c);
 }
 
-void print_product_key(unsigned char *pk)
+void print_product_key(uint8_t *pk)
 {
 	int i;
 	assert(strlen((const char *)pk) == 25);
@@ -146,7 +146,7 @@ void print_product_key(unsigned char *pk)
 
 void verify(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey)
 {
-	unsigned char key[25];
+	uint8_t key[25];
 	int i, j, k;
 
 	BN_CTX *ctx = BN_CTX_new();
@@ -163,8 +163,8 @@ void verify(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey
 	}
 	
  // Base24_CDKEY -> Bin_CDKEY
-	unsigned long bkey[4] = {0};
-	unsigned long pid[1], hash[1], sig[2];
+	uint32_t bkey[4] = {0};
+	uint32_t pid[1], hash[1], sig[2];
 	unbase24(bkey, key);
  
  // Output Bin_CDKEY
@@ -182,8 +182,8 @@ void verify(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey
 	/* e = hash, s = sig */
 	e = BN_new();
 	BN_set_word(e, hash[0]);
-	endian((unsigned char *)sig, sizeof(sig));
-	s = BN_bin2bn((unsigned char *)sig, sizeof(sig), NULL);
+	endian((uint8_t *)sig, sizeof(sig));
+	s = BN_bin2bn((uint8_t *)sig, sizeof(sig), NULL);
 	
 	BIGNUM *x = BN_new();
 	BIGNUM *y = BN_new();
@@ -196,9 +196,9 @@ void verify(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey
 	EC_POINT_add(ec, v, u, v, ctx);
 	EC_POINT_get_affine_coordinates_GFp(ec, v, x, y, ctx);
 	
-	unsigned char buf[FIELD_BYTES], md[20];
-	unsigned long h;
-	unsigned char t[4];
+	uint8_t buf[FIELD_BYTES], md[20];
+	uint32_t h;
+	uint8_t t[4];
 	SHA_CTX h_ctx;
 	
 	/* h = (fist 32 bits of SHA1(pid || v.x, v.y)) >> 4 */
@@ -211,12 +211,12 @@ void verify(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey
 	
 	memset(buf, 0, sizeof(buf));
 	BN_bn2bin(x, buf);
-	endian((unsigned char *)buf, sizeof(buf));
+	endian((uint8_t *)buf, sizeof(buf));
 	SHA1_Update(&h_ctx, buf, sizeof(buf));
 	
 	memset(buf, 0, sizeof(buf));
 	BN_bn2bin(y, buf);
-	endian((unsigned char *)buf, sizeof(buf));
+	endian((uint8_t *)buf, sizeof(buf));
 	SHA1_Update(&h_ctx, buf, sizeof(buf));
 	
 	SHA1_Final(md, &h_ctx);
@@ -238,7 +238,7 @@ void verify(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey
 	BN_CTX_free(ctx);
 }
 
-void generate(unsigned char *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, BIGNUM *priv, unsigned long *pid)
+void generate(uint8_t *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, BIGNUM *priv, uint32_t *pid)
 {
 	BN_CTX *ctx = BN_CTX_new();
 
@@ -247,7 +247,7 @@ void generate(unsigned char *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *or
 	BIGNUM *x = BN_new();
 	BIGNUM *y = BN_new();
 	EC_POINT *r = EC_POINT_new(ec);
-	unsigned long bkey[4];
+	uint32_t bkey[4];
 
  // Loop in case signaturepart will make cdkey(base-24 "digits") longer than 25 
 	do {
@@ -256,8 +256,8 @@ void generate(unsigned char *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *or
 		EC_POINT_get_affine_coordinates_GFp(ec, r, x, y, ctx);
 		
 		SHA_CTX h_ctx;
-		unsigned char t[4], md[20], buf[FIELD_BYTES];
-		unsigned long hash[1];
+		uint8_t t[4], md[20], buf[FIELD_BYTES];
+		uint32_t hash[1];
 		/* h = (fist 32 bits of SHA1(pid || r.x, r.y)) >> 4 */
 		SHA1_Init(&h_ctx);
 		t[0] =  pid[0] & 0xff;
@@ -268,12 +268,12 @@ void generate(unsigned char *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *or
 		
 		memset(buf, 0, sizeof(buf));
 		BN_bn2bin(x, buf);
-		endian((unsigned char *)buf, sizeof(buf));
+		endian((uint8_t *)buf, sizeof(buf));
 		SHA1_Update(&h_ctx, buf, sizeof(buf));
 		
 		memset(buf, 0, sizeof(buf));
 		BN_bn2bin(y, buf);
-		endian((unsigned char *)buf, sizeof(buf));
+		endian((uint8_t *)buf, sizeof(buf));
 		SHA1_Update(&h_ctx, buf, sizeof(buf));
 		
 		SHA1_Final(md, &h_ctx);
@@ -285,9 +285,9 @@ void generate(unsigned char *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *or
 		BN_mul_word(s, hash[0]);
 		BN_mod_add(s, s, k, order, ctx);
 		
-		unsigned long sig[2] = {0};
-		BN_bn2bin(s, (unsigned char *)sig);
-		endian((unsigned char *)sig, BN_num_bytes(s));
+		uint32_t sig[2] = {0};
+		BN_bn2bin(s, (uint8_t *)sig);
+		endian((uint8_t *)sig, BN_num_bytes(s));
 		pack(bkey, pid, hash, sig);
 		printf("PID: %.8x\nHash: %.8x\nSig: %.8x %.8x\n", pid[0], hash[0], sig[1], sig[0]);
 	} while (bkey[3] >= 0x62a32);
@@ -349,8 +349,8 @@ int main()
 	EC_POINT *pub = EC_POINT_new(ec);
 	EC_POINT_set_affine_coordinates_GFp(ec, pub, pubx, puby, ctx);
 	
-	unsigned char pkey[26];
-	unsigned long pid[1];
+	uint8_t pkey[26];
+	uint32_t pid[1];
 	pid[0] = 640000000 << 1; /* <- change */
 
  // generate a key
