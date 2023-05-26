@@ -20,7 +20,7 @@
 **1.** Use this program to generate a key, and use such key during installation.
  
 **2.** After installation, you will be prompted to activate Windows. Select the
-        *telephone activation* method, then, fire up [this website](https://msdev.gointeract.io/interact/index?interaction=1461173234028-3884f8602eccbe259104553afa8415434b4581-05d1&accountId=microsoft&appkey=196de13c-e946-4531-98f6-2719ec8405ce) and enter the installation ID that the activation wizard gave you.
+        *telephone activation* method, then, fire up [xp_activate32.exe](https://archive.org/details/xp_activate32_202305) and enter the installation ID that the activation wizard gave you.
  
 **3.** Click "**Next**"
  
