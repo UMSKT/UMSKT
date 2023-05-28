@@ -88,7 +88,7 @@ void print_product_key(uint8_t *pk)
 	}
 }
 
-void verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey)
+int verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey)
 {
 	uint8_t key[25];
 	int i, j, k;
@@ -176,9 +176,6 @@ void verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *c
 	h2[0] = (md[0] | (md[1] << 8) | (md[2] << 16) | (md[3] << 24)) & 0x7fffffff;
 	printf("Calculated hash: %.8x\n", h2[0]);
 	
-	if (h2[0] == hash[0]) printf("Key VALID\n");
-	else printf("Key invalid\n");
-	
 	BN_free(s);
 	BN_free(h);
 	BN_free(x);
@@ -186,6 +183,15 @@ void verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *c
 	EC_POINT_free(r);
 	EC_POINT_free(t);
 	BN_CTX_free(ctx);
+	
+	if (h2[0] == hash[0]) {
+		printf("Key VALID\n");
+		return 1;
+	}
+	else {
+		printf("Key invalid\n");
+		return 0;
+	}
 }
 
 void generate2003(uint8_t *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, BIGNUM *priv, uint32_t *osfamily, uint32_t *prefix)
@@ -328,9 +334,12 @@ int main()
 	osfamily[0] = 1280;
 	RAND_pseudo_bytes((uint8_t *)prefix, 4);
 	prefix[0] &= 0x3ff;
-	generate2003(pkey, ec, g, n, priv, osfamily, prefix);
+	
+	do {
+		generate2003(pkey, ec, g, n, priv, osfamily, prefix);
+	} while (!verify2003(ec, g, pub, (char*)pkey));
+	
 	print_product_key(pkey); printf("\n\n");
-	verify2003(ec, g, pub, (char*)pkey);
 
 	BN_CTX_free(ctx);
 	
