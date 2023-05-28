@@ -290,7 +290,7 @@ void generate(uint8_t *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, B
 		endian((uint8_t *)sig, BN_num_bytes(s));
 		pack(bkey, pid, hash, sig);
 		printf("PID: %.8x\nHash: %.8x\nSig: %.8x %.8x\n", pid[0], hash[0], sig[1], sig[0]);
-	} while (bkey[3] >= 0x62a32);
+	} while (bkey[3] >= 0x40000);
 
 	base24(pkey, bkey);
 	
