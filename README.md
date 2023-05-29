@@ -16,7 +16,7 @@
  It all comes down to four simple steps:
  
  
-**1.** Use this program to generate a key, and use such key during installation.
+**1.** Use [XPKeygen](https://github.com/Endermanch/XPKeygen) to generate a key, and use such key during installation.
  
 **2.** After installation, you will be prompted to activate Windows. Select the
         *telephone activation* method, then, fire up [xp_activate32.exe](https://archive.org/details/xp_activate32_202305) and enter the installation ID that the activation wizard gave you.
