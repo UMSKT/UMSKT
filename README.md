@@ -1,6 +1,6 @@
-## **Windows XP / Server 2003 Keygen**
+# **Windows XP / Server 2003 Keygen**
 
-# **FAQ**
+### **FAQ**
 
 * **What does it do?**
 
@@ -25,7 +25,17 @@
  
 **4.** Profit!
 
+### Authors
+The list of people who have helped to bring the XP generation to where it is now:
+* z22
+* MSKey
+* sk00ter
+* diamondggg
+* pottzman
+* Endermanch
+* Neo-Desktop
 
+(the list will be updated to add more collaborators)
 
 **REQUIREMENTS:**
 
