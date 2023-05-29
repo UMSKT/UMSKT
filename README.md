@@ -1,16 +1,15 @@
-## **Windows XP Keygen!**
+## **Windows XP / Server 2003 Keygen**
 
 # **FAQ**
 
 * **What does it do?**
 
- This program allows you to generate endless Windows XP keys. 
+ This program allows you to generate endless Windows XP / Windows Server 2003 keys. 
  You also can use it to check your already existing keys.
 
 * **How does it work?**
 
- This program is based on [this paper](fully-licensed-wpa.txt) Basically,
- it uses a cracked private key from Microsoft to sign some stuff encoded in the 25-digit product key. It also does this process in reverse to check for the validation of the keys.
+[XPKeygen Readme](https://github.com/Endermanch/XPKeygen) explains everything in detail.
 
 * **How do I use it?**
 
