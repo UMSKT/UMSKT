@@ -28,7 +28,7 @@ In light of the recent exponential interest in this project I've decided to put 
 ### **Usage**
 1. Feel free to use [XPKeygen](https://github.com/Endermanch/XPKeygen) on **Windows** to generate a key, and use such key during installation.
 
-    * If on **Linux** please clone and compile this repository using `make` and run using `./xpkey` to generate a Volume License Key
+    * If on **Linux** please clone and compile this repository using `cd build && cmake ../ && make` and run using `./xpkey` to generate a Volume License Key
 
 2. (For retail only): After installation, you will be prompted to activate Windows. Select the *telephone activation* method, then, fire up [xp_activate32.exe](https://archive.org/details/xp_activate32_202305) and enter the installation ID that the activation wizard gave you.
 

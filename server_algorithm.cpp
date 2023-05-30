@@ -1,12 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <openssl/bn.h>
-#include <openssl/ec.h>
-#include <openssl/sha.h>
-#include <openssl/rand.h>
-#include <assert.h>
-
-uint8_t cset[] = "BCDFGHJKMPQRTVWXY2346789";
+#include "shared.h"
 
 #define FIELD_BITS_2003 512
 #define FIELD_BYTES_2003 64
@@ -26,66 +18,6 @@ void pack2003(uint32_t *raw, uint32_t *osfamily, uint32_t *hash, uint32_t *sig, 
 	raw[1] = (hash[0] >> 21) | (sig[0] << 10);
 	raw[2] = (sig[0] >> 22) | (sig[1] << 10);
 	raw[3] = (sig[1] >> 22) | (prefix[0] << 8);
-}
-
-static void endian(uint8_t *x, int n)
-{
-	int i;
-	for (i = 0; i < n/2; i++) {
-		uint8_t t;
-		t = x[i];
-		x[i] = x[n-i-1];
-		x[n-i-1] = t;
-	}
-}
-
-void unbase24(uint32_t *x, uint8_t *c)
-{
-	memset(x, 0, 16);
-	int i, n;
-	
-	BIGNUM *y = BN_new();
-	BN_zero(y);
-	
-	for (i = 0; i < 25; i++)
-	{
-		BN_mul_word(y, 24);
-		BN_add_word(y, c[i]);
-	}
-	n = BN_num_bytes(y);
-	BN_bn2bin(y, (uint8_t *)x);
-	BN_free(y);
-	
-	endian((uint8_t *)x, n);
-}
-
-void base24(uint8_t *c, uint32_t *x)
-{
-	uint8_t y[16];
-	int i;
-	
-	BIGNUM *z;
-	memcpy(y, x, sizeof(y));
-	for (i = 15; y[i] == 0; i--) {} i++;
-	endian(y, i);
-	z = BN_bin2bn(y, i, NULL);
-	
-	c[25] = 0;
-	for (i = 24; i >= 0; i--) {
-		uint8_t t = BN_div_word(z, 24);
-		c[i] = cset[t];
-	}
-	BN_free(z);
-}
-
-void print_product_key(uint8_t *pk)
-{
-	int i;
-	assert(strlen((const char *)pk) == 25);
-	for (i = 0; i < 25; i++) {
-		putchar(pk[i]);
-		if (i != 24 && i % 5 == 4) putchar('-');
-	}
 }
 
 int verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey)

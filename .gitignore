@@ -1,5 +1,4 @@
-srv2003key
-xpkey
+build/*
 
 ### NotepadPP template
 # Notepad++ backups #
@@ -234,3 +233,15 @@ bh_unicode_properties.cache
 # https://packagecontrol.io/packages/sublime-github
 GitHub.sublime-settings
 
+### CMake template
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
