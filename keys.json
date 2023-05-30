@@ -7,9 +7,9 @@
     "Windows XP Pro Retail": ["2C","2D"],
     "Windows XP Pro VLK": ["2E","2F"],
     "Halo: Combat Evolved": ["50","51"],
-    "Visual Studio 2005": ["82", "83"],
     "Windows XP Pro 64 Bit Edition VLK": ["64","65"],
-    "Windows XP Pro 64 Bit Edition Retail": ["66","67"]
+    "Windows XP Pro 64 Bit Edition Retail": ["66","67"],
+    "Visual Studio 2005": ["82", "83"]
   },
   "BINK": {
     "00": {
