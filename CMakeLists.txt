@@ -1,0 +1,9 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
+PROJECT(WindowsXPKg)
+
+SET(CMAKE_CXX_STANDARD 17)
+SET(SOURCE main.c xp_algorithm.c server_algorithm.c)
+SET(HEADER header.h)
+
+TARGET_LINK_LIBRARIES(${CMAKE_SOURCE_DIR}/lib/libcrypto.lib)
+ADD_EXECUTABLE(Release ${SOURCE})
