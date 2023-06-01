@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <random>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -31,7 +32,7 @@
 #define FIELD_BYTES_2003    64
 
 typedef unsigned char byte;
-typedef uint32_t ul32;
+typedef unsigned int  ul32;
 
 extern char charset[];
 

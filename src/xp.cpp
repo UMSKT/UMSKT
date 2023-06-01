@@ -231,7 +231,7 @@ void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *or
         // Pack product key.
         packXP(bKey, pRaw, &hash, sig);
 
-        printf("PID: %.8lX\nHash: %.8lX\nSig: %.8lX %.8lX\n", pRaw[0], hash, sig[1], sig[0]);
+        printf("PID: %.8X\nHash: %.8X\nSig: %.8X %.8X\n", pRaw[0], hash, sig[1], sig[0]);
     } while (bKey[3] >= 0x40000);
     // ↑ ↑ ↑
     // bKey[3] can't be longer than 18 bits, else the signature part will make

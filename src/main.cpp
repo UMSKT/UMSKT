@@ -80,7 +80,7 @@ int main() {
     ul32 nRaw = 640 * 1000000 ; /* <- change */
     //nRaw += rand() & 999999;
 
-    printf("> PID: %lu\n", nRaw);
+    printf("> PID: %u\n", nRaw);
 
     // generate a key
     BN_sub(privateKey, genOrder, privateKey);
