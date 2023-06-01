@@ -20,12 +20,12 @@ add_custom_command(
 
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_EXE_LINKER_FLAGS "-static")
-ADD_EXECUTABLE(xpkey xp_algorithm.cpp shared.cpp bink.h)
+ADD_EXECUTABLE(xpkey main.cpp xp.cpp key.cpp util.cpp cli.cpp bink.h)
 TARGET_INCLUDE_DIRECTORIES(xpkey PUBLIC crypto)
 TARGET_LINK_LIBRARIES(xpkey PUBLIC crypto)
 add_dependencies(xpkey bink.h)
 
-ADD_EXECUTABLE(srv2003key server_algorithm.cpp shared.cpp bink.h)
+ADD_EXECUTABLE(srv2003key server.cpp key.cpp util.cpp cli.cpp bink.h)
 TARGET_INCLUDE_DIRECTORIES(srv2003key PUBLIC crypto)
 TARGET_LINK_LIBRARIES(srv2003key PUBLIC crypto)
 add_dependencies(srv2003key bink.h)

@@ -222,7 +222,7 @@ void generate2003(char *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, 
 	
 }
 
-int gen2003()
+int main()
 {
 	BIGNUM *a, *b, *p, *gx, *gy, *pubx, *puby, *n, *priv;
 	BN_CTX *ctx = BN_CTX_new();
