@@ -9,10 +9,6 @@ IF(!OPENSSL_FOUND)
     MESSAGE(FATAL_ERROR "OpenSSL Not Found")
 ENDIF()
 
-ADD_EXECUTABLE(xpkey xp_algorithm.cpp key.cpp)
+ADD_EXECUTABLE(xpkey main.cpp xp.cpp server.cpp key.cpp util.cpp cli.cpp)
 TARGET_INCLUDE_DIRECTORIES(xpkey PUBLIC crypto)
 TARGET_LINK_LIBRARIES(xpkey PUBLIC crypto)
-
-ADD_EXECUTABLE(srv2003key server_algorithm.cpp key.cpp)
-TARGET_INCLUDE_DIRECTORIES(srv2003key PUBLIC crypto)
-TARGET_LINK_LIBRARIES(srv2003key PUBLIC crypto)
