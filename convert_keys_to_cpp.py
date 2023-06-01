@@ -14,9 +14,6 @@ with open('bink.h', 'w') as out:
 #ifndef WINDOWSXPKG_BINK_H
 #define WINDOWSXPKG_BINK_H
 
-std::unordered_map<std::string, std::unordered_map<int, std::string>> Products;
-std::unordered_map<std::string, ECDLP_Params> BINKData;
-
 struct ECDLP_Params {
     //         p,           a,           b
     std::tuple<std::string, std::string, std::string> E;
@@ -30,6 +27,9 @@ struct ECDLP_Params {
     std::string n;
     std::string k;
 };
+
+std::unordered_map<std::string, std::unordered_map<int, std::string>> Products;
+std::unordered_map<std::string, ECDLP_Params> BINKData;
 
 struct ProductID {
     uint8_t SiteID;
