@@ -20,7 +20,6 @@ void endian(uint8_t *data, int len)
 
 void unbase24(uint32_t *x, uint8_t *c)
 {
-
     memset(x, 0, 16);
     int i, n;
 
@@ -32,6 +31,7 @@ void unbase24(uint32_t *x, uint8_t *c)
         BN_mul_word(y, 24);
         BN_add_word(y, c[i]);
     }
+
     n = BN_num_bytes(y);
     BN_bn2bin(y, (uint8_t *)x);
     BN_free(y);
@@ -50,7 +50,6 @@ void base24(uint8_t *c, uint32_t *x)
     for (i = 15; y[i] == 0; i--) {} i++;	// skip following nulls
     endian(y, i);							// Reverse y
     z = BN_bin2bn(y, i, NULL);				// Convert y to BigNum z
-
 
     // Divide z by 24 and convert remainder with cset to Base24-CDKEY Char
     c[25] = 0;
@@ -77,8 +76,8 @@ void print_product_id(uint32_t *pid)
 
     // Make c-part {...-123456X...}
     strcpy(c, raw + 3);
-
     printf("> %s\n", c);
+
     // Make checksum digit-part {...56X-}
     assert(strlen(c) == 6);
     for (i = 0; i < 6; i++)
@@ -89,7 +88,7 @@ void print_product_id(uint32_t *pid)
     c[6] = digit + '0';
     c[7] = 0;
 
-    printf("Product ID: 55274-%s-%s-23xxx\n", b, c);
+    printf("Product ID: PPPPP-%s-%s-23xxx\n", b, c);
 }
 
 void print_product_key(uint8_t *pk)

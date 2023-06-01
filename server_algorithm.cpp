@@ -1,4 +1,5 @@
 #include "shared.h"
+#include "bink.h"
 
 #define FIELD_BITS_2003 512
 #define FIELD_BYTES_2003 64
@@ -23,12 +24,10 @@ void pack2003(uint32_t *raw, uint32_t *osfamily, uint32_t *hash, uint32_t *sig, 
 int verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey)
 {
 	uint8_t key[25];
-	int i, j, k;
-	
 	BN_CTX *ctx = BN_CTX_new();
 
-	for (i = 0, k = 0; i < strlen(cdkey); i++) {
-		for (j = 0; j < 24; j++) {
+	for (int i = 0, k = 0; i < strlen(cdkey); i++) {
+		for (int j = 0; j < 24; j++) {
 			if (cdkey[i] != '-' && cdkey[i] == cset[j]) {
 				key[k++] = j;
 				break;

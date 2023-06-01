@@ -16,6 +16,7 @@
 */
 
 #include "shared.h"
+#include "bink.h"
 
 #define FIELD_BITS 384
 #define FIELD_BYTES 48
@@ -203,6 +204,12 @@ void generate(uint8_t *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, B
 
 int main()
 {
+    initBink();
+
+    rand();
+    srand(time(nullptr));
+    rand();
+
  // Init
 	BIGNUM *a, *b, *p, *gx, *gy, *pubx, *puby, *n, *priv;
 	BN_CTX *ctx = BN_CTX_new();
@@ -218,27 +225,29 @@ int main()
 	n = BN_new();
 	priv = BN_new();
 
+    char* BINKID = "2E";
+
  // Data from pidgen-Bink-resources
 	/* Elliptic curve parameters: y^2 = x^3 + ax + b mod p */
-	BN_hex2bn(&p,    "92ddcf14cb9e71f4489a2e9ba350ae29454d98cb93bdbcc07d62b502ea12238ee904a8b20d017197aae0c103b32713a9");
-	BN_set_word(a, 1);
-	BN_set_word(b, 0);
+	BN_dec2bn(&p,    std::get<0>(BINKData[BINKID].E).c_str());
+    BN_dec2bn(&a,    std::get<1>(BINKData[BINKID].E).c_str());
+    BN_dec2bn(&b,    std::get<2>(BINKData[BINKID].E).c_str());
 	
 
 	/* base point (generator) G */
-	BN_hex2bn(&gx,   "46E3775ECE21B0898D39BEA57050D422A0AF989E497962BAEE2CB17E0A28D5360D5476B8DC966443E37A14F1AEF37742");
-	BN_hex2bn(&gy,   "7C8E741D2C34F4478E325469CD491603D807222C9C4AC09DDB2B31B3CE3F7CC191B3580079932BC6BEF70BE27604F65E");
+    BN_dec2bn(&gx,   std::get<0>(BINKData[BINKID].G).c_str());
+    BN_dec2bn(&gy,   std::get<1>(BINKData[BINKID].G).c_str());
 
 	/* inverse of public key */
-	BN_hex2bn(&pubx, "5D8DBE75198015EC41C45AAB6143542EB098F6A5CC9CE4178A1B8A1E7ABBB5BC64DF64FAF6177DC1B0988AB00BA94BF8");
-	BN_hex2bn(&puby, "23A2909A0B4803C89F910C7191758B48746CEA4D5FF07667444ACDB9512080DBCA55E6EBF30433672B894F44ACE92BFA");
+    BN_dec2bn(&pubx, std::get<0>(BINKData[BINKID].K).c_str());
+    BN_dec2bn(&puby, std::get<1>(BINKData[BINKID].K).c_str());
 
  // Computed data
 	/* order of G - computed in 18 hours using a P3-450 */
-	BN_hex2bn(&n,    "DB6B4C58EFBAFD");
+    BN_dec2bn(&n,    BINKData[BINKID].n.c_str());
 
 	/* THE private key  - computed in 10 hours using a P3-450 */
-	BN_hex2bn(&priv, "565B0DFF8496C8");
+    BN_dec2bn(&priv, BINKData[BINKID].k.c_str());
 
  // Calculation
 	EC_GROUP *ec = EC_GROUP_new_curve_GFp(p, a, b, ctx);
@@ -249,11 +258,16 @@ int main()
 	
 	uint8_t pkey[26];
 	uint32_t pid[1];
-	pid[0] = 640000000 << 1; /* <- change */
+    pid[0] = 640 * 1000000 ; /* <- change */
+    pid[0] += rand() & 999999;
+
+    printf("> PID: %d\n", pid[0]);
 
  // generate a key
+    BN_sub(priv, n, priv);
 	generate(pkey, ec, g, n, priv, pid);
-	print_product_key(pkey); printf("\n\n");
+	print_product_key(pkey);
+    printf("\n\n");
 
  // verify the key
 	verify(ec, g, pub, (char*)pkey);
