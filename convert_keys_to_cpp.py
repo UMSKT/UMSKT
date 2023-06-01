@@ -14,7 +14,7 @@ with open('bink.h', 'w') as out:
 #ifndef WINDOWSXPKG_BINK_H
 #define WINDOWSXPKG_BINK_H
 
-#include "shared.h"
+#include "header.h"
 
 std::unordered_map<std::string, std::unordered_map<int, std::string>> Products;
 std::unordered_map<std::string, ECDLP_Params> BINKData;
@@ -39,8 +39,8 @@ void initBink() {
                   '{"' + d['g']['x'] + '", "' + d['g']['y'] + '"}, ' +
                   '"' + d['n'] + '", "' + d['priv'] + '"};' + "\n")
 
-    out.write("""
+    out.write('''
 }
 
 #endif //WINDOWSXPKG_BINK_H
-""")
+''')
