@@ -3,13 +3,15 @@
 //
 
 #include "header.h"
+#include <iostream>
 
 char charset[] = "BCDFGHJKMPQRTVWXY2346789";
 
 using json = nlohmann::json;
 
-int main()
-{
+int main() {
+    char* BINKID = "2E";
+
     std::ifstream f("keys.json");
     json keys = json::parse(f);
 
@@ -17,70 +19,79 @@ int main()
     srand(time(nullptr));
     rand();
 
-    // Init
-    BIGNUM *a, *b, *p, *gx, *gy, *pubx, *puby, *n, *priv;
-    BN_CTX *ctx = BN_CTX_new();
+    // We cannot produce a valid key without knowing the private key k. The reason for this is that
+    // we need the result of the function K(x; y) = kG(x; y).
+    BIGNUM *privateKey = BN_new();
 
-    // make BigNumbers
-    a = BN_new();
-    b = BN_new();
-    p = BN_new();
-    gx = BN_new();
-    gy = BN_new();
-    pubx = BN_new();
-    puby = BN_new();
-    n = BN_new();
-    priv = BN_new();
+    // We can, however, validate any given key using the available public key: {p, a, b, G, K}.
+    // genOrder the order of the generator G, a value we have to reverse -> Schoof's Algorithm.
+    BIGNUM *genOrder = BN_new();
 
-    char* BINKID = "2E";
+    /* Computed data */
+    BN_dec2bn(&genOrder, keys["BINK"][BINKID]["n"].get<std::string>().c_str());
+    BN_dec2bn(&privateKey, keys["BINK"][BINKID]["priv"].get<std::string>().c_str());
 
-    // Data from pidgen-Bink-resources
-    /* Elliptic curve parameters: y^2 = x^3 + ax + b mod p */
-    BN_dec2bn(&p,    keys["BINK"][BINKID]["p"].get<std::string>().c_str());
-    BN_dec2bn(&a,    keys["BINK"][BINKID]["a"].get<std::string>().c_str());
-    BN_dec2bn(&b,    keys["BINK"][BINKID]["b"].get<std::string>().c_str());
+    std::cout << keys["BINK"][BINKID]["p"].get<std::string>().c_str() << std::endl;
+    std::cout << keys["BINK"][BINKID]["a"].get<std::string>().c_str() << std::endl;
+    std::cout << keys["BINK"][BINKID]["b"].get<std::string>().c_str() << std::endl;
+    std::cout << keys["BINK"][BINKID]["g"]["x"].get<std::string>().c_str() << std::endl;
+    std::cout << keys["BINK"][BINKID]["g"]["y"].get<std::string>().c_str() << std::endl;
+    std::cout << keys["BINK"][BINKID]["pub"]["x"].get<std::string>().c_str() << std::endl;
+    std::cout << keys["BINK"][BINKID]["pub"]["y"].get<std::string>().c_str() << std::endl;
+    std::cout << keys["BINK"][BINKID]["n"].get<std::string>().c_str() << std::endl;
+    std::cout << keys["BINK"][BINKID]["priv"].get<std::string>().c_str() << std::endl;
 
+    EC_POINT *genPoint, *pubPoint;
+    EC_GROUP *eCurve = initializeEllipticCurve(
+            keys["BINK"][BINKID]["p"].get<std::string>().c_str(),
+            keys["BINK"][BINKID]["a"].get<std::string>().c_str(),
+            keys["BINK"][BINKID]["b"].get<std::string>().c_str(),
+            keys["BINK"][BINKID]["g"]["x"].get<std::string>().c_str(),
+            keys["BINK"][BINKID]["g"]["y"].get<std::string>().c_str(),
+            keys["BINK"][BINKID]["pub"]["x"].get<std::string>().c_str(),
+            keys["BINK"][BINKID]["pub"]["y"].get<std::string>().c_str(),
+            &genPoint,
+            &pubPoint
+    );
 
-    /* base point (generator) G */
-    BN_dec2bn(&gx,   keys["BINK"][BINKID]["g"]["x"].get<std::string>().c_str());
-    BN_dec2bn(&gy,   keys["BINK"][BINKID]["g"]["y"].get<std::string>().c_str());
-
-    /* inverse of public key */
-    BN_dec2bn(&pubx, keys["BINK"][BINKID]["pub"]["x"].get<std::string>().c_str());
-    BN_dec2bn(&puby, keys["BINK"][BINKID]["pub"]["y"].get<std::string>().c_str());
-
-    // Computed data
-    /* order of G - computed in 18 hours using a P3-450 */
-    BN_dec2bn(&n,    keys["BINK"][BINKID]["n"].get<std::string>().c_str());
-
-    /* THE private key  - computed in 10 hours using a P3-450 */
-    BN_dec2bn(&n,    keys["BINK"][BINKID]["priv"].get<std::string>().c_str());
-
+    /*BN_print_fp(stdout, p);
+    std::cout << std::endl;
+    BN_print_fp(stdout, a);
+    std::cout << std::endl;
+    BN_print_fp(stdout, b);
+    std::cout << std::endl;
+    BN_print_fp(stdout, gx);
+    std::cout << std::endl;
+    BN_print_fp(stdout, gy);
+    std::cout << std::endl;
+    BN_print_fp(stdout, pubx);
+    std::cout << std::endl;
+    BN_print_fp(stdout, puby);
+    std::cout << std::endl;
+    BN_print_fp(stdout, n);
+    std::cout << std::endl;
+    BN_print_fp(stdout, priv);
+    std::cout << std::endl;*/
     // Calculation
-    EC_GROUP *ec = EC_GROUP_new_curve_GFp(p, a, b, ctx);
-    EC_POINT *g = EC_POINT_new(ec);
-    EC_POINT_set_affine_coordinates_GFp(ec, g, gx, gy, ctx);
-    EC_POINT *pub = EC_POINT_new(ec);
-    EC_POINT_set_affine_coordinates_GFp(ec, pub, pubx, puby, ctx);
 
-    char pkey[26];
-    ul32 pid[1];
-    pid[0] = 640 * 1000000 ; /* <- change */
-    pid[0] += rand() & 999999;
 
-    printf("> PID: %lu\n", pid[0]);
+    char pKey[25];
+
+    ul32 nRaw = 640 * 1000000 ; /* <- change */
+    //nRaw += rand() & 999999;
+
+    printf("> PID: %lu\n", nRaw);
 
     // generate a key
-    BN_sub(priv, n, priv);
-    generateXPKey(pkey, ec, g, n, priv, pid);
-    print_product_key(pkey);
+    BN_sub(privateKey, genOrder, privateKey);
+    nRaw <<= 1;
+
+    generateXPKey(pKey, eCurve, genPoint, genOrder, privateKey, &nRaw);
+    print_product_key(pKey);
     printf("\n\n");
 
     // verify the key
-    verifyXPKey(ec, g, pub, (char*)pkey);
-
-    // Cleanup
-    BN_CTX_free(ctx);
+    if (!verifyXPKey(eCurve, genPoint, pubPoint, pKey)) printf("Fail! Key is invalid.\n");
 
     return 0;
 }

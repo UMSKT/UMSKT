@@ -31,12 +31,23 @@
 #define FIELD_BYTES_2003    64
 
 typedef unsigned char byte;
-typedef unsigned long ul32;
+typedef uint32_t ul32;
 
 extern char charset[];
 
 // util.cpp
 void endian(byte *data, int length);
+EC_GROUP *initializeEllipticCurve(
+        const char *pSel,
+        const char *aSel,
+        const char *bSel,
+        const char *generatorXSel,
+        const char *generatorYSel,
+        const char *publicKeyXSel,
+        const char *publicKeyYSel,
+        EC_POINT **genPoint,
+        EC_POINT **pubPoint
+);
 
 // key.cpp
 void unbase24(ul32 *byteSeq, const char *cdKey);
