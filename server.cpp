@@ -1,5 +1,7 @@
 #include "header.h"
 
+char charset[] = "BCDFGHJKMPQRTVWXY2346789";
+
 void unpack2003(ul32 *osfamily, ul32 *hash, ul32 *sig, ul32 *prefix, ul32 *raw)
 {
 	osfamily[0] = raw[0] & 0x7ff;

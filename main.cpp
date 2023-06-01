@@ -6,9 +6,12 @@
 
 char charset[] = "BCDFGHJKMPQRTVWXY2346789";
 
+using json = nlohmann::json;
+
 int main()
 {
-    initBink();
+    std::ifstream f("keys.json");
+    json keys = json::parse(f);
 
     rand();
     srand(time(nullptr));
@@ -33,25 +36,25 @@ int main()
 
     // Data from pidgen-Bink-resources
     /* Elliptic curve parameters: y^2 = x^3 + ax + b mod p */
-    BN_dec2bn(&p,    std::get<0>(BINKData[BINKID].E).c_str());
-    BN_dec2bn(&a,    std::get<1>(BINKData[BINKID].E).c_str());
-    BN_dec2bn(&b,    std::get<2>(BINKData[BINKID].E).c_str());
+    BN_dec2bn(&p,    keys["BINK"][BINKID]["p"].get<std::string>().c_str());
+    BN_dec2bn(&a,    keys["BINK"][BINKID]["a"].get<std::string>().c_str());
+    BN_dec2bn(&b,    keys["BINK"][BINKID]["b"].get<std::string>().c_str());
 
 
     /* base point (generator) G */
-    BN_dec2bn(&gx,   std::get<0>(BINKData[BINKID].G).c_str());
-    BN_dec2bn(&gy,   std::get<1>(BINKData[BINKID].G).c_str());
+    BN_dec2bn(&gx,   keys["BINK"][BINKID]["g"]["x"].get<std::string>().c_str());
+    BN_dec2bn(&gy,   keys["BINK"][BINKID]["g"]["y"].get<std::string>().c_str());
 
     /* inverse of public key */
-    BN_dec2bn(&pubx, std::get<0>(BINKData[BINKID].K).c_str());
-    BN_dec2bn(&puby, std::get<1>(BINKData[BINKID].K).c_str());
+    BN_dec2bn(&pubx, keys["BINK"][BINKID]["pub"]["x"].get<std::string>().c_str());
+    BN_dec2bn(&puby, keys["BINK"][BINKID]["pub"]["y"].get<std::string>().c_str());
 
     // Computed data
     /* order of G - computed in 18 hours using a P3-450 */
-    BN_dec2bn(&n,    BINKData[BINKID].n.c_str());
+    BN_dec2bn(&n,    keys["BINK"][BINKID]["n"].get<std::string>().c_str());
 
     /* THE private key  - computed in 10 hours using a P3-450 */
-    BN_dec2bn(&priv, BINKData[BINKID].k.c_str());
+    BN_dec2bn(&n,    keys["BINK"][BINKID]["priv"].get<std::string>().c_str());
 
     // Calculation
     EC_GROUP *ec = EC_GROUP_new_curve_GFp(p, a, b, ctx);

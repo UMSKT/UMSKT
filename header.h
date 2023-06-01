@@ -10,16 +10,17 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <unordered_map>
+
+#include <nlohmann/json.hpp>
 
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 #include <openssl/sha.h>
 #include <openssl/rand.h>
-
-#include "bink.h"
 
 #define PK_LENGTH           25
 #define NULL_TERMINATOR     1
@@ -38,7 +39,7 @@ extern char charset[];
 void endian(byte *data, int length);
 
 // key.cpp
-void unbase24(ul32 *byteSeq, char *cdKey);
+void unbase24(ul32 *byteSeq, const char *cdKey);
 void base24(char *cdKey, ul32 *byteSeq);
 
 // cli.cpp
