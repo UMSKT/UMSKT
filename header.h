@@ -19,6 +19,8 @@
 #include <openssl/sha.h>
 #include <openssl/rand.h>
 
+#include "bink.h"
+
 #define PK_LENGTH           25
 #define NULL_TERMINATOR     1
 
@@ -48,28 +50,7 @@ bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, cha
 void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, ul32 *pRaw);
 
 // server.cpp
-
-struct ECDLP_Params {
-    //         p,           a,           b
-    std::tuple<std::string, std::string, std::string> E;
-
-    //         x,           y
-    std::tuple<std::string, std::string> K;
-
-    //         x,           y
-    std::tuple<std::string, std::string> G;
-
-    std::string n;
-    std::string k;
-};
-
-struct ProductID {
-    uint8_t SiteID;
-    uint16_t Serial;
-};
-
-extern std::unordered_map<std::string, std::unordered_map<int, std::string>> Products;
-extern std::unordered_map<std::string, ECDLP_Params> BINKData;
-void initBink();
+int verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey);
+void generate2003(char *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, BIGNUM *priv, ul32 *osfamily, ul32 *prefix);
 
 #endif //WINDOWSXPKG_HEADER_H

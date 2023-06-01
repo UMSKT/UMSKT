@@ -14,10 +14,27 @@ with open('bink.h', 'w') as out:
 #ifndef WINDOWSXPKG_BINK_H
 #define WINDOWSXPKG_BINK_H
 
-#include "header.h"
-
 std::unordered_map<std::string, std::unordered_map<int, std::string>> Products;
 std::unordered_map<std::string, ECDLP_Params> BINKData;
+
+struct ECDLP_Params {
+    //         p,           a,           b
+    std::tuple<std::string, std::string, std::string> E;
+
+    //         x,           y
+    std::tuple<std::string, std::string> K;
+
+    //         x,           y
+    std::tuple<std::string, std::string> G;
+
+    std::string n;
+    std::string k;
+};
+
+struct ProductID {
+    uint8_t SiteID;
+    uint16_t Serial;
+};
 
 void initBink() {
 ''')

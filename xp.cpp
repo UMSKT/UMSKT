@@ -15,7 +15,7 @@
 
 */
 
-#include "bink.h"
+#include "header.h"
 
 /* Unpacks the Windows XP Product Key. */
 void unpackXP(ul32 *serial, ul32 *hash, ul32 *sig, ul32 *raw) {
