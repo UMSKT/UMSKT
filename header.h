@@ -19,8 +19,6 @@
 #include <openssl/sha.h>
 #include <openssl/rand.h>
 
-#include "bink.h"
-
 #define PK_LENGTH           25
 #define NULL_TERMINATOR     1
 

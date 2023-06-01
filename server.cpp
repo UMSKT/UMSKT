@@ -1,4 +1,4 @@
-#include "header.h"
+#include "bink.h"
 
 void unpack2003(ul32 *osfamily, ul32 *hash, ul32 *sig, ul32 *prefix, ul32 *raw)
 {
