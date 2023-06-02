@@ -2,226 +2,310 @@
 
 char charset[] = "BCDFGHJKMPQRTVWXY2346789";
 
-void unpack2003(uint32_t *osfamily, uint32_t *hash, uint32_t *sig, uint32_t *prefix, uint32_t *raw)
-{
-	osfamily[0] = raw[0] & 0x7ff;
-	hash[0] = ((raw[0] >> 11) | (raw[1] << 21)) & 0x7fffffff;
-	sig[0] = (raw[1] >> 10) | (raw[2] << 22);
-	sig[1] = ((raw[2] >> 10) | (raw[3] << 22)) & 0x3fffffff;
-	prefix[0] = (raw[3] >> 8) & 0x3ff;
+void unpackServer(DWORD *osFamily, DWORD *hash, DWORD *sig, DWORD *prefix, DWORD *raw) {
+
+    // We're assuming that the quantity of information within the product key is at most 114 bits.
+    // log2(24^25) = 114.
+
+    // OS Family = Bits [0..10] -> 11 bits
+    osFamily[0] = raw[0] & 0x7ff;
+
+    // Hash = Bits [11..41] -> 31 bits
+    hash[0] = ((raw[0] >> 11) | (raw[1] << 21)) & 0x7fffffff;
+
+    // Signature = Bits [42..103] -> 62 bits
+    sig[0] = (raw[1] >> 10) | (raw[2] << 22);
+    sig[1] = ((raw[2] >> 10) | (raw[3] << 22)) & 0x3fffffff;
+
+    // Prefix = Bits [104..113] -> 10 bits
+    prefix[0] = (raw[3] >> 8) & 0x3ff;
 }
 
-void pack2003(uint32_t *raw, uint32_t *osfamily, uint32_t *hash, uint32_t *sig, uint32_t *prefix)
-{
-	raw[0] = osfamily[0] | (hash[0] << 11);
-	raw[1] = (hash[0] >> 21) | (sig[0] << 10);
-	raw[2] = (sig[0] >> 22) | (sig[1] << 10);
-	raw[3] = (sig[1] >> 22) | (prefix[0] << 8);
+void packServer(DWORD *raw, DWORD *osFamily, DWORD *hash, DWORD *sig, DWORD *prefix) {
+    raw[0] = osFamily[0] | (hash[0] << 11);
+    raw[1] = (hash[0] >> 21) | (sig[0] << 10);
+    raw[2] = (sig[0] >> 22) | (sig[1] << 10);
+    raw[3] = (sig[1] >> 22) | (prefix[0] << 8);
 }
 
-int verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey)
-{
-	char key[25];
-	BN_CTX *ctx = BN_CTX_new();
 
-	for (int i = 0, k = 0; i < strlen(cdkey); i++) {
-		for (int j = 0; j < 24; j++) {
-			if (cdkey[i] != '-' && cdkey[i] == charset[j]) {
-				key[k++] = j;
-				break;
-			}
-			assert(j < 24);
-		}
-		if (k >= 25) break;
-	}
+bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, char *cdKey) {
+    BN_CTX *context = BN_CTX_new();
 
-    uint32_t bkey[4] = {0};
-    uint32_t osfamily[1], hash[1], sig[2], prefix[1];
+    // Convert Base24 CD-key to bytecode.
+    DWORD osFamily, hash, sig[2], prefix;
+    DWORD bKey[4]{};
 
-	unbase24(bkey, key);
+    unbase24(bKey, cdKey);
 
-	printf("%.8ix %.8ix %.8ix %.8ix\n", bkey[3], bkey[2], bkey[1], bkey[0]);
-	unpack2003(osfamily, hash, sig, prefix, bkey);
-	
-	printf("OS Family: %iu\nHash: %.8ix\nSig: %.8ix %.8ix\nPrefix: %.8ix\n", osfamily[0], hash[0], sig[1], sig[0], prefix[0]);
+    // Extract segments from the bytecode and reverse the signature.
+    unpackServer(&osFamily, &hash, sig, &prefix, bKey);
+    endian((BYTE *)sig, 8);
 
-    uint8_t buf[FIELD_BYTES_2003], md[20];
-    uint32_t h1[2];
-	SHA_CTX h_ctx;
-	
-	/* h1 = SHA-1(5D || OS Family || Hash || Prefix || 00 00) */
-	SHA1_Init(&h_ctx);
-	buf[0] = 0x5d;
-	buf[1] = osfamily[0] & 0xff;
-	buf[2] = (osfamily[0] & 0xff00) >> 8;
-	buf[3] = hash[0] & 0xff;
-	buf[4] = (hash[0] & 0xff00) >> 8;
-	buf[5] = (hash[0] & 0xff0000) >> 16;
-	buf[6] = (hash[0] & 0xff000000) >> 24;
-	buf[7] = prefix[0] & 0xff;
-	buf[8] = (prefix[0] & 0xff00) >> 8;
-	buf[9] = buf[10] = 0;
-	SHA1_Update(&h_ctx, buf, 11);
-	SHA1_Final(md, &h_ctx);
-	h1[0] = md[0] | (md[1] << 8) | (md[2] << 16) | (md[3] << 24);
-	h1[1] = (md[4] | (md[5] << 8) | (md[6] << 16) | (md[7] << 24)) >> 2;
-	h1[1] &= 0x3FFFFFFF;
-	printf("h1: %.8ix %.8ix\n", h1[1], h1[0]);
-	
-	BIGNUM *s, *h, *x, *y;
-	x = BN_new();
-	y = BN_new();
-	endian((uint8_t *)sig, 8);
-	endian((uint8_t *)h1, 8);
-	s = BN_bin2bn((uint8_t *)sig, 8, nullptr);
-	h = BN_bin2bn((uint8_t *)h1, 8, nullptr);
+    BYTE t[FIELD_BYTES_2003]{}, md[SHA_DIGEST_LENGTH]{};
+    DWORD checkHash, newHash[2]{};
 
-	EC_POINT *r = EC_POINT_new(ec);
-	EC_POINT *t = EC_POINT_new(ec);
-	/* r = sig*(sig*generator + h1*public_key) */
-	EC_POINT_mul(ec, t, nullptr, generator, s, ctx);
-	EC_POINT_mul(ec, r, nullptr, public_key, h, ctx);
-	EC_POINT_add(ec, r, r, t, ctx);
-	EC_POINT_mul(ec, r, nullptr, r, s, ctx);
-	EC_POINT_get_affine_coordinates(ec, r, x, y, ctx);
+    SHA_CTX hContext;
 
-    uint32_t h2[1];
-	/* h2 = SHA-1(79 || OS Family || r.x || r.y) */
-	SHA1_Init(&h_ctx);
-	buf[0] = 0x79;
-	buf[1] = osfamily[0] & 0xff;
-	buf[2] = (osfamily[0] & 0xff00) >> 8;
-	SHA1_Update(&h_ctx, buf, 3);
-	
-	memset(buf, 0, FIELD_BYTES_2003);
-	BN_bn2bin(x, buf);
-	endian((uint8_t *)buf, FIELD_BYTES_2003);
-	SHA1_Update(&h_ctx, buf, FIELD_BYTES_2003);
-	
-	memset(buf, 0, FIELD_BYTES_2003);
-	BN_bn2bin(y, buf);
-	endian((uint8_t *)buf, FIELD_BYTES_2003);
-	SHA1_Update(&h_ctx, buf, FIELD_BYTES_2003);
-	
-	SHA1_Final(md, &h_ctx);
-	h2[0] = (md[0] | (md[1] << 8) | (md[2] << 16) | (md[3] << 24)) & 0x7fffffff;
-	printf("Calculated hash: %.8ix\n", h2[0]);
-	
-	BN_free(s);
-	BN_free(h);
-	BN_free(x);
-	BN_free(y);
-	EC_POINT_free(r);
-	EC_POINT_free(t);
-	BN_CTX_free(ctx);
-	
-	if (h2[0] == hash[0]) {
-		printf("Key VALID\n");
-		return 1;
-	}
-	else {
-		printf("Key invalid\n");
-		return 0;
-	}
+    // H = SHA-1(5D || OS Family || Hash || Prefix || 00 00)
+    SHA1_Init(&hContext);
+
+    t[0] = 0x5D;
+    t[1] = (osFamily & 0xff);
+    t[2] = (osFamily & 0xff00) >> 8;
+    t[3] = (hash & 0xff);
+    t[4] = (hash & 0xff00) >> 8;
+    t[5] = (hash & 0xff0000) >> 16;
+    t[6] = (hash & 0xff000000) >> 24;
+    t[7] = (prefix & 0xff);
+    t[8] = (prefix & 0xff00) >> 8;
+    t[9] = 0x00;
+    t[10] = 0x00;
+
+    SHA1_Update(&hContext, t, 11);
+    SHA1_Final(md, &hContext);
+
+    // First word.
+    newHash[0] = md[0] | (md[1] << 8) | (md[2] << 16) | (md[3] << 24);
+
+    // Second word, right shift 2 bits.
+    newHash[1] = (md[4] | (md[5] << 8) | (md[6] << 16) | (md[7] << 24)) >> 2;
+    newHash[1] &= 0x3FFFFFFF;
+
+    endian((BYTE *)newHash, 8);
+
+    BIGNUM *x = BN_new();
+    BIGNUM *y = BN_new();
+    BIGNUM *s = BN_bin2bn((BYTE *)sig, 8, nullptr);
+    BIGNUM *e = BN_bin2bn((BYTE *)newHash, 8, nullptr);
+
+    EC_POINT *u = EC_POINT_new(eCurve);
+    EC_POINT *v = EC_POINT_new(eCurve);
+
+    // EC_POINT_mul calculates r = generator * n + q * m.
+    // v = s * (s * generator + e * publicKey)
+
+    // u = generator * s
+    EC_POINT_mul(eCurve, u, nullptr, generator, s, context);
+
+    // v = publicKey * e
+    EC_POINT_mul(eCurve, v, nullptr, publicKey, e, context);
+
+    // v += u
+    EC_POINT_add(eCurve, v, u, v, context);
+
+    // v *= s
+    EC_POINT_mul(eCurve, v, nullptr, v, s, context);
+
+    // EC_POINT_get_affine_coordinates() sets x and y, either of which may be nullptr, to the corresponding coordinates of p.
+    // x = v.x; y = v.y;
+    EC_POINT_get_affine_coordinates_GFp(eCurve, v, x, y, context);
+
+    // Hash = First31(SHA-1(79 || OS Family || v.x || v.y))
+    SHA1_Init(&hContext);
+
+    t[0] = 0x79;
+    t[1] = (osFamily & 0xff);
+    t[2] = (osFamily & 0xff00) >> 8;
+
+    // Hash chunk of data.
+    SHA1_Update(&hContext, t, 3);
+
+    // Empty buffer, place v.y in little-endian.
+    memset(t, 0, FIELD_BYTES_2003);
+    BN_bn2bin(x, t);
+    endian(t, FIELD_BYTES_2003);
+
+    // Hash chunk of data.
+    SHA1_Update(&hContext, t, FIELD_BYTES_2003);
+
+    // Empty buffer, place v.y in little-endian.
+    memset(t, 0, FIELD_BYTES_2003);
+    BN_bn2bin(y, t);
+    endian(t, FIELD_BYTES_2003);
+
+    // Hash chunk of data.
+    SHA1_Update(&hContext, t, FIELD_BYTES_2003);
+
+    // Store the final message from hContext in md.
+    SHA1_Final(md, &hContext);
+
+    // Hash = First31(SHA-1(79 || OS Family || v.x || v.y))
+    checkHash = (md[0] | (md[1] << 8) | (md[2] << 16) | (md[3] << 24)) & 0x7fffffff;
+
+    BN_free(s);
+    BN_free(e);
+    BN_free(x);
+    BN_free(y);
+
+    BN_CTX_free(context);
+
+    EC_POINT_free(v);
+    EC_POINT_free(u);
+
+    // If we managed to generate a key with the same hash, the key is correct.
+    return checkHash == hash;
 }
 
-void generate2003(char *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, BIGNUM *priv, uint32_t *osfamily, uint32_t *prefix)
-{
-	BN_CTX *ctx = BN_CTX_new();
+void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, DWORD *osFamily, DWORD *prefix) {
+    EC_POINT *r = EC_POINT_new(eCurve);
+    BN_CTX *ctx = BN_CTX_new();
 
-	BIGNUM *k = BN_new();
-	BIGNUM *s = BN_new();
-	BIGNUM *x = BN_new();
-	BIGNUM *y = BN_new();
-	BIGNUM *b = BN_new();
-	EC_POINT *r = EC_POINT_new(ec);
+    DWORD bKey[4]{},
+            bSig[2]{};
 
-    uint32_t bkey[4];
-    uint8_t buf[FIELD_BYTES_2003], md[20];
-    uint32_t h1[2];
-    uint32_t hash[1], sig[2];
-	
-	SHA_CTX h_ctx;
-	
-	for (;;) {
-		/* r = k*generator */
-		BN_pseudo_rand(k, FIELD_BITS_2003, -1, 0);
-		EC_POINT_mul(ec, r, nullptr, generator, k, ctx);
-		EC_POINT_get_affine_coordinates_GFp(ec, r, x, y, ctx);
-			
-		/* hash = SHA-1(79 || OS Family || r.x || r.y) */
-		SHA1_Init(&h_ctx);
-		buf[0] = 0x79;
-		buf[1] = osfamily[0] & 0xff;
-		buf[2] = (osfamily[0] & 0xff00) >> 8;
-		SHA1_Update(&h_ctx, buf, 3);
-		
-		memset(buf, 0, FIELD_BYTES_2003);
-		BN_bn2bin(x, buf);
-		endian((uint8_t *)buf, FIELD_BYTES_2003);
-		SHA1_Update(&h_ctx, buf, FIELD_BYTES_2003);
-		
-		memset(buf, 0, FIELD_BYTES_2003);
-		BN_bn2bin(y, buf);
-		endian((uint8_t *)buf, FIELD_BYTES_2003);
-		SHA1_Update(&h_ctx, buf, FIELD_BYTES_2003);
-		
-		SHA1_Final(md, &h_ctx);
-		hash[0] = (md[0] | (md[1] << 8) | (md[2] << 16) | (md[3] << 24)) & 0x7fffffff;
-			
-		/* h1 = SHA-1(5D || OS Family || Hash || Prefix || 00 00) */
-		SHA1_Init(&h_ctx);
-		buf[0] = 0x5d;
-		buf[1] = osfamily[0] & 0xff;
-		buf[2] = (osfamily[0] & 0xff00) >> 8;
-		buf[3] = hash[0] & 0xff;
-		buf[4] = (hash[0] & 0xff00) >> 8;
-		buf[5] = (hash[0] & 0xff0000) >> 16;
-		buf[6] = (hash[0] & 0xff000000) >> 24;
-		buf[7] = prefix[0] & 0xff;
-		buf[8] = (prefix[0] & 0xff00) >> 8;
-		buf[9] = buf[10] = 0;
-		SHA1_Update(&h_ctx, buf, 11);
-		SHA1_Final(md, &h_ctx);
-		h1[0] = md[0] | (md[1] << 8) | (md[2] << 16) | (md[3] << 24);
-		h1[1] = (md[4] | (md[5] << 8) | (md[6] << 16) | (md[7] << 24)) >> 2;
-		h1[1] &= 0x3FFFFFFF;
-		printf("h1: %.8ix %.8ix\n", h1[1], h1[0]);
-	
-		/* s = ( -h1*priv + sqrt( (h1*priv)^2 + 4k ) ) / 2 */
-		endian((uint8_t *)h1, 8);
-		BN_bin2bn((uint8_t *)h1, 8, b);
-		BN_mod_mul(b, b, priv, order, ctx);
-		BN_copy(s, b);
-		BN_mod_sqr(s, s, order, ctx);
-		BN_lshift(k, k, 2);
-		BN_add(s, s, k);
-		BN_mod_sqrt(s, s, order, ctx);
-		BN_mod_sub(s, s, b, order, ctx);
-		if (BN_is_odd(s)) {
-			BN_add(s, s, order);
-		}
-		BN_rshift1(s, s);
-		sig[0] = sig[1] = 0;
-		BN_bn2bin(s, (uint8_t *)sig);
-		endian((uint8_t *)sig, BN_num_bytes(s));
-		if (sig[1] < 0x40000000) break;
-	}
-	pack2003(bkey, osfamily, hash, sig, prefix);
-	printf("OS family: %iu\nHash: %.8ix\nSig: %.8ix %.8ix\nPrefix: %.8ix\n", osfamily[0], hash[0], sig[1], sig[0], prefix[0]);
-	printf("%.8ix %.8ix %.8ix %.8ix\n", bkey[3], bkey[2], bkey[1], bkey[0]);
+    do {
+        BIGNUM *c = BN_new();
+        BIGNUM *s = BN_new();
+        BIGNUM *x = BN_new();
+        BIGNUM *y = BN_new();
+        BIGNUM *b = BN_new();
 
-    base24(pkey, bkey);
-	
-	BN_free(k);
-	BN_free(s);
-	BN_free(x);
-	BN_free(y);
-	BN_free(b);
-	EC_POINT_free(r);
+        DWORD hash = 0, h[2]{};
 
-	BN_CTX_free(ctx);
-	
+        memset(bKey, 0, 4);
+        memset(bSig, 0, 2);
+
+        // Generate a random number c consisting of 512 bits without any constraints.
+        BN_rand(c, FIELD_BITS_2003, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
+
+        // r = generator * c
+        EC_POINT_mul(eCurve, r, nullptr, generator, c, ctx);
+
+        // x = r.x; y = r.y;
+        EC_POINT_get_affine_coordinates(eCurve, r, x, y, ctx);
+
+        SHA_CTX hContext;
+        BYTE md[SHA_DIGEST_LENGTH]{}, buf[FIELD_BYTES_2003]{};
+
+        // Hash = SHA-1(79 || OS Family || r.x || r.y)
+        SHA1_Init(&hContext);
+
+        buf[0] = 0x79;
+
+        buf[1] = (*osFamily & 0xff);
+        buf[2] = (*osFamily & 0xff00) >> 8;
+
+        SHA1_Update(&hContext, buf, 3);
+
+        memset(buf, 0, FIELD_BYTES_2003);
+
+        BN_bn2bin(x, buf);
+        endian((BYTE *)buf, FIELD_BYTES_2003);
+        SHA1_Update(&hContext, buf, FIELD_BYTES_2003);
+
+        memset(buf, 0, FIELD_BYTES_2003);
+
+        BN_bn2bin(y, buf);
+        endian((BYTE *)buf, FIELD_BYTES_2003);
+
+        SHA1_Update(&hContext, buf, FIELD_BYTES_2003);
+        SHA1_Final(md, &hContext);
+
+        hash = (md[0] | (md[1] << 8) | (md[2] << 16) | (md[3] << 24)) & 0x7fffffff;
+
+        // H = SHA-1(5D || OS Family || Hash || Prefix || 00 00)
+        SHA1_Init(&hContext);
+        buf[0] = 0x5D;
+
+        buf[1] = (*osFamily & 0xff);
+        buf[2] = (*osFamily & 0xff00) >> 8;
+
+        buf[3] = (hash & 0xff);
+        buf[4] = (hash & 0xff00) >> 8;
+        buf[5] = (hash & 0xff0000) >> 16;
+        buf[6] = (hash & 0xff000000) >> 24;
+
+        buf[7] = prefix[0] & 0xff;
+        buf[8] = (prefix[0] & 0xff00) >> 8;
+
+        buf[9] = 0x00;
+        buf[10] = 0x00;
+
+        // Input length is 11 BYTEs.
+        SHA1_Update(&hContext, buf, 11);
+        SHA1_Final(md, &hContext);
+
+        // First word.
+        h[0] = md[0] | (md[1] << 8) | (md[2] << 16) | (md[3] << 24);
+
+        // Second word, right shift 2 bits.
+        h[1] = (md[4] | (md[5] << 8) | (md[6] << 16) | (md[7] << 24)) >> 2;
+        h[1] &= 0x3FFFFFFF;
+
+        endian((BYTE *)h, 8);
+        BN_bin2bn((BYTE *)h, 8, b);
+
+        /*
+         * Signature * (Signature * G + H * K) = rG (mod p)
+         * ↓ K = kG ↓
+         *
+         * Signature * (Signature * G + H * k * G) = rG (mod p)
+         * Signature^2 * G + Signature * HkG = rG (mod p)
+         * G(Signature^2 + Signature * HkG) = G (mod p) * r
+         * ↓ G^(-1)(G (mod p)) = (mod n), n = order of G ↓
+         *
+         * Signature^2 + Hk * Signature = r (mod n)
+         * Signature = -(b +- sqrt(D)) / 2a → Signature = (-Hk +- sqrt((Hk)^2 + 4r)) / 2
+         *
+         * S = (-Hk +- sqrt((Hk)^2 + 4r)) (mod n) / 2
+         *
+         * S = s
+         * H = b
+         * k = privateKey
+         * n = order
+         * r = c
+         *
+         * s = ( ( -b * privateKey +- sqrt( (b * privateKey)^2 + 4c ) ) / 2 ) % order
+         */
+
+        // b = (b * privateKey) % order
+        BN_mod_mul(b, b, privateKey, order, ctx);
+
+        // s = b
+        BN_copy(s, b);
+
+        // s = (s % order)^2
+        BN_mod_sqr(s, s, order, ctx);
+
+        // c <<= 2 (c = 4c)
+        BN_lshift(c, c, 2);
+
+        // s = s + c
+        BN_add(s, s, c);
+
+        // s^2 = s % order (order must be prime)
+        BN_mod_sqrt(s, s, order, ctx);
+
+        // s = s - b
+        BN_mod_sub(s, s, b, order, ctx);
+
+        // if s is odd, s = s + order
+        if (BN_is_odd(s)) {
+            BN_add(s, s, order);
+        }
+
+        // s >>= 1 (s = s / 2)
+        BN_rshift1(s, s);
+
+        // Convert s from BigNum back to bytecode and reverse the endianness.
+        BN_bn2bin(s, (BYTE *)bSig);
+        endian((BYTE *)bSig, BN_num_bytes(s));
+
+        // Pack product key.
+        packServer(bKey, osFamily, &hash, bSig, prefix);
+
+        BN_free(c);
+        BN_free(s);
+        BN_free(x);
+        BN_free(y);
+        BN_free(b);
+    } while (bSig[1] >= 0x40000000);
+
+    base24(pKey, bKey);
+
+    BN_CTX_free(ctx);
+    EC_POINT_free(r);
 }
 
 int main()
@@ -264,7 +348,7 @@ int main()
     uint32_t osfamily[1], prefix[1];
 	
 	osfamily[0] = 1280;
-	RAND_pseudo_bytes((uint8_t *)prefix, 4);
+	RAND_bytes((uint8_t *)prefix, 4);
 	prefix[0] &= 0x3ff;
 	
 	do {

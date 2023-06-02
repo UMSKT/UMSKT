@@ -24,6 +24,7 @@
 #include <openssl/sha.h>
 #include <openssl/rand.h>
 
+// Algorithm macros
 #define PK_LENGTH           25
 #define NULL_TERMINATOR     1
 
@@ -32,19 +33,25 @@
 #define FIELD_BITS_2003     512
 #define FIELD_BYTES_2003    64
 
+// Type definitions
+typedef uint8_t  BYTE;
+typedef uint16_t WORD;
+typedef uint32_t DWORD;
+typedef uint64_t QWORD;
 
+// Global variables
 extern char charset[];
 
 // util.cpp
 void endian(uint8_t *data, int length);
 EC_GROUP *initializeEllipticCurve(
-        const std::string pSel,
-        const std::string aSel,
-        const std::string bSel,
-        const std::string generatorXSel,
-        const std::string generatorYSel,
-        const std::string publicKeyXSel,
-        const std::string publicKeyYSel,
+        std::string pSel,
+        std::string aSel,
+        std::string bSel,
+        std::string generatorXSel,
+        std::string generatorYSel,
+        std::string publicKeyXSel,
+        std::string publicKeyYSel,
         EC_POINT **genPoint,
         EC_POINT **pubPoint
 );
@@ -74,7 +81,5 @@ bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, cha
 void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, uint32_t *pRaw);
 
 // server.cpp
-int verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey);
-void generate2003(char *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, BIGNUM *priv, uint32_t *osfamily, uint32_t *prefix);
 
 #endif //WINDOWSXPKG_HEADER_H
