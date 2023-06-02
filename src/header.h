@@ -11,6 +11,7 @@
 #include <cstring>
 #include <ctime>
 #include <random>
+#include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -31,39 +32,49 @@
 #define FIELD_BITS_2003     512
 #define FIELD_BYTES_2003    64
 
-typedef unsigned char byte;
-typedef unsigned int  ul32;
 
 extern char charset[];
 
 // util.cpp
-void endian(byte *data, int length);
+void endian(uint8_t *data, int length);
 EC_GROUP *initializeEllipticCurve(
-        const char *pSel,
-        const char *aSel,
-        const char *bSel,
-        const char *generatorXSel,
-        const char *generatorYSel,
-        const char *publicKeyXSel,
-        const char *publicKeyYSel,
+        const std::string pSel,
+        const std::string aSel,
+        const std::string bSel,
+        const std::string generatorXSel,
+        const std::string generatorYSel,
+        const std::string publicKeyXSel,
+        const std::string publicKeyYSel,
         EC_POINT **genPoint,
         EC_POINT **pubPoint
 );
 
 // key.cpp
-void unbase24(ul32 *byteSeq, const char *cdKey);
-void base24(char *cdKey, ul32 *byteSeq);
+void unbase24(uint32_t *byteSeq, const char *cdKey);
+void base24(char *cdKey, uint32_t *byteSeq);
 
 // cli.cpp
 void print_product_key(char *pk);
-void print_product_id(ul32 *pid);
+void print_product_id(uint32_t *pid);
+
+struct Options {
+    std::string binkid;
+    int channelID;
+    bool verbose;
+    bool help;
+    bool list;
+    bool error;
+};
+
+Options parseCommandLine(int argc, char* argv[]);
+void showHelp(char *argv[]);
 
 // xp.cpp
 bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, char *cdKey);
-void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, ul32 *pRaw);
+void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, uint32_t *pRaw);
 
 // server.cpp
 int verify2003(EC_GROUP *ec, EC_POINT *generator, EC_POINT *public_key, char *cdkey);
-void generate2003(char *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, BIGNUM *priv, ul32 *osfamily, ul32 *prefix);
+void generate2003(char *pkey, EC_GROUP *ec, EC_POINT *generator, BIGNUM *order, BIGNUM *priv, uint32_t *osfamily, uint32_t *prefix);
 
 #endif //WINDOWSXPKG_HEADER_H

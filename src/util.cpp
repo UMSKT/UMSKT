@@ -5,14 +5,14 @@
 #include "header.h"
 
 int randomRange() {
-
-
+    return 4;  // chosen by fair dice roll
+               // guaranteed to be random
 }
 
 /* Convert data between endianness types. */
-void endian(byte *data, int length) {
+void endian(uint8_t *data, int length) {
     for (int i = 0; i < length / 2; i++) {
-        byte temp = data[i];
+        uint8_t temp = data[i];
         data[i] = data[length - i - 1];
         data[length - i - 1] = temp;
     }
@@ -20,13 +20,13 @@ void endian(byte *data, int length) {
 
 /* Initializes the elliptic curve. */
 EC_GROUP *initializeEllipticCurve(
-        const char *pSel,
-        const char *aSel,
-        const char *bSel,
-        const char *generatorXSel,
-        const char *generatorYSel,
-        const char *publicKeyXSel,
-        const char *publicKeyYSel,
+        const std::string pSel,
+        const std::string aSel,
+        const std::string bSel,
+        const std::string generatorXSel,
+        const std::string generatorYSel,
+        const std::string publicKeyXSel,
+        const std::string publicKeyYSel,
         EC_POINT **genPoint,
         EC_POINT **pubPoint
 ) {
@@ -54,14 +54,14 @@ EC_GROUP *initializeEllipticCurve(
     context = BN_CTX_new();
 
     /* Public data */
-    BN_dec2bn(&p, pSel);
-    BN_dec2bn(&a, aSel);
-    BN_dec2bn(&b, bSel);
-    BN_dec2bn(&generatorX, generatorXSel);
-    BN_dec2bn(&generatorY, generatorYSel);
+    BN_dec2bn(&p, pSel.c_str());
+    BN_dec2bn(&a, aSel.c_str());
+    BN_dec2bn(&b, bSel.c_str());
+    BN_dec2bn(&generatorX, generatorXSel.c_str());
+    BN_dec2bn(&generatorY, generatorYSel.c_str());
 
-    BN_dec2bn(&publicKeyX, publicKeyXSel);
-    BN_dec2bn(&publicKeyY, publicKeyYSel);
+    BN_dec2bn(&publicKeyX, publicKeyXSel.c_str());
+    BN_dec2bn(&publicKeyY, publicKeyYSel.c_str());
 
     /* Elliptic Curve calculations. */
     // The group is defined via Fp = all integers [0; p - 1], where p is prime.
