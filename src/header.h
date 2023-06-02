@@ -24,6 +24,12 @@
 #include <openssl/sha.h>
 #include <openssl/rand.h>
 
+#ifdef __GNUC__
+#include <x86intrin.h>
+#else
+#include <intrin.h>
+#endif
+
 // Algorithm macros
 #define PK_LENGTH           25
 #define NULL_TERMINATOR     1
@@ -32,6 +38,15 @@
 #define FIELD_BYTES         48
 #define FIELD_BITS_2003     512
 #define FIELD_BYTES_2003    64
+
+// Confirmation ID generator constants
+#define SUCCESS 0
+#define ERR_TOO_SHORT 1
+#define ERR_TOO_LARGE 2
+#define ERR_INVALID_CHARACTER 3
+#define ERR_INVALID_CHECK_DIGIT 4
+#define ERR_UNKNOWN_VERSION 5
+#define ERR_UNLUCKY 6
 
 // Type definitions
 typedef uint8_t  BYTE;
