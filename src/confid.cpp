@@ -847,6 +847,6 @@ int main(int argc, char** argv) {
 			return 1;
 		case SUCCESS:
 			std::cout << "Confirmation ID: " << confirmation_id << std::endl;
-		
+			return 0;
 	}
 }
