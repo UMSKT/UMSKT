@@ -2,7 +2,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.9)
 PROJECT(WindowsXPKg)
 SET(CMAKE_CXX_STANDARD 17)
 
-SET(OPENSSL_USE_STATIC_LIBS TRUE)
+# TODO: commenting out static builds for now
+#SET(OPENSSL_USE_STATIC_LIBS TRUE)
 FIND_PACKAGE(OpenSSL REQUIRED)
 
 IF(!OPENSSL_FOUND)
@@ -20,8 +21,8 @@ CPMAddPackage(
 
 CONFIGURE_FILE(keys.json keys.json COPYONLY)
 
-SET(BUILD_SHARED_LIBS OFF)
-SET(CMAKE_EXE_LINKER_FLAGS "-static")
+#SET(BUILD_SHARED_LIBS OFF)
+#SET(CMAKE_EXE_LINKER_FLAGS "-static")
 ADD_EXECUTABLE(xpkey src/main.cpp src/xp.cpp src/key.cpp src/util.cpp src/cli.cpp)
 TARGET_INCLUDE_DIRECTORIES(xpkey PUBLIC crypto)
 TARGET_LINK_LIBRARIES(xpkey PUBLIC OpenSSL::Crypto nlohmann_json::nlohmann_json)

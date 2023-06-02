@@ -1,17 +1,18 @@
 {
   "Products": {
-    "Windows 98 SE (OEM)": ["02","03"],
+    "Windows 98": ["02","03"],
     "Office 2000": ["04","05"],
     "Windows Embedded POSReady 2009": ["0D", "0D"],
-    "Windows 2000 Retail": ["12","13"],
-    "Windows ME Retail": ["1C","1D"],
-    "Windows XP Pro Retail": ["2C","2D"],
+    "Windows 2000": ["12","13"],
+    "Windows ME": ["1C","1D"],
+    "Windows XP Home": ["2A", "2B"],
+    "Windows XP Pro": ["2C","2D"],
     "Windows XP Pro VLK": ["2E","2F"],
     "Windows XP Starter Edition": ["32", "33"],
     "Halo: Combat Evolved": ["50","51"],
     "Visual Studio 2005": ["52", "53"],
     "Windows XP Pro 64 Bit Edition VLK": ["64","65"],
-    "Windows XP Pro 64 Bit Edition Retail": ["66","67"]
+    "Windows XP Pro 64 Bit Edition": ["66","67"]
   },
   "BINK": {
     "00": {
