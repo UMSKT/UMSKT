@@ -36,28 +36,18 @@ static ui64 residue_sub(ui64 x, ui64 y)
 	return z;
 }
 
-#if defined(__x86_64__) || defined(_M_AMD64)
-#   define EXTRACT64(X) _mm_cvtsi128_si64(X)
-
-#   ifdef __GNUC__
+#if defined(__x86_64__) || defined(_M_AMD64) || defined(__aarch64__) || (defined(__arm64__) && defined(__APPLE__))
+#ifdef __GNUC__
 static inline uint64_t __umul128(uint64_t a, uint64_t b, uint64_t* hi)
 {
     unsigned __int128 r = (unsigned __int128) a * (unsigned __int128) b;
     *hi = r >> 64;
     return (uint64_t) r;
 }
-#   else
-    #define __umul128 _umul128
-#   endif
-#elif defined(__i386__) || defined(_M_IX86)
-#   define HI32(X) \
-    _mm_srli_si128((X), 4)
-
-
-#   define EXTRACT64(X) \
-    ((uint64_t)(uint32_t)_mm_cvtsi128_si32(X) | \
-    ((uint64_t)(uint32_t)_mm_cvtsi128_si32(HI32(X)) << 32))
-
+#else
+#define __umul128 _umul128
+#endif
+#elif defined(__i386__) || defined(_M_IX86) || defined(__arm__)
 static inline uint64_t __umul128(uint64_t multiplier, uint64_t multiplicand, uint64_t *product_hi) {
     // multiplier   = ab = a * 2^32 + b
     // multiplicand = cd = c * 2^32 + d

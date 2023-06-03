@@ -24,12 +24,6 @@
 #include <openssl/sha.h>
 #include <openssl/rand.h>
 
-#ifdef __GNUC__
-#include <x86intrin.h>
-#else
-#include <intrin.h>
-#endif
-
 // Algorithm macros
 #define PK_LENGTH           25
 #define NULL_TERMINATOR     1
