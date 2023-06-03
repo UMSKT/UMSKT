@@ -30,3 +30,7 @@ TARGET_LINK_LIBRARIES(xpkey PUBLIC OpenSSL::Crypto nlohmann_json::nlohmann_json)
 ADD_EXECUTABLE(srv2003key src/server.cpp src/key.cpp src/util.cpp src/cli.cpp)
 TARGET_INCLUDE_DIRECTORIES(srv2003key PUBLIC crypto)
 TARGET_LINK_LIBRARIES(srv2003key PUBLIC OpenSSL::Crypto nlohmann_json::nlohmann_json)
+
+ADD_EXECUTABLE(xpactivate src/confid.cpp)
+TARGET_INCLUDE_DIRECTORIES(xpactivate PUBLIC crypto)
+TARGET_LINK_LIBRARIES(xpactivate PUBLIC OpenSSL::Crypto nlohmann_json::nlohmann_json)

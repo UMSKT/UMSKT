@@ -352,8 +352,8 @@ int main()
 	prefix[0] &= 0x3ff;
 	
 	do {
-		generate2003(pkey, ec, g, n, priv, osfamily, prefix);
-	} while (!verify2003(ec, g, pub, pkey));
+		generateServerKey(pkey, ec, g, n, priv, osfamily, prefix);
+	} while (!verifyServerKey(ec, g, pub, pkey));
 	
 	print_product_key(pkey);
     std::cout << std::endl << std::endl;

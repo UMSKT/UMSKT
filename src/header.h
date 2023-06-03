@@ -33,6 +33,15 @@
 #define FIELD_BITS_2003     512
 #define FIELD_BYTES_2003    64
 
+// Confirmation ID generator constants
+#define SUCCESS 0
+#define ERR_TOO_SHORT 1
+#define ERR_TOO_LARGE 2
+#define ERR_INVALID_CHARACTER 3
+#define ERR_INVALID_CHECK_DIGIT 4
+#define ERR_UNKNOWN_VERSION 5
+#define ERR_UNLUCKY 6
+
 // Type definitions
 typedef uint8_t  BYTE;
 typedef uint16_t WORD;
