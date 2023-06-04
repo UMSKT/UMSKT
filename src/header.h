@@ -28,19 +28,25 @@
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 #include <openssl/sha.h>
+#include <openssl/evp.h>
 #include <openssl/rand.h>
 
 // Algorithm macros
-#define PK_LENGTH           25
-#define NULL_TERMINATOR     1
+#define PK_LENGTH               25
+#define NULL_TERMINATOR         1
 
-#define FIELD_BITS          384
-#define FIELD_BYTES         48
-#define FIELD_BITS_2003     512
-#define FIELD_BYTES_2003    64
+#define FIELD_BITS              384
+#define FIELD_BYTES             48
+#define FIELD_BITS_2003         512
+#define FIELD_BYTES_2003        64
 
-#define NEXTSNBITS(field, n, offset)    (((QWORD)field >> offset) & ((1ULL << (n)) - 1))
+#define SHA_MSG_LENGTH_XP       (4 + 2 * FIELD_BYTES)
+
+#define NEXTSNBITS(field, n, offset)   (((QWORD)field >> offset) & ((1ULL << (n)) - 1))
 #define FIRSTNBITS(field, n)           NEXTSNBITS(field, n, 0)
+
+#define BYDWORD(n)                     (n[0] | n[1] << 8 | n[2] << 16 | n[3] << 24)
+#define BITMASK(n)                     ((1ULL << n) - 1)
 
 // Confirmation ID generator constants
 #define SUCCESS 0
@@ -62,7 +68,9 @@ typedef uint64_t QWORD;
 extern char pCharset[];
 
 // util.cpp
+int  BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen); // Hello OpenSSL developers, please tell me, where is this function at?
 void endian(BYTE *data, int length);
+
 EC_GROUP *initializeEllipticCurve(
         std::string pSel,
         std::string aSel,
@@ -71,8 +79,8 @@ EC_GROUP *initializeEllipticCurve(
         std::string generatorYSel,
         std::string publicKeyXSel,
         std::string publicKeyYSel,
-        EC_POINT *&genPoint,
-        EC_POINT *&pubPoint
+        EC_POINT    *&genPoint,
+        EC_POINT    *&pubPoint
 );
 
 // key.cpp
@@ -98,18 +106,18 @@ void showHelp(char *argv[]);
 // xp.cpp
 bool verifyXPKey(
         EC_GROUP *eCurve,
-        EC_POINT *generator,
+        EC_POINT *basePoint,
         EC_POINT *publicKey,
-        char (&cdKey)[25]
+        char     (&cdKey)[25]
 );
 
 void generateXPKey(
         EC_GROUP *eCurve,
-        EC_POINT *generator,
-        BIGNUM *order,
-        BIGNUM *privateKey,
-        DWORD pRaw,
-        char (&cdKey)[25]
+        EC_POINT *basePoint,
+        BIGNUM   *genOrder,
+        BIGNUM   *privateKey,
+        DWORD    pSerial,
+        char     (&cdKey)[25]
 );
 
 // server.cpp
