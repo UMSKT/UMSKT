@@ -27,8 +27,8 @@ EC_GROUP *initializeEllipticCurve(
         const std::string generatorYSel,
         const std::string publicKeyXSel,
         const std::string publicKeyYSel,
-        EC_POINT **genPoint,
-        EC_POINT **pubPoint
+        EC_POINT *&genPoint,
+        EC_POINT *&pubPoint
 ) {
     // Initialize BIGNUM and BIGNUMCTX structures.
     // BIGNUM - Large numbers
@@ -69,16 +69,16 @@ EC_GROUP *initializeEllipticCurve(
     EC_GROUP *eCurve = EC_GROUP_new_curve_GFp(p, a, b, context);
 
     // Create new point for the generator on the elliptic curve and set its coordinates to (genX; genY).
-    *genPoint = EC_POINT_new(eCurve);
-    EC_POINT_set_affine_coordinates(eCurve, *genPoint, generatorX, generatorY, context);
+    genPoint = EC_POINT_new(eCurve);
+    EC_POINT_set_affine_coordinates(eCurve, genPoint, generatorX, generatorY, context);
 
     // Create new point for the public key on the elliptic curve and set its coordinates to (pubX; pubY).
-    *pubPoint = EC_POINT_new(eCurve);
-    EC_POINT_set_affine_coordinates(eCurve, *pubPoint, publicKeyX, publicKeyY, context);
+    pubPoint = EC_POINT_new(eCurve);
+    EC_POINT_set_affine_coordinates(eCurve, pubPoint, publicKeyX, publicKeyY, context);
 
     // If generator and public key points are not on the elliptic curve, either the generator or the public key values are incorrect.
-    assert(EC_POINT_is_on_curve(eCurve, *genPoint, context) == 1);
-    assert(EC_POINT_is_on_curve(eCurve, *pubPoint, context) == 1);
+    assert(EC_POINT_is_on_curve(eCurve, genPoint, context) == true);
+    assert(EC_POINT_is_on_curve(eCurve, pubPoint, context) == true);
 
     // Cleanup
     BN_CTX_free(context);

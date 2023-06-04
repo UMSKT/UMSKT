@@ -18,28 +18,24 @@
 #include "header.h"
 
 /* Unpacks the Windows XP Product Key. */
-void unpackXP(DWORD *pRaw, DWORD *pSerial, DWORD *pHash, DWORD *pSignature) {
+void unpackXP(DWORD (&pRaw)[4], DWORD &pSerial, DWORD &pHash, DWORD (&pSignature)[2]) {
 
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
 
     // Serial = Bits [0..30] -> 31 bits
-    if (pSerial)
-        pSerial[0] = pRaw[0] & 0x7fffffff;
+    pSerial = pRaw[0] & 0x7fffffff;
 
     // Hash (e) = Bits [31..58] -> 28 bits
-    if (pHash)
-        pHash[0] = ((pRaw[0] >> 31) | (pRaw[1] << 1)) & 0xfffffff;
+    pHash = ((pRaw[0] >> 31) | (pRaw[1] << 1)) & 0xfffffff;
 
     // Signature (s) = Bits [59..113] -> 55 bits
-    if (pSignature) {
-        pSignature[0] = (pRaw[1] >> 27) | (pRaw[2] << 5);
-        pSignature[1] = (pRaw[2] >> 27) | (pRaw[3] << 5);
-    }
+    pSignature[0] = (pRaw[1] >> 27) | (pRaw[2] << 5);
+    pSignature[1] = (pRaw[2] >> 27) | (pRaw[3] << 5);
 }
 
 /* Packs the Windows XP Product Key. */
-void packXP(DWORD *pRaw, const DWORD pSerial, const DWORD pHash, const DWORD *pSignature) {
+void packXP(DWORD (&pRaw)[4], DWORD pSerial, DWORD pHash, DWORD (&pSignature)[2]) {
     pRaw[0] = pSerial | ((pHash & 1) << 31);
     pRaw[1] = (pHash >> 1) | ((pSignature[0] & 0x1f) << 27);
     pRaw[2] = (pSignature[0] >> 5) | (pSignature[1] << 27);
@@ -47,7 +43,7 @@ void packXP(DWORD *pRaw, const DWORD pSerial, const DWORD pHash, const DWORD *pS
 }
 
 /* Verify Product Key */
-bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, char *cdKey) {
+bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, char (&cdKey)[25]) {
     BN_CTX *context = BN_CTX_new();
 
     // Convert Base24 CD-key to bytecode.
@@ -57,7 +53,7 @@ bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, cha
     unbase24(bKey, cdKey);
 
     // Extract data, hash and signature from the bytecode.
-    unpackXP(bKey, &pID, &checkHash, sig);
+    unpackXP(bKey, pID, checkHash, sig);
 
     // e = Hash
     // s = Signature
@@ -150,7 +146,7 @@ bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, cha
 }
 
 /* Generate a valid Product Key. */
-void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, DWORD *pRaw) {
+void generateXPKey(EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, DWORD pRaw, char (&pKey)[25]) {
     EC_POINT *r = EC_POINT_new(eCurve);
     BN_CTX *ctx = BN_CTX_new();
 
@@ -182,10 +178,10 @@ void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *or
         SHA1_Init(&hContext);
 
         // Chop Raw Product Key into 4 bytes.
-        t[0] = (*pRaw & 0xff);
-        t[1] = (*pRaw & 0xff00) >> 8;
-        t[2] = (*pRaw & 0xff0000) >> 16;
-        t[3] = (*pRaw & 0xff000000) >> 24;
+        t[0] = (pRaw & 0xff);
+        t[1] = (pRaw & 0xff00) >> 8;
+        t[2] = (pRaw & 0xff0000) >> 16;
+        t[3] = (pRaw & 0xff000000) >> 24;
 
         // Hash chunk of data.
         SHA1_Update(&hContext, t, sizeof(t));
@@ -229,13 +225,13 @@ void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *or
         endian((BYTE *)sig, BN_num_bytes(s));
 
         // Pack product key.
-        packXP(bKey, *pRaw, hash, sig);
+        packXP(bKey, pRaw, hash, sig);
 
         //printf("PID: %.8X\nHash: %.8X\nSig: %.8X %.8X\n", pRaw[0], hash, sig[1], sig[0]);
-        std::cout << " PID: " << std::hex << std::setw(8) << std::setfill('0') << pRaw[0] << std::endl
-                  << "Hash: " << std::hex << std::setw(8) << std::setfill('0') << hash    << std::endl
-                  << " Sig: " << std::hex << std::setw(8) << std::setfill('0') << sig[1]  << " "
-                              << std::hex << std::setw(8) << std::setfill('0') << sig[2]  << std::endl
+        std::cout << " PID: " << std::hex << std::setw(8) << std::setfill('0') << pRaw   << std::endl
+                  << "Hash: " << std::hex << std::setw(8) << std::setfill('0') << hash   << std::endl
+                  << " Sig: " << std::hex << std::setw(8) << std::setfill('0') << sig[0] << " "
+                              << std::hex << std::setw(8) << std::setfill('0') << sig[1] << std::endl
                               << std::endl;
 
     } while (bKey[3] >= 0x40000);

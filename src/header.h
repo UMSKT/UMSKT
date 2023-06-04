@@ -67,8 +67,8 @@ EC_GROUP *initializeEllipticCurve(
         std::string generatorYSel,
         std::string publicKeyXSel,
         std::string publicKeyYSel,
-        EC_POINT **genPoint,
-        EC_POINT **pubPoint
+        EC_POINT *&genPoint,
+        EC_POINT *&pubPoint
 );
 
 // key.cpp
@@ -92,8 +92,8 @@ Options parseCommandLine(int argc, char* argv[]);
 void showHelp(char *argv[]);
 
 // xp.cpp
-bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, char *cdKey);
-void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, DWORD *pRaw);
+bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, char (&cdKey)[25]);
+void generateXPKey(EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, DWORD pRaw, char (&cdKey)[25]);
 
 // server.cpp
 

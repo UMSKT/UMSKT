@@ -99,8 +99,8 @@ int main(int argc, char *argv[]) {
             keys["BINK"][BINKID]["g"]["y"].get<std::string>(),
             keys["BINK"][BINKID]["pub"]["x"].get<std::string>(),
             keys["BINK"][BINKID]["pub"]["y"].get<std::string>(),
-            &genPoint,
-            &pubPoint
+            genPoint,
+            pubPoint
     );
 
     // Calculation
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
     BN_sub(privateKey, genOrder, privateKey);
     nRaw <<= 1;
 
-    generateXPKey(pKey, eCurve, genPoint, genOrder, privateKey, &nRaw);
+    generateXPKey(eCurve, genPoint, genOrder, privateKey, nRaw, pKey);
     print_product_key(pKey);
     std::cout << std::endl << std::endl;
 
