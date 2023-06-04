@@ -39,9 +39,9 @@ void unpackXP(DWORD *pRaw, DWORD *pSerial, DWORD *pHash, DWORD *pSignature) {
 }
 
 /* Packs the Windows XP Product Key. */
-void packXP(DWORD *pRaw, const DWORD *pSerial, const DWORD *pHash, const DWORD *pSignature) {
-    pRaw[0] = pSerial[0] | ((pHash[0] & 1) << 31);
-    pRaw[1] = (pHash[0] >> 1) | ((pSignature[0] & 0x1f) << 27);
+void packXP(DWORD *pRaw, const DWORD pSerial, const DWORD pHash, const DWORD *pSignature) {
+    pRaw[0] = pSerial | ((pHash & 1) << 31);
+    pRaw[1] = (pHash >> 1) | ((pSignature[0] & 0x1f) << 27);
     pRaw[2] = (pSignature[0] >> 5) | (pSignature[1] << 27);
     pRaw[3] = pSignature[1] >> 5;
 }
@@ -229,7 +229,7 @@ void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *or
         endian((BYTE *)sig, BN_num_bytes(s));
 
         // Pack product key.
-        packXP(bKey, pRaw, &hash, sig);
+        packXP(bKey, *pRaw, hash, sig);
 
         //printf("PID: %.8X\nHash: %.8X\nSig: %.8X %.8X\n", pRaw[0], hash, sig[1], sig[0]);
         std::cout << " PID: " << std::hex << std::setw(8) << std::setfill('0') << pRaw[0] << std::endl
