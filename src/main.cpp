@@ -34,11 +34,11 @@ int main(int argc, char *argv[]) {
     if (options.list) {
         for (auto el : keys["Products"].items()) {
             int id;
-            sscanf((el.value()[0]).get<std::string>().c_str(), "%x", &id);
+            sscanf((el.value()["BINK"][0]).get<std::string>().c_str(), "%x", &id);
             if (id >= 0x50) {
                 continue;
             }
-            std::cout << el.key() << ": " << el.value() << std::endl;
+            std::cout << el.key() << ": " << el.value()["BINK"] << std::endl;
         }
 
         std::cout << std::endl << std::endl
