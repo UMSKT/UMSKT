@@ -40,7 +40,7 @@ bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey,
     DWORD osFamily, hash, sig[2], prefix;
     DWORD bKey[4]{};
 
-    unbase24(bKey, cdKey);
+    unbase24((BYTE *)bKey, cdKey);
 
     // Extract segments from the bytecode and reverse the signature.
     unpackServer(&osFamily, &hash, sig, &prefix, bKey);
@@ -306,7 +306,7 @@ void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM
         BN_free(b);
     } while (bSig[1] >= 0x40000000);
 
-    base24(pKey, bKey);
+    base24(pKey, (BYTE *)bKey);
 
     BN_CTX_free(ctx);
     EC_POINT_free(r);
