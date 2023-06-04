@@ -6,30 +6,41 @@
 
 char pCharset[] = "BCDFGHJKMPQRTVWXY2346789";
 
-void unpackServer(DWORD *osFamily, DWORD *hash, DWORD *sig, DWORD *prefix, DWORD *raw) {
-
+void unpackServer(
+        DWORD (&pRaw)[4],
+        DWORD &pChannelID,
+        DWORD &pHash,
+        DWORD (&pSignature)[2],
+        DWORD &pAuthInfo
+) {
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
 
     // OS Family = Bits [0..10] -> 11 bits
-    osFamily[0] = raw[0] & 0x7ff;
+    pChannelID = pRaw[0] & 0x7ff;
 
     // Hash = Bits [11..41] -> 31 bits
-    hash[0] = ((raw[0] >> 11) | (raw[1] << 21)) & 0x7fffffff;
+    pHash = ((pRaw[0] >> 11) | (pRaw[1] << 21)) & 0x7fffffff;
 
     // Signature = Bits [42..103] -> 62 bits
-    sig[0] = (raw[1] >> 10) | (raw[2] << 22);
-    sig[1] = ((raw[2] >> 10) | (raw[3] << 22)) & 0x3fffffff;
+    pSignature[0] = (pRaw[1] >> 10) | (pRaw[2] << 22);
+    pSignature[1] = ((pRaw[2] >> 10) | (pRaw[3] << 22)) & 0x3fffffff;
 
     // Prefix = Bits [104..113] -> 10 bits
-    prefix[0] = (raw[3] >> 8) & 0x3ff;
+    pAuthInfo = (pRaw[3] >> 8) & 0x3ff;
 }
 
-void packServer(DWORD *raw, DWORD *osFamily, DWORD *hash, DWORD *sig, DWORD *prefix) {
-    raw[0] = osFamily[0] | (hash[0] << 11);
-    raw[1] = (hash[0] >> 21) | (sig[0] << 10);
-    raw[2] = (sig[0] >> 22) | (sig[1] << 10);
-    raw[3] = (sig[1] >> 22) | (prefix[0] << 8);
+void packServer(
+        DWORD (&pRaw)[4],
+        DWORD pChannelID,
+        DWORD pHash,
+        DWORD (&pSignature)[2],
+        DWORD pAuthInfo
+) {
+    pRaw[0] = pChannelID | (pHash << 11);
+    pRaw[1] = (pHash >> 21) | (pSignature[0] << 10);
+    pRaw[2] = (pSignature[0] >> 22) | (pSignature[1] << 10);
+    pRaw[3] = (pSignature[1] >> 22) | (pAuthInfo << 8);
 }
 
 
@@ -43,7 +54,7 @@ bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey,
     unbase24((BYTE *)bKey, cdKey);
 
     // Extract segments from the bytecode and reverse the signature.
-    unpackServer(&osFamily, &hash, sig, &prefix, bKey);
+    unpackServer(bKey, osFamily, hash, sig, prefix);
     endian((BYTE *)sig, 8);
 
     BYTE t[FIELD_BYTES_2003]{}, md[SHA_DIGEST_LENGTH]{};
@@ -297,7 +308,7 @@ void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM
         endian((BYTE *)bSig, BN_num_bytes(s));
 
         // Pack product key.
-        packServer(bKey, osFamily, &hash, bSig, prefix);
+        packServer(bKey, *osFamily, hash, bSig, *prefix);
 
         BN_free(c);
         BN_free(s);
