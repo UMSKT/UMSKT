@@ -345,10 +345,10 @@ int main()
 	assert(EC_POINT_is_on_curve(ec, pub, ctx) == 1);
 
     char pkey[25];
-    uint32_t osfamily[1], prefix[1];
+    DWORD osfamily[1], prefix[1];
 	
 	osfamily[0] = 1280;
-	RAND_bytes((uint8_t *)prefix, 4);
+	RAND_bytes((BYTE *)prefix, 4);
 	prefix[0] &= 0x3ff;
 	
 	do {

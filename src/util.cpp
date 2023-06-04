@@ -10,9 +10,9 @@ int randomRange() {
 }
 
 /* Convert data between endianness types. */
-void endian(uint8_t *data, int length) {
+void endian(BYTE *data, int length) {
     for (int i = 0; i < length / 2; i++) {
-        uint8_t temp = data[i];
+        BYTE temp = data[i];
         data[i] = data[length - i - 1];
         data[length - i - 1] = temp;
     }

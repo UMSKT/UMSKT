@@ -5,8 +5,8 @@
 #include "header.h"
 
 /* Converts from CD-key to a byte sequence. */
-void unbase24(uint32_t *byteSeq, const char *cdKey) {
-    uint8_t pDecodedKey[PK_LENGTH + NULL_TERMINATOR]{};
+void unbase24(DWORD *byteSeq, const char *cdKey) {
+    BYTE pDecodedKey[PK_LENGTH + NULL_TERMINATOR]{};
     BIGNUM *y = BN_new();
 
     BN_zero(y);
@@ -34,16 +34,16 @@ void unbase24(uint32_t *byteSeq, const char *cdKey) {
     int n = BN_num_bytes(y);
 
     // Place the generated code into the byte sequence.
-    BN_bn2bin(y, (uint8_t *)byteSeq);
+    BN_bn2bin(y, (BYTE *)byteSeq);
     BN_free(y);
 
     // Reverse the byte sequence.
-    endian((uint8_t *)byteSeq, n);
+    endian((BYTE *)byteSeq, n);
 }
 
 /* Converts from byte sequence to the CD-key. */
-void base24(char *cdKey, uint32_t *byteSeq) {
-    uint8_t rbyteSeq[16];
+void base24(char *cdKey, DWORD *byteSeq) {
+    BYTE rbyteSeq[16];
     BIGNUM *z;
 
     // Copy byte sequence to the reversed byte sequence.

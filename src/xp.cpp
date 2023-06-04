@@ -18,7 +18,7 @@
 #include "header.h"
 
 /* Unpacks the Windows XP Product Key. */
-void unpackXP(uint32_t *serial, uint32_t *hash, uint32_t *sig, uint32_t *raw) {
+void unpackXP(DWORD *serial, DWORD *hash, DWORD *sig, DWORD *raw) {
 
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
@@ -39,7 +39,7 @@ void unpackXP(uint32_t *serial, uint32_t *hash, uint32_t *sig, uint32_t *raw) {
 }
 
 /* Packs the Windows XP Product Key. */
-void packXP(uint32_t *raw, const uint32_t *serial, const uint32_t *hash, const uint32_t *sig) {
+void packXP(DWORD *raw, const DWORD *serial, const DWORD *hash, const DWORD *sig) {
     raw[0] = serial[0] | ((hash[0] & 1) << 31);
     raw[1] = (hash[0] >> 1) | ((sig[0] & 0x1f) << 27);
     raw[2] = (sig[0] >> 5) | (sig[1] << 27);
@@ -51,8 +51,8 @@ bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, cha
     BN_CTX *context = BN_CTX_new();
 
     // Convert Base24 CD-key to bytecode.
-    uint32_t bKey[4]{};
-    uint32_t pID, checkHash, sig[2];
+    DWORD bKey[4]{};
+    DWORD pID, checkHash, sig[2];
 
     unbase24(bKey, cdKey);
 
@@ -68,8 +68,8 @@ bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, cha
     BN_set_word(e, checkHash);
 
     // Reverse signature and create a new BigNum s.
-    endian((uint8_t *)sig, sizeof(sig));
-    s = BN_bin2bn((uint8_t *)sig, sizeof(sig), nullptr);
+    endian((BYTE *)sig, sizeof(sig));
+    s = BN_bin2bn((BYTE *)sig, sizeof(sig), nullptr);
 
     // Create x and y.
     BIGNUM *x = BN_new();
@@ -95,8 +95,8 @@ bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, cha
     // x = v.x; y = v.y;
     EC_POINT_get_affine_coordinates(eCurve, v, x, y, context);
 
-    uint8_t buf[FIELD_BYTES], md[SHA_DIGEST_LENGTH], t[4];
-    uint32_t newHash;
+    BYTE buf[FIELD_BYTES], md[SHA_DIGEST_LENGTH], t[4];
+    DWORD newHash;
 
     SHA_CTX hContext;
 
@@ -150,7 +150,7 @@ bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, cha
 }
 
 /* Generate a valid Product Key. */
-void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, uint32_t *pRaw) {
+void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, DWORD *pRaw) {
     EC_POINT *r = EC_POINT_new(eCurve);
     BN_CTX *ctx = BN_CTX_new();
 
@@ -159,10 +159,10 @@ void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *or
     BIGNUM *x = BN_new();
     BIGNUM *y = BN_new();
 
-    uint32_t bKey[4]{};
+    DWORD bKey[4]{};
 
     do {
-        uint32_t hash = 0, sig[2]{};
+        DWORD hash = 0, sig[2]{};
 
         memset(bKey, 0, 4);
 
@@ -176,7 +176,7 @@ void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *or
         EC_POINT_get_affine_coordinates(eCurve, r, x, y, ctx);
 
         SHA_CTX hContext;
-        uint8_t md[SHA_DIGEST_LENGTH]{}, buf[FIELD_BYTES]{}, t[4]{};
+        BYTE md[SHA_DIGEST_LENGTH]{}, buf[FIELD_BYTES]{}, t[4]{};
 
         // h = (First-32(SHA1(pRaw, r.x, r.y)) >> 4
         SHA1_Init(&hContext);
@@ -225,8 +225,8 @@ void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *or
         BN_mod_add(s, s, c, order, ctx);
 
         // Convert s from BigNum back to bytecode and reverse the endianness.
-        BN_bn2bin(s, (uint8_t *)sig);
-        endian((uint8_t *)sig, BN_num_bytes(s));
+        BN_bn2bin(s, (BYTE *)sig);
+        endian((BYTE *)sig, BN_num_bytes(s));
 
         // Pack product key.
         packXP(bKey, pRaw, &hash, sig);

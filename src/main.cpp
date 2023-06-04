@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     // Calculation
     char pKey[25];
 
-    uint32_t nRaw = options.channelID * 1000000 ; /* <- change */
+    DWORD nRaw = options.channelID * 1000000 ; /* <- change */
 
     BIGNUM *bnrand = BN_new();
     BN_rand(bnrand, 19, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);

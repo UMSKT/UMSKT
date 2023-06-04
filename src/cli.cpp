@@ -51,7 +51,7 @@ Options parseCommandLine(int argc, char* argv[]) {
     return options;
 }
 
-void print_product_id(uint32_t *pid)
+void print_product_id(DWORD *pid)
 {
     char raw[12];
     char b[6], c[8];

@@ -58,7 +58,7 @@ typedef uint64_t QWORD;
 extern char charset[];
 
 // util.cpp
-void endian(uint8_t *data, int length);
+void endian(BYTE *data, int length);
 EC_GROUP *initializeEllipticCurve(
         std::string pSel,
         std::string aSel,
@@ -72,12 +72,12 @@ EC_GROUP *initializeEllipticCurve(
 );
 
 // key.cpp
-void unbase24(uint32_t *byteSeq, const char *cdKey);
-void base24(char *cdKey, uint32_t *byteSeq);
+void unbase24(DWORD *byteSeq, const char *cdKey);
+void base24(char *cdKey, DWORD *byteSeq);
 
 // cli.cpp
 void print_product_key(char *pk);
-void print_product_id(uint32_t *pid);
+void print_product_id(DWORD *pid);
 
 struct Options {
     std::string binkid;
@@ -93,7 +93,7 @@ void showHelp(char *argv[]);
 
 // xp.cpp
 bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, char *cdKey);
-void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, uint32_t *pRaw);
+void generateXPKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, DWORD *pRaw);
 
 // server.cpp
 
