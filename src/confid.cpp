@@ -4,8 +4,6 @@
 
 #include "header.h"
 
-#define assert(x) /*nothing*/
-
 typedef int64_t i64;
 typedef uint64_t ui64;
 

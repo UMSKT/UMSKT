@@ -5,11 +5,17 @@
 #ifndef WINDOWSXPKG_HEADER_H
 #define WINDOWSXPKG_HEADER_H
 
+#ifdef DEBUG
 #include <cassert>
+#else
+#define assert(x) /* nothing */
+#endif
+
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+
 #include <random>
 #include <iostream>
 #include <fstream>
