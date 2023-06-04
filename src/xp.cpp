@@ -18,7 +18,7 @@
 #include "header.h"
 
 /* Unpacks the Windows XP Product Key. */
-void unpackXP(DWORD (&pRaw)[4], DWORD &pSerial, DWORD &pHash, QWORD &pSignature) {
+void unpackXP(QWORD (&pRaw)[2], DWORD &pSerial, DWORD &pHash, QWORD &pSignature) {
 
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
@@ -27,18 +27,18 @@ void unpackXP(DWORD (&pRaw)[4], DWORD &pSerial, DWORD &pHash, QWORD &pSignature)
     pSerial = FIRSTNBITS(pRaw[0], 31);
 
     // Hash (e) = Bits [31..58] -> 28 bits
-    pHash = FIRSTNBITS(pRaw[1] << 1 | pRaw[0] >> 31, 28);
+    pHash = NEXTNBITS(pRaw[0], 28, 31);
 
     // Signature (s) = Bits [59..113] -> 55 bits
-    pSignature = (QWORD)pRaw[3] << (5 + 8 * sizeof(DWORD)) | (QWORD)pRaw[2] << 5 | pRaw[1] >> 27;
+    pSignature = FIRSTNBITS(pRaw[1], 51) << 5 | NEXTNBITS(pRaw[0], 5, 59);
 }
 
 /* Packs the Windows XP Product Key. */
-void packXP(DWORD (&pRaw)[4], DWORD pSerial, DWORD pHash, QWORD pSignature) {
-    pRaw[0] = pSerial | FIRSTNBITS(pHash, 1) << 31;
-    pRaw[1] = FIRSTNBITS(pSignature, 5) << 27 | pHash >> 1;
-    pRaw[2] = (DWORD)(pSignature >> 5);
-    pRaw[3] = (DWORD)(pSignature >> (5 + 8 * sizeof(DWORD)));
+void packXP(QWORD (&pRaw)[2], DWORD pSerial, DWORD pHash, QWORD pSignature) {
+    pRaw[0] = FIRSTNBITS(pSignature, 5) << 59 | FIRSTNBITS(pHash, 28) << 31 | pSerial;
+
+    // sig is 56 bits long, 5 of them are used -> 51 bits remaining
+    pRaw[1] = NEXTNBITS(pSignature, 51, 5);
 }
 
 /* Verify Product Key */
@@ -46,7 +46,7 @@ bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, cha
     BN_CTX *context = BN_CTX_new();
 
     // Convert Base24 CD-key to bytecode.
-    DWORD bKey[4]{};
+    QWORD bKey[2]{};
     DWORD pID, checkHash;
 
     QWORD sig = 0;
@@ -156,13 +156,13 @@ void generateXPKey(EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM 
     BIGNUM *x = BN_new();
     BIGNUM *y = BN_new();
 
-    DWORD bKey[4]{};
+    QWORD bKey[2]{};
 
     do {
         DWORD hash = 0;
         QWORD sig = 0;
 
-        memset(bKey, 0, 4);
+        memset(bKey, 0, 2 * sizeof(QWORD));
 
         // Generate a random number c consisting of 384 bits without any constraints.
         BN_rand(c, FIELD_BITS, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
@@ -235,9 +235,9 @@ void generateXPKey(EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM 
                   << " Sig: " << std::hex << std::setw(8) << std::setfill('0') << sig  << std::endl
                               << std::endl;
 
-    } while (bKey[3] >= 0x40000);
+    } while (bKey[1] >= (1ULL << 50));
     // ↑ ↑ ↑
-    // bKey[3] can't be longer than 18 bits, else the signature part will make
+    // bKey[1] can't be longer than 50 bits, else the signature part will make
     // the CD-key longer than 25 characters.
 
     // Convert the key to Base24.

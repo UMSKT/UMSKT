@@ -124,15 +124,18 @@ int main(int argc, char *argv[]) {
     // generate a key
     BN_sub(privateKey, genOrder, privateKey);
     nRaw <<= 1;
+    int count = 0, total = 1000;
 
-    generateXPKey(eCurve, genPoint, genOrder, privateKey, nRaw, pKey);
-    print_product_key(pKey);
-    std::cout << std::endl << std::endl;
+    for (int i = 0; i < total; i++) {
+        generateXPKey(eCurve, genPoint, genOrder, privateKey, nRaw, pKey);
+        print_product_key(pKey);
+        std::cout << std::endl << std::endl;
 
-    // verify the key
-    if (!verifyXPKey(eCurve, genPoint, pubPoint, pKey)) {
-        std::cout << "Fail! Key is invalid." << std::endl;
+        // verify the key
+        count += verifyXPKey(eCurve, genPoint, pubPoint, pKey);
     }
+
+    std::cout << "Success count: " << std::dec << count << "/" << total << std::endl;
 
     return 0;
 }
