@@ -1,6 +1,6 @@
 #include "header.h"
 
-char charset[] = "BCDFGHJKMPQRTVWXY2346789";
+char pCharset[] = "BCDFGHJKMPQRTVWXY2346789";
 
 void unpackServer(DWORD *osFamily, DWORD *hash, DWORD *sig, DWORD *prefix, DWORD *raw) {
 

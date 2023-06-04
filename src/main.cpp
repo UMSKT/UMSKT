@@ -4,7 +4,7 @@
 
 #include "header.h"
 
-char charset[] = "BCDFGHJKMPQRTVWXY2346789";
+char pCharset[] = "BCDFGHJKMPQRTVWXY2346789";
 const std::string filename = "keys.json";
 
 using json = nlohmann::json;

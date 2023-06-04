@@ -57,7 +57,7 @@ typedef uint32_t DWORD;
 typedef uint64_t QWORD;
 
 // Global variables
-extern char charset[];
+extern char pCharset[];
 
 // util.cpp
 void endian(BYTE *data, int length);
@@ -74,8 +74,8 @@ EC_GROUP *initializeEllipticCurve(
 );
 
 // key.cpp
-void unbase24(DWORD *byteSeq, const char *cdKey);
-void base24(char *cdKey, DWORD *byteSeq);
+void unbase24(BYTE *byteSeq, const char *cdKey);
+void base24(char *cdKey, BYTE *byteSeq);
 
 // cli.cpp
 void print_product_key(char *pk);

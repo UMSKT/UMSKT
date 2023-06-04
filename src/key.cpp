@@ -5,7 +5,7 @@
 #include "header.h"
 
 /* Converts from CD-key to a byte sequence. */
-void unbase24(DWORD *byteSeq, const char *cdKey) {
+void unbase24(BYTE *byteSeq, const char *cdKey) {
     BYTE pDecodedKey[PK_LENGTH + NULL_TERMINATOR]{};
     BIGNUM *y = BN_new();
 
@@ -14,7 +14,7 @@ void unbase24(DWORD *byteSeq, const char *cdKey) {
     // Remove dashes from the CD-key and put it into a Base24 byte array.
     for (int i = 0, k = 0; i < strlen(cdKey) && k < PK_LENGTH; i++) {
         for (int j = 0; j < 24; j++) {
-            if (cdKey[i] != '-' && cdKey[i] == charset[j]) {
+            if (cdKey[i] != '-' && cdKey[i] == pCharset[j]) {
                 pDecodedKey[k++] = j;
                 break;
             }
@@ -34,15 +34,15 @@ void unbase24(DWORD *byteSeq, const char *cdKey) {
     int n = BN_num_bytes(y);
 
     // Place the generated code into the byte sequence.
-    BN_bn2bin(y, (BYTE *)byteSeq);
+    BN_bn2bin(y, byteSeq);
     BN_free(y);
 
     // Reverse the byte sequence.
-    endian((BYTE *)byteSeq, n);
+    endian(byteSeq, n);
 }
 
 /* Converts from byte sequence to the CD-key. */
-void base24(char *cdKey, DWORD *byteSeq) {
+void base24(char *cdKey, BYTE *byteSeq) {
     BYTE rbyteSeq[16];
     BIGNUM *z;
 
@@ -62,7 +62,7 @@ void base24(char *cdKey, DWORD *byteSeq) {
     cdKey[25] = 0;
 
     for (int i = 24; i >= 0; i--)
-        cdKey[i] = charset[BN_div_word(z, 24)];
+        cdKey[i] = pCharset[BN_div_word(z, 24)];
 
     BN_free(z);
 }

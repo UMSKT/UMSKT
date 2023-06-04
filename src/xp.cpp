@@ -51,7 +51,7 @@ bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, cha
 
     QWORD sig = 0;
 
-    unbase24(bKey, cdKey);
+    unbase24((BYTE *)bKey, cdKey);
 
     // Extract data, hash and signature from the bytecode.
     unpackXP(bKey, pID, checkHash, sig);
@@ -241,7 +241,7 @@ void generateXPKey(EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM 
     // the CD-key longer than 25 characters.
 
     // Convert the key to Base24.
-    base24(pKey, bKey);
+    base24(pKey, (BYTE *)bKey);
 
     BN_free(c);
     BN_free(s);
