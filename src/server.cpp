@@ -60,11 +60,7 @@ bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey,
     BYTE t[FIELD_BYTES_2003]{}, md[SHA_DIGEST_LENGTH]{};
     DWORD checkHash, newHash[2]{};
 
-    SHA_CTX hContext;
-
     // H = SHA-1(5D || OS Family || Hash || Prefix || 00 00)
-    SHA1_Init(&hContext);
-
     t[0] = 0x5D;
     t[1] = (osFamily & 0xff);
     t[2] = (osFamily & 0xff00) >> 8;
@@ -77,8 +73,7 @@ bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey,
     t[9] = 0x00;
     t[10] = 0x00;
 
-    SHA1_Update(&hContext, t, 11);
-    SHA1_Final(md, &hContext);
+    SHA1(t, 11, md);
 
     // First word.
     newHash[0] = md[0] | (md[1] << 8) | (md[2] << 16) | (md[3] << 24);
@@ -114,39 +109,32 @@ bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey,
 
     // EC_POINT_get_affine_coordinates() sets x and y, either of which may be nullptr, to the corresponding coordinates of p.
     // x = v.x; y = v.y;
-    EC_POINT_get_affine_coordinates_GFp(eCurve, v, x, y, context);
+    EC_POINT_get_affine_coordinates(eCurve, v, x, y, context);
 
+    BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
+            msgBuffer[SHA_MSG_LENGTH_2003]{},
+            xBin[FIELD_BYTES_2003]{},
+            yBin[FIELD_BYTES_2003]{};
+
+    // Convert resulting point coordinates to bytes.
+    BN_bn2lebin(x, xBin, FIELD_BYTES_2003);
+    BN_bn2lebin(y, yBin, FIELD_BYTES_2003);
+
+    // Assemble the SHA message.
+    msgBuffer[0] = 0x79;
+    msgBuffer[1] = (osFamily & 0xff);
+    msgBuffer[2] = (osFamily & 0xff00) >> 8;
+
+    memcpy((void *)&msgBuffer[3], (void *)xBin, FIELD_BYTES_2003);
+    memcpy((void *)&msgBuffer[3 + FIELD_BYTES_2003], (void *)yBin, FIELD_BYTES_2003);
+
+    // Retrieve the message digest.
+    SHA1(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
+
+    // Translate the byte digest into a 32-bit integer - this is our computed hash.
+    // Truncate the hash to 28 bits.
     // Hash = First31(SHA-1(79 || OS Family || v.x || v.y))
-    SHA1_Init(&hContext);
-
-    t[0] = 0x79;
-    t[1] = (osFamily & 0xff);
-    t[2] = (osFamily & 0xff00) >> 8;
-
-    // Hash chunk of data.
-    SHA1_Update(&hContext, t, 3);
-
-    // Empty buffer, place v.y in little-endian.
-    memset(t, 0, FIELD_BYTES_2003);
-    BN_bn2bin(x, t);
-    endian(t, FIELD_BYTES_2003);
-
-    // Hash chunk of data.
-    SHA1_Update(&hContext, t, FIELD_BYTES_2003);
-
-    // Empty buffer, place v.y in little-endian.
-    memset(t, 0, FIELD_BYTES_2003);
-    BN_bn2bin(y, t);
-    endian(t, FIELD_BYTES_2003);
-
-    // Hash chunk of data.
-    SHA1_Update(&hContext, t, FIELD_BYTES_2003);
-
-    // Store the final message from hContext in md.
-    SHA1_Final(md, &hContext);
-
-    // Hash = First31(SHA-1(79 || OS Family || v.x || v.y))
-    checkHash = (md[0] | (md[1] << 8) | (md[2] << 16) | (md[3] << 24)) & 0x7fffffff;
+    DWORD compHash = BYDWORD(msgDigest) & BITMASK(31);
 
     BN_free(s);
     BN_free(e);
@@ -159,7 +147,7 @@ bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey,
     EC_POINT_free(u);
 
     // If we managed to generate a key with the same hash, the key is correct.
-    return checkHash == hash;
+    return compHash == hash;
 }
 
 void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, DWORD *osFamily, DWORD *prefix) {

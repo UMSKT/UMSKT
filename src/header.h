@@ -41,6 +41,7 @@
 #define FIELD_BYTES_2003        64
 
 #define SHA_MSG_LENGTH_XP       (4 + 2 * FIELD_BYTES)
+#define SHA_MSG_LENGTH_2003     (3 + 2 * FIELD_BYTES_2003)
 
 #define NEXTSNBITS(field, n, offset)   (((QWORD)field >> offset) & ((1ULL << (n)) - 1))
 #define FIRSTNBITS(field, n)           NEXTSNBITS(field, n, 0)
