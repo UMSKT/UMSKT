@@ -18,32 +18,32 @@
 #include "header.h"
 
 /* Unpacks the Windows XP Product Key. */
-void unpackXP(DWORD *serial, DWORD *hash, DWORD *sig, DWORD *raw) {
+void unpackXP(DWORD *pRaw, DWORD *pSerial, DWORD *pHash, DWORD *pSignature) {
 
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
 
     // Serial = Bits [0..30] -> 31 bits
-    if (serial)
-        serial[0] = raw[0] & 0x7fffffff;
+    if (pSerial)
+        pSerial[0] = pRaw[0] & 0x7fffffff;
 
     // Hash (e) = Bits [31..58] -> 28 bits
-    if (hash)
-        hash[0] = ((raw[0] >> 31) | (raw[1] << 1)) & 0xfffffff;
+    if (pHash)
+        pHash[0] = ((pRaw[0] >> 31) | (pRaw[1] << 1)) & 0xfffffff;
 
     // Signature (s) = Bits [59..113] -> 55 bits
-    if (sig) {
-        sig[0] = (raw[1] >> 27) | (raw[2] << 5);
-        sig[1] = (raw[2] >> 27) | (raw[3] << 5);
+    if (pSignature) {
+        pSignature[0] = (pRaw[1] >> 27) | (pRaw[2] << 5);
+        pSignature[1] = (pRaw[2] >> 27) | (pRaw[3] << 5);
     }
 }
 
 /* Packs the Windows XP Product Key. */
-void packXP(DWORD *raw, const DWORD *serial, const DWORD *hash, const DWORD *sig) {
-    raw[0] = serial[0] | ((hash[0] & 1) << 31);
-    raw[1] = (hash[0] >> 1) | ((sig[0] & 0x1f) << 27);
-    raw[2] = (sig[0] >> 5) | (sig[1] << 27);
-    raw[3] = sig[1] >> 5;
+void packXP(DWORD *pRaw, const DWORD *pSerial, const DWORD *pHash, const DWORD *pSignature) {
+    pRaw[0] = pSerial[0] | ((pHash[0] & 1) << 31);
+    pRaw[1] = (pHash[0] >> 1) | ((pSignature[0] & 0x1f) << 27);
+    pRaw[2] = (pSignature[0] >> 5) | (pSignature[1] << 27);
+    pRaw[3] = pSignature[1] >> 5;
 }
 
 /* Verify Product Key */
@@ -57,7 +57,7 @@ bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, cha
     unbase24(bKey, cdKey);
 
     // Extract data, hash and signature from the bytecode.
-    unpackXP(&pID, &checkHash, sig, bKey);
+    unpackXP(bKey, &pID, &checkHash, sig);
 
     // e = Hash
     // s = Signature
