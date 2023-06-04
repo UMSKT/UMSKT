@@ -10,7 +10,7 @@ void unpackServer(
         DWORD (&pRaw)[4],
         DWORD &pChannelID,
         DWORD &pHash,
-        DWORD (&pSignature)[2],
+        QWORD &pSignature,
         DWORD &pAuthInfo
 ) {
     // We're assuming that the quantity of information within the product key is at most 114 bits.
@@ -23,8 +23,7 @@ void unpackServer(
     pHash = ((pRaw[0] >> 11) | (pRaw[1] << 21)) & 0x7fffffff;
 
     // Signature = Bits [42..103] -> 62 bits
-    pSignature[0] = (pRaw[1] >> 10) | (pRaw[2] << 22);
-    pSignature[1] = ((pRaw[2] >> 10) | (pRaw[3] << 22)) & 0x3fffffff;
+    pSignature = (((QWORD)pRaw[2] >> 10 | (QWORD)pRaw[3] << 22) & 0x3fffffff) << 32 | (pRaw[1] >> 10) | (pRaw[2] << 22);
 
     // Prefix = Bits [104..113] -> 10 bits
     pAuthInfo = (pRaw[3] >> 8) & 0x3ff;
@@ -34,13 +33,13 @@ void packServer(
         DWORD (&pRaw)[4],
         DWORD pChannelID,
         DWORD pHash,
-        DWORD (&pSignature)[2],
+        QWORD &pSignature,
         DWORD pAuthInfo
 ) {
     pRaw[0] = pChannelID | (pHash << 11);
-    pRaw[1] = (pHash >> 21) | (pSignature[0] << 10);
-    pRaw[2] = (pSignature[0] >> 22) | (pSignature[1] << 10);
-    pRaw[3] = (pSignature[1] >> 22) | (pAuthInfo << 8);
+    pRaw[1] = (pHash >> 21) | pSignature << 10;
+    pRaw[2] = (DWORD)(pSignature >> 22);
+    pRaw[3] = pSignature >> 54 | (pAuthInfo << 8);
 }
 
 
@@ -48,8 +47,10 @@ bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey,
     BN_CTX *context = BN_CTX_new();
 
     // Convert Base24 CD-key to bytecode.
-    DWORD pChannelID, pHash, pSignature[2], pAuthInfo;
+    DWORD pChannelID, pHash, pAuthInfo;
     DWORD bKey[4]{};
+
+    QWORD pSignature = 0;
 
     unbase24((BYTE *)bKey, cdKey);
 
@@ -80,7 +81,7 @@ bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey,
 
     BIGNUM *x = BN_new();
     BIGNUM *y = BN_new();
-    BIGNUM *s = BN_lebin2bn((BYTE *)pSignature, sizeof(pSignature), nullptr);
+    BIGNUM *s = BN_lebin2bn((BYTE *)&pSignature, sizeof(pSignature), nullptr);
     BIGNUM *e = BN_lebin2bn((BYTE *)&newHash, sizeof(newHash), nullptr);
 
     EC_POINT *u = EC_POINT_new(eCurve);
@@ -143,8 +144,9 @@ void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM
     EC_POINT *r = EC_POINT_new(eCurve);
     BN_CTX *ctx = BN_CTX_new();
 
-    DWORD bKey[4]{},
-            bSig[2]{};
+    DWORD bKey[4]{};
+
+    QWORD pSignature = 0;
 
     do {
         BIGNUM *c = BN_new();
@@ -156,7 +158,6 @@ void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM
         DWORD hash = 0, h[2]{};
 
         memset(bKey, 0, 4);
-        memset(bSig, 0, 2);
 
         // Generate a random number c consisting of 512 bits without any constraints.
         BN_rand(c, FIELD_BITS_2003, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
@@ -281,18 +282,18 @@ void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM
         BN_rshift1(s, s);
 
         // Convert s from BigNum back to bytecode and reverse the endianness.
-        BN_bn2bin(s, (BYTE *)bSig);
-        endian((BYTE *)bSig, BN_num_bytes(s));
+        BN_bn2bin(s, (BYTE *)&pSignature);
+        endian((BYTE *)&pSignature, BN_num_bytes(s));
 
         // Pack product key.
-        packServer(bKey, *osFamily, hash, bSig, *prefix);
+        packServer(bKey, *osFamily, hash, pSignature, *prefix);
 
         BN_free(c);
         BN_free(s);
         BN_free(x);
         BN_free(y);
         BN_free(b);
-    } while (bSig[1] >= 0x40000000);
+    } while ((pSignature >> 32) >= 0x40000000);
 
     base24(pKey, (BYTE *)bKey);
 
