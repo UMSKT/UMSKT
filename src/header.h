@@ -39,8 +39,8 @@
 #define FIELD_BITS_2003     512
 #define FIELD_BYTES_2003    64
 
-#define NEXTNBITS(field, n, offset)    (((QWORD)field >> offset) & ((1ULL << (n)) - 1))
-#define FIRSTNBITS(field, n)           NEXTNBITS(field, n, 0)
+#define NEXTSNBITS(field, n, offset)    (((QWORD)field >> offset) & ((1ULL << (n)) - 1))
+#define FIRSTNBITS(field, n)           NEXTSNBITS(field, n, 0)
 
 // Confirmation ID generator constants
 #define SUCCESS 0
@@ -52,6 +52,7 @@
 #define ERR_UNLUCKY 6
 
 // Type definitions
+typedef bool     BOOL;
 typedef uint8_t  BYTE;
 typedef uint16_t WORD;
 typedef uint32_t DWORD;
@@ -95,8 +96,21 @@ Options parseCommandLine(int argc, char* argv[]);
 void showHelp(char *argv[]);
 
 // xp.cpp
-bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, char (&cdKey)[25]);
-void generateXPKey(EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, DWORD pRaw, char (&cdKey)[25]);
+bool verifyXPKey(
+        EC_GROUP *eCurve,
+        EC_POINT *generator,
+        EC_POINT *publicKey,
+        char (&cdKey)[25]
+);
+
+void generateXPKey(
+        EC_GROUP *eCurve,
+        EC_POINT *generator,
+        BIGNUM *order,
+        BIGNUM *privateKey,
+        DWORD pRaw,
+        char (&cdKey)[25]
+);
 
 // server.cpp
 

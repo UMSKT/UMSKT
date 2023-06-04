@@ -18,27 +18,39 @@
 #include "header.h"
 
 /* Unpacks the Windows XP Product Key. */
-void unpackXP(QWORD (&pRaw)[2], DWORD &pSerial, DWORD &pHash, QWORD &pSignature) {
-
+void unpackXP(
+        QWORD (&pRaw)[2],
+        DWORD &pSerial,
+        DWORD &pHash,
+        QWORD &pSignature
+) {
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
 
     // Serial = Bits [0..30] -> 31 bits
     pSerial = FIRSTNBITS(pRaw[0], 31);
 
-    // Hash (e) = Bits [31..58] -> 28 bits
-    pHash = NEXTNBITS(pRaw[0], 28, 31);
+    // Hash = Bits [31..58] -> 28 bits
+    pHash = NEXTSNBITS(pRaw[0], 28, 31);
 
-    // Signature (s) = Bits [59..113] -> 55 bits
-    pSignature = FIRSTNBITS(pRaw[1], 51) << 5 | NEXTNBITS(pRaw[0], 5, 59);
+    // Signature = Bits [59..113] -> 56 bits
+    pSignature = FIRSTNBITS(pRaw[1], 51) << 5 | NEXTSNBITS(pRaw[0], 5, 59);
 }
 
 /* Packs the Windows XP Product Key. */
-void packXP(QWORD (&pRaw)[2], DWORD pSerial, DWORD pHash, QWORD pSignature) {
-    pRaw[0] = FIRSTNBITS(pSignature, 5) << 59 | FIRSTNBITS(pHash, 28) << 31 | pSerial;
+void packXP(
+        QWORD (&pRaw)[2],
+        DWORD pSerial,
+        DWORD pHash,
+        QWORD pSignature
+) {
+    // The quantity of information the key provides is 114 bits.
+    // We're storing it in 2 64-bit quad-words with 14 trailing bits.
+    // 64 * 2 = 128
 
-    // sig is 56 bits long, 5 of them are used -> 51 bits remaining
-    pRaw[1] = NEXTNBITS(pSignature, 51, 5);
+    // Signature [114..59] <- Hash [58..31] <- Serial [30..1] <- Upgrade [0]
+    pRaw[0] = FIRSTNBITS(pSignature, 5) << 59 | FIRSTNBITS(pHash, 28) << 31 | pSerial;
+    pRaw[1] = NEXTSNBITS(pSignature, 51, 5);
 }
 
 /* Verify Product Key */
