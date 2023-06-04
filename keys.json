@@ -12,6 +12,9 @@
     "Office 2000": {
       "BINK": ["04","05"]
     },
+    "PLUS! for Windows XP": {
+      "BINK": ["08", "09"]
+    },
     "Windows 2000 Server (all)": {
       "BINK": ["0A", "13"]
     },
