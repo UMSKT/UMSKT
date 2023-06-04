@@ -39,6 +39,8 @@
 #define FIELD_BITS_2003     512
 #define FIELD_BYTES_2003    64
 
+#define FIRSTNBITS(field, n)           ((field) & ((1ULL << (n)) - 1))
+
 // Confirmation ID generator constants
 #define SUCCESS 0
 #define ERR_TOO_SHORT 1

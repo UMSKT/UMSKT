@@ -24,21 +24,21 @@ void unpackXP(DWORD (&pRaw)[4], DWORD &pSerial, DWORD &pHash, DWORD (&pSignature
     // log2(24^25) = 114.
 
     // Serial = Bits [0..30] -> 31 bits
-    pSerial = pRaw[0] & 0x7fffffff;
+    pSerial = FIRSTNBITS(pRaw[0], 31);
 
     // Hash (e) = Bits [31..58] -> 28 bits
-    pHash = ((pRaw[0] >> 31) | (pRaw[1] << 1)) & 0xfffffff;
+    pHash = FIRSTNBITS(pRaw[1] << 1 | pRaw[0] >> 31, 28);
 
     // Signature (s) = Bits [59..113] -> 55 bits
-    pSignature[0] = (pRaw[1] >> 27) | (pRaw[2] << 5);
-    pSignature[1] = (pRaw[2] >> 27) | (pRaw[3] << 5);
+    pSignature[0] = pRaw[2] << 5 | pRaw[1] >> 27;
+    pSignature[1] = pRaw[3] << 5 | pRaw[2] >> 27;
 }
 
 /* Packs the Windows XP Product Key. */
 void packXP(DWORD (&pRaw)[4], DWORD pSerial, DWORD pHash, DWORD (&pSignature)[2]) {
-    pRaw[0] = pSerial | ((pHash & 1) << 31);
-    pRaw[1] = (pHash >> 1) | ((pSignature[0] & 0x1f) << 27);
-    pRaw[2] = (pSignature[0] >> 5) | (pSignature[1] << 27);
+    pRaw[0] = pSerial | FIRSTNBITS(pHash, 1) << 31;
+    pRaw[1] = FIRSTNBITS(pSignature[0], 5) << 27 | pHash >> 1;
+    pRaw[2] = pSignature[1] << 27 | pSignature[0] >> 5;
     pRaw[3] = pSignature[1] >> 5;
 }
 
