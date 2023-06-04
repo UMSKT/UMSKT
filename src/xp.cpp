@@ -18,7 +18,7 @@
 #include "header.h"
 
 /* Unpacks the Windows XP Product Key. */
-void unpackXP(DWORD (&pRaw)[4], DWORD &pSerial, DWORD &pHash, DWORD (&pSignature)[2]) {
+void unpackXP(DWORD (&pRaw)[4], DWORD &pSerial, DWORD &pHash, QWORD &pSignature) {
 
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
@@ -30,16 +30,15 @@ void unpackXP(DWORD (&pRaw)[4], DWORD &pSerial, DWORD &pHash, DWORD (&pSignature
     pHash = FIRSTNBITS(pRaw[1] << 1 | pRaw[0] >> 31, 28);
 
     // Signature (s) = Bits [59..113] -> 55 bits
-    pSignature[0] = pRaw[2] << 5 | pRaw[1] >> 27;
-    pSignature[1] = pRaw[3] << 5 | pRaw[2] >> 27;
+    pSignature = (QWORD)pRaw[3] << (5 + 8 * sizeof(DWORD)) | (QWORD)pRaw[2] << 5 | pRaw[1] >> 27;
 }
 
 /* Packs the Windows XP Product Key. */
-void packXP(DWORD (&pRaw)[4], DWORD pSerial, DWORD pHash, DWORD (&pSignature)[2]) {
+void packXP(DWORD (&pRaw)[4], DWORD pSerial, DWORD pHash, QWORD pSignature) {
     pRaw[0] = pSerial | FIRSTNBITS(pHash, 1) << 31;
-    pRaw[1] = FIRSTNBITS(pSignature[0], 5) << 27 | pHash >> 1;
-    pRaw[2] = pSignature[1] << 27 | pSignature[0] >> 5;
-    pRaw[3] = pSignature[1] >> 5;
+    pRaw[1] = FIRSTNBITS(pSignature, 5) << 27 | pHash >> 1;
+    pRaw[2] = (DWORD)(pSignature >> 5);
+    pRaw[3] = (DWORD)(pSignature >> (5 + 8 * sizeof(DWORD)));
 }
 
 /* Verify Product Key */
@@ -48,7 +47,9 @@ bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, cha
 
     // Convert Base24 CD-key to bytecode.
     DWORD bKey[4]{};
-    DWORD pID, checkHash, sig[2];
+    DWORD pID, checkHash;
+
+    QWORD sig = 0;
 
     unbase24(bKey, cdKey);
 
@@ -64,8 +65,8 @@ bool verifyXPKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, cha
     BN_set_word(e, checkHash);
 
     // Reverse signature and create a new BigNum s.
-    endian((BYTE *)sig, sizeof(sig));
-    s = BN_bin2bn((BYTE *)sig, sizeof(sig), nullptr);
+    endian((BYTE *)&sig, sizeof(sig));
+    s = BN_bin2bn((BYTE *)&sig, sizeof(sig), nullptr);
 
     // Create x and y.
     BIGNUM *x = BN_new();
@@ -158,7 +159,8 @@ void generateXPKey(EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM 
     DWORD bKey[4]{};
 
     do {
-        DWORD hash = 0, sig[2]{};
+        DWORD hash = 0;
+        QWORD sig = 0;
 
         memset(bKey, 0, 4);
 
@@ -221,17 +223,16 @@ void generateXPKey(EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM 
         BN_mod_add(s, s, c, order, ctx);
 
         // Convert s from BigNum back to bytecode and reverse the endianness.
-        BN_bn2bin(s, (BYTE *)sig);
-        endian((BYTE *)sig, BN_num_bytes(s));
+        BN_bn2bin(s, (BYTE *)&sig);
+        endian((BYTE *)&sig, BN_num_bytes(s));
 
         // Pack product key.
         packXP(bKey, pRaw, hash, sig);
 
         //printf("PID: %.8X\nHash: %.8X\nSig: %.8X %.8X\n", pRaw[0], hash, sig[1], sig[0]);
-        std::cout << " PID: " << std::hex << std::setw(8) << std::setfill('0') << pRaw   << std::endl
-                  << "Hash: " << std::hex << std::setw(8) << std::setfill('0') << hash   << std::endl
-                  << " Sig: " << std::hex << std::setw(8) << std::setfill('0') << sig[0] << " "
-                              << std::hex << std::setw(8) << std::setfill('0') << sig[1] << std::endl
+        std::cout << " PID: " << std::hex << std::setw(8) << std::setfill('0') << pRaw << std::endl
+                  << "Hash: " << std::hex << std::setw(8) << std::setfill('0') << hash << std::endl
+                  << " Sig: " << std::hex << std::setw(8) << std::setfill('0') << sig  << std::endl
                               << std::endl;
 
     } while (bKey[3] >= 0x40000);
