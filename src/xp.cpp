@@ -102,8 +102,6 @@ bool verifyXPKey(
             xBin[FIELD_BYTES]{},
             yBin[FIELD_BYTES]{};
 
-    DWORD   compHash;
-
     // Convert resulting point coordinates to bytes.
     BN_bn2lebin(x, xBin, FIELD_BYTES);
     BN_bn2lebin(y, yBin, FIELD_BYTES);
@@ -118,8 +116,7 @@ bool verifyXPKey(
 
     // Translate the byte digest into a 32-bit integer - this is our computed hash.
     // Truncate the hash to 28 bits.
-    compHash  = BYDWORD(msgDigest) >> 4;
-    compHash &= BITMASK(28);
+    DWORD compHash = BYDWORD(msgDigest) >> 4 & BITMASK(28);
 
     BN_free(e);
     BN_free(s);

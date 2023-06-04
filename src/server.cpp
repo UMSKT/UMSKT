@@ -48,46 +48,40 @@ bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey,
     BN_CTX *context = BN_CTX_new();
 
     // Convert Base24 CD-key to bytecode.
-    DWORD osFamily, hash, sig[2], prefix;
+    DWORD pChannelID, pHash, pSignature[2], pAuthInfo;
     DWORD bKey[4]{};
 
     unbase24((BYTE *)bKey, cdKey);
 
     // Extract segments from the bytecode and reverse the signature.
-    unpackServer(bKey, osFamily, hash, sig, prefix);
-    endian((BYTE *)sig, 8);
+    unpackServer(bKey, pChannelID, pHash, pSignature, pAuthInfo);
 
-    BYTE t[FIELD_BYTES_2003]{}, md[SHA_DIGEST_LENGTH]{};
-    DWORD checkHash, newHash[2]{};
+    BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
+            msgBuffer[SHA_MSG_LENGTH_2003]{},
+            xBin[FIELD_BYTES_2003]{},
+            yBin[FIELD_BYTES_2003]{};
 
     // H = SHA-1(5D || OS Family || Hash || Prefix || 00 00)
-    t[0] = 0x5D;
-    t[1] = (osFamily & 0xff);
-    t[2] = (osFamily & 0xff00) >> 8;
-    t[3] = (hash & 0xff);
-    t[4] = (hash & 0xff00) >> 8;
-    t[5] = (hash & 0xff0000) >> 16;
-    t[6] = (hash & 0xff000000) >> 24;
-    t[7] = (prefix & 0xff);
-    t[8] = (prefix & 0xff00) >> 8;
-    t[9] = 0x00;
-    t[10] = 0x00;
+    msgBuffer[0x00] = 0x5D;
+    msgBuffer[0x01] = (pChannelID & 0x00FF);
+    msgBuffer[0x02] = (pChannelID & 0xFF00) >> 8;
+    msgBuffer[0x03] = (pHash & 0x000000FF);
+    msgBuffer[0x04] = (pHash & 0x0000FF00) >> 8;
+    msgBuffer[0x05] = (pHash & 0x00FF0000) >> 16;
+    msgBuffer[0x06] = (pHash & 0xFF000000) >> 24;
+    msgBuffer[0x07] = (pAuthInfo & 0x00FF);
+    msgBuffer[0x08] = (pAuthInfo & 0xFF00) >> 8;
+    msgBuffer[0x09] = 0x00;
+    msgBuffer[0x0A] = 0x00;
 
-    SHA1(t, 11, md);
+    SHA1(msgBuffer, 11, msgDigest);
 
-    // First word.
-    newHash[0] = md[0] | (md[1] << 8) | (md[2] << 16) | (md[3] << 24);
-
-    // Second word, right shift 2 bits.
-    newHash[1] = (md[4] | (md[5] << 8) | (md[6] << 16) | (md[7] << 24)) >> 2;
-    newHash[1] &= 0x3FFFFFFF;
-
-    endian((BYTE *)newHash, 8);
+    QWORD newHash = (BYDWORD(&msgDigest[4]) >> 2 & BITMASK(30)) << 32 | BYDWORD(msgDigest);
 
     BIGNUM *x = BN_new();
     BIGNUM *y = BN_new();
-    BIGNUM *s = BN_bin2bn((BYTE *)sig, 8, nullptr);
-    BIGNUM *e = BN_bin2bn((BYTE *)newHash, 8, nullptr);
+    BIGNUM *s = BN_lebin2bn((BYTE *)pSignature, sizeof(pSignature), nullptr);
+    BIGNUM *e = BN_lebin2bn((BYTE *)&newHash, sizeof(newHash), nullptr);
 
     EC_POINT *u = EC_POINT_new(eCurve);
     EC_POINT *v = EC_POINT_new(eCurve);
@@ -111,19 +105,14 @@ bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey,
     // x = v.x; y = v.y;
     EC_POINT_get_affine_coordinates(eCurve, v, x, y, context);
 
-    BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
-            msgBuffer[SHA_MSG_LENGTH_2003]{},
-            xBin[FIELD_BYTES_2003]{},
-            yBin[FIELD_BYTES_2003]{};
-
     // Convert resulting point coordinates to bytes.
     BN_bn2lebin(x, xBin, FIELD_BYTES_2003);
     BN_bn2lebin(y, yBin, FIELD_BYTES_2003);
 
     // Assemble the SHA message.
-    msgBuffer[0] = 0x79;
-    msgBuffer[1] = (osFamily & 0xff);
-    msgBuffer[2] = (osFamily & 0xff00) >> 8;
+    msgBuffer[0x00] = 0x79;
+    msgBuffer[0x01] = (pChannelID & 0x00FF);
+    msgBuffer[0x02] = (pChannelID & 0xFF00) >> 8;
 
     memcpy((void *)&msgBuffer[3], (void *)xBin, FIELD_BYTES_2003);
     memcpy((void *)&msgBuffer[3 + FIELD_BYTES_2003], (void *)yBin, FIELD_BYTES_2003);
@@ -131,8 +120,8 @@ bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey,
     // Retrieve the message digest.
     SHA1(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
 
-    // Translate the byte digest into a 32-bit integer - this is our computed hash.
-    // Truncate the hash to 28 bits.
+    // Translate the byte digest into a 32-bit integer - this is our computed pHash.
+    // Truncate the pHash to 28 bits.
     // Hash = First31(SHA-1(79 || OS Family || v.x || v.y))
     DWORD compHash = BYDWORD(msgDigest) & BITMASK(31);
 
@@ -146,8 +135,8 @@ bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey,
     EC_POINT_free(v);
     EC_POINT_free(u);
 
-    // If we managed to generate a key with the same hash, the key is correct.
-    return compHash == hash;
+    // If we managed to generate a key with the same pHash, the key is correct.
+    return compHash == pHash;
 }
 
 void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, DWORD *osFamily, DWORD *prefix) {

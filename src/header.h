@@ -46,7 +46,7 @@
 #define NEXTSNBITS(field, n, offset)   (((QWORD)field >> offset) & ((1ULL << (n)) - 1))
 #define FIRSTNBITS(field, n)           NEXTSNBITS(field, n, 0)
 
-#define BYDWORD(n)                     (n[0] | n[1] << 8 | n[2] << 16 | n[3] << 24)
+#define BYDWORD(n)                     (*(n + 0) | *(n + 1) << 8 | *(n + 2) << 16 | *(n + 3) << 24)
 #define BITMASK(n)                     ((1ULL << n) - 1)
 
 // Confirmation ID generator constants
