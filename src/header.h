@@ -49,7 +49,7 @@
 #define HIBYTES(field, bytes)          NEXTSNBITS((QWORD)(field), ((bytes) * 8), ((bytes) * 8))
 #define LOBYTES(field, bytes)          FIRSTNBITS((QWORD)(field), ((bytes) * 8))
 
-#define BYDWORD(n)                     (*((n) + 0) | *((n) + 1) << 8 | *((n) + 2) << 16 | *((n) + 3) << 24)
+#define BYDWORD(n)                     (DWORD)(*((n) + 0) | *((n) + 1) << 8 | *((n) + 2) << 16 | *((n) + 3) << 24)
 #define BITMASK(n)                     ((1ULL << (n)) - 1)
 
 // Confirmation ID generator constants

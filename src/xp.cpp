@@ -186,8 +186,7 @@ void generateXPKey(
 
         // Translate the byte digest into a 32-bit integer - this is our computed pHash.
         // Truncate the pHash to 28 bits.
-        pHash  = BYDWORD(msgDigest) >> 4;
-        pHash &= BITMASK(28);
+        pHash = BYDWORD(msgDigest) >> 4 & BITMASK(28);
 
         /*
          *

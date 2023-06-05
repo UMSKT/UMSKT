@@ -86,15 +86,12 @@ bool verifyServerKey(
 
     SHA1(msgBuffer, 11, msgDigest);
 
-    DWORD newHash[2]{};
-
-    newHash[0] = BYDWORD(msgDigest);
-    newHash[1] = BYDWORD(&msgDigest[4]) >> 2 & BITMASK(30);
+    QWORD newHash2 = (QWORD)(BYDWORD(&msgDigest[4]) >> 2 & BITMASK(30)) << 32 | BYDWORD(msgDigest);
 
     BIGNUM *x = BN_new();
     BIGNUM *y = BN_new();
     BIGNUM *s = BN_lebin2bn((BYTE *)&pSignature, sizeof(pSignature), nullptr);
-    BIGNUM *e = BN_lebin2bn((BYTE *)&newHash, sizeof(newHash), nullptr);
+    BIGNUM *e = BN_lebin2bn((BYTE *)&newHash2, 8, nullptr);
 
     EC_POINT *u = EC_POINT_new(eCurve);
     EC_POINT *v = EC_POINT_new(eCurve);
