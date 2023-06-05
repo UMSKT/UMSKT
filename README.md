@@ -1,5 +1,7 @@
 # **Windows XP / Server 2003 Keygen**
 
+[![Zulip chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://umskt.zulipchat.com)
+
 ### **Plan of Action / ToDo List**
 
 In light of the recent exponential interest in this project I've decided to put updates of this project here:
