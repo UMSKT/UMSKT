@@ -21,16 +21,16 @@ void unpackServer(
     // log2(24^25) = 114.
 
     // OS Family = Bits [0..10] -> 11 bits
-    pChannelID = pRaw[0] & 0x7ff;
+    pChannelID = pRaw[0] & BITMASK(11);
 
     // Hash = Bits [11..41] -> 31 bits
-    pHash = ((pRaw[0] >> 11) | (pRaw[1] << 21)) & 0x7fffffff;
+    pHash = (pRaw[1] << 21 | pRaw[0] >> 11) & BITMASK(31);
 
     // Signature = Bits [42..103] -> 62 bits
-    pSignature = (((QWORD)pRaw[2] >> 10 | (QWORD)pRaw[3] << 22) & 0x3fffffff) << 32 | (pRaw[1] >> 10) | (pRaw[2] << 22);
+    pSignature = (((QWORD)pRaw[3] << 22 | (QWORD)pRaw[2] >> 10) & BITMASK(30)) << 32 | pRaw[2] << 22 | pRaw[1] >> 10;
 
     // Prefix = Bits [104..113] -> 10 bits
-    pAuthInfo = (pRaw[3] >> 8) & 0x3ff;
+    pAuthInfo = pRaw[3] >> 8 & BITMASK(10);
 }
 
 void packServer(
@@ -40,10 +40,10 @@ void packServer(
         QWORD &pSignature,
         DWORD pAuthInfo
 ) {
-    pRaw[0] = pChannelID | (pHash << 11);
-    pRaw[1] = (pHash >> 21) | pSignature << 10;
+    pRaw[0] = pHash << 11 | pChannelID;
+    pRaw[1] = pSignature << 10 | pHash >> 21;
     pRaw[2] = (DWORD)(pSignature >> 22);
-    pRaw[3] = pSignature >> 54 | (pAuthInfo << 8);
+    pRaw[3] = pAuthInfo << 8 | pSignature >> 54;
 }
 
 
