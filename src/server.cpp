@@ -9,9 +9,9 @@ const std::string filename = "keys.json";
 
 using json = nlohmann::json;
 
-
+/* Unpacks the Windows XP-like Product Key. */
 void unpackServer(
-        DWORD (&pRaw)[4],
+        QWORD (&pRaw)[2],
         DWORD &pChannelID,
         DWORD &pHash,
         QWORD &pSignature,
@@ -20,30 +20,31 @@ void unpackServer(
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
 
-    // OS Family = Bits [0..10] -> 11 bits
-    pChannelID = pRaw[0] & BITMASK(11);
+    // Channel ID = Bits [0..10] -> 11 bits
+    pChannelID = FIRSTNBITS(pRaw[0], 11);
 
     // Hash = Bits [11..41] -> 31 bits
-    pHash = (pRaw[1] << 21 | pRaw[0] >> 11) & BITMASK(31);
+    pHash = NEXTSNBITS(pRaw[0], 31, 11);
 
     // Signature = Bits [42..103] -> 62 bits
-    pSignature = (((QWORD)pRaw[3] << 22 | (QWORD)pRaw[2] >> 10) & BITMASK(30)) << 32 | pRaw[2] << 22 | pRaw[1] >> 10;
+    // The quad-word signature overlaps AuthInfo in bits 104 and 105,
+    // hence Microsoft employs a secret technique called: Signature = HIDWORD(Signature) >> 2 | LODWORD(Signature)
+    pSignature = NEXTSNBITS(pRaw[1], 30, 10) << 32 | FIRSTNBITS(pRaw[1], 10) << 22 | NEXTSNBITS(pRaw[0], 22, 42);
 
-    // Prefix = Bits [104..113] -> 10 bits
-    pAuthInfo = pRaw[3] >> 8 & BITMASK(10);
+    // AuthInfo = Bits [104..113] -> 10 bits
+    pAuthInfo = NEXTSNBITS(pRaw[1], 10, 40);
 }
 
 void packServer(
-        DWORD (&pRaw)[4],
+        QWORD (&pRaw)[2],
         DWORD pChannelID,
         DWORD pHash,
         QWORD &pSignature,
         DWORD pAuthInfo
 ) {
-    pRaw[0] = pHash << 11 | pChannelID;
-    pRaw[1] = pSignature << 10 | pHash >> 21;
-    pRaw[2] = (DWORD)(pSignature >> 22);
-    pRaw[3] = pAuthInfo << 8 | pSignature >> 54;
+    // AuthInfo [113..104] <- Signature [103..42] <- Hash [41..11] <- Channel ID [10..1] <- Upgrade [0]
+    pRaw[0] = FIRSTNBITS(pSignature, 22) << 42 | (QWORD)pHash << 11 | pChannelID;
+    pRaw[1] = FIRSTNBITS(pAuthInfo, 10) << 40 | NEXTSNBITS(pSignature, 40, 22);
 }
 
 
@@ -57,7 +58,7 @@ bool verifyServerKey(
 
     // Convert Base24 CD-key to bytecode.
     DWORD pChannelID, pHash, pAuthInfo;
-    DWORD bKey[4]{};
+    QWORD bKey[2]{};
 
     QWORD pSignature = 0;
 
@@ -65,6 +66,12 @@ bool verifyServerKey(
 
     // Extract segments from the bytecode and reverse the signature.
     unpackServer(bKey, pChannelID, pHash, pSignature, pAuthInfo);
+
+    std::cout << "Validation results:\n    Serial: 0x" << std::hex << std::setw(8) << std::setfill('0') << pChannelID << std::endl
+              << "      Hash: 0x" << std::hex << std::setw(8) << std::setfill('0') << pHash << std::endl
+              << " Signature: 0x" << std::hex << std::setw(8) << std::setfill('0') << pSignature << std::endl
+              << "  AuthInfo: 0x" << std::hex << std::setw(8) << std::setfill('0') << pAuthInfo << std::endl
+              << std::endl;
 
     BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
             msgBuffer[SHA_MSG_LENGTH_2003]{},
@@ -86,7 +93,7 @@ bool verifyServerKey(
 
     SHA1(msgBuffer, 11, msgDigest);
 
-    QWORD newHash = (BYDWORD(&msgDigest[4]) >> 2 & BITMASK(30)) << 32 | BYDWORD(msgDigest);
+    QWORD newHash = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
 
     BIGNUM *x = BN_new();
     BIGNUM *y = BN_new();
@@ -166,7 +173,7 @@ void generateServerKey(
     BIGNUM *y = BN_new();
     BIGNUM *e = BN_new();
 
-    DWORD pRaw[4]{};
+    QWORD pRaw[2]{};
     BOOL wrong = false;
     QWORD pSignature = 0;
 
@@ -175,8 +182,7 @@ void generateServerKey(
 
         wrong = false;
 
-        DWORD hash = 0;
-        QWORD h = 0;
+        QWORD sig = 0;
 
         // Generate a random number c consisting of 512 bits without any constraints.
         BN_rand(c, FIELD_BITS_2003, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
@@ -208,7 +214,7 @@ void generateServerKey(
         // Retrieve the message digest.
         SHA1(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
 
-        hash = BYDWORD(msgDigest) & BITMASK(31);
+        DWORD hash = BYDWORD(msgDigest) & BITMASK(31);
 
         // H = SHA-1(5D || OS Family || Hash || Prefix || 00 00)
         msgBuffer[0x00] = 0x5D;
@@ -226,9 +232,9 @@ void generateServerKey(
         SHA1(msgBuffer, 11, msgDigest);
 
         // First word.
-        h = (BYDWORD(&msgDigest[4]) >> 2 & BITMASK(30)) << 32 | BYDWORD(msgDigest);
+        sig = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
 
-        BN_lebin2bn((BYTE *)&h, sizeof(h), e);
+        BN_lebin2bn((BYTE *)&sig, sizeof(sig), e);
 
         /*
          * Signature * (Signature * G + H * K) = rG (mod p)
@@ -288,6 +294,12 @@ void generateServerKey(
         // Pack product key.
         packServer(pRaw, pChannelID, hash, pSignature, pAuthInfo);
 
+        std::cout << "Generation results:\n    Serial: 0x" << std::hex << std::setw(8) << std::setfill('0') << pChannelID << std::endl
+                  << "      Hash: 0x" << std::hex << std::setw(8) << std::setfill('0') << hash << std::endl
+                  << " Signature: 0x" << std::hex << std::setw(8) << std::setfill('0') << pSignature << std::endl
+                  << "  AuthInfo: 0x" << std::hex << std::setw(8) << std::setfill('0') << pAuthInfo << std::endl
+                  << std::endl;
+
         EC_POINT_free(r);
     } while (HIBYTES(pSignature, sizeof(DWORD)) >= 0x40000000);
 
@@ -340,7 +352,9 @@ int main()
 
 	RAND_bytes((BYTE *)&pAuthInfo, 4);
     pAuthInfo &= 0x3ff;
-	
+
+    printf("AuthInfo: %d\n", pAuthInfo);
+
 	do {
 		generateServerKey(eCurve, genPoint, genOrder, privateKey, pChannelID, pAuthInfo, pKey);
 	} while (!verifyServerKey(eCurve, genPoint, pubPoint, pKey));
