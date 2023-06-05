@@ -219,10 +219,10 @@ void generateXPKey(
         // Pack product key.
         packXP(pRaw, pSerial, pHash, pSignature);
 
-        std::cout << "    Serial: 0x" << std::hex << std::setw(8) << std::setfill('0') << pSerial << std::endl
-                  << "      Hash: 0x" << std::hex << std::setw(8) << std::setfill('0') << pHash << std::endl
-                  << " Signature: 0x" << std::hex << std::setw(8) << std::setfill('0') << pSignature << std::endl
-                                      << std::endl;
+        fmt::print("    Serial: 0x{:08x}\n", pSerial);
+        fmt::print("      Hash: 0x{:08x}\n", pHash);
+        fmt::print(" Signature: 0x{:08x}\n", pSignature);
+        fmt::print("\n");
 
         EC_POINT_free(r);
     } while (pRaw[1] > BITMASK(50));

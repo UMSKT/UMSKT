@@ -19,10 +19,12 @@
 #include <random>
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 #include <string>
 #include <vector>
 #include <unordered_map>
 
+#include <fmt/core.h>
 #include <nlohmann/json.hpp>
 
 #include <openssl/bn.h>
@@ -51,6 +53,9 @@
 
 #define BYDWORD(n)                     (DWORD)(*((n) + 0) | *((n) + 1) << 8 | *((n) + 2) << 16 | *((n) + 3) << 24)
 #define BITMASK(n)                     ((1ULL << (n)) - 1)
+
+using json = nlohmann::json;
+namespace fs = std::filesystem;
 
 // Confirmation ID generator constants
 #define SUCCESS 0
@@ -98,14 +103,17 @@ void print_product_id(DWORD *pid);
 struct Options {
     std::string binkid;
     int channelID;
+    std::string keysFilename;
     bool verbose;
     bool help;
     bool list;
     bool error;
 };
 
-Options parseCommandLine(int argc, char* argv[]);
-void showHelp(char *argv[]);
+int parseCommandLine(int argc, char* argv[], Options* output);
+int validateCommandLine(Options* options, char* argv[], json* output);
+void showHelp(char* argv[]);
+bool loadJSON(const fs::path& filename, json *output);
 
 // xp.cpp
 bool verifyXPKey(

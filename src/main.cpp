@@ -5,58 +5,17 @@
 #include "header.h"
 
 char pCharset[] = "BCDFGHJKMPQRTVWXY2346789";
-const std::string filename = "keys.json";
-
-using json = nlohmann::json;
 
 int main(int argc, char *argv[]) {
-    Options options = parseCommandLine(argc, argv);
+    Options options;
 
-    if (options.help || options.error) {
-        if (options.error) {
-            std::cout << "error parsing command line options" << std::endl;
-        }
-        showHelp(argv);
-        return 0;
+    if (!parseCommandLine(argc, argv, &options)) {
+        fmt::print("error parsing command line\n");
+        return !options.error ? 0 : 1;
     }
 
-    if (options.verbose) {
-        std::cout << "loading " << filename << std::endl;
-    }
-
-    std::ifstream f(filename);
-    json keys = json::parse(f);
-
-    if (options.verbose) {
-        std::cout << "loaded " << filename << " successfully" << std::endl;
-    }
-
-    if (options.list) {
-        for (auto el : keys["Products"].items()) {
-            int id;
-            sscanf((el.value()["BINK"][0]).get<std::string>().c_str(), "%x", &id);
-            if (id >= 0x50) {
-                continue;
-            }
-            std::cout << el.key() << ": " << el.value()["BINK"] << std::endl;
-        }
-
-        std::cout << std::endl << std::endl
-                  << "** Please note: any BINK ID other than 2E is considered experimental at this time **"
-                  << std::endl;
-        return 0;
-    }
-
-    int intBinkID;
-    sscanf(options.binkid.c_str(), "%x", &intBinkID);
-
-    if (intBinkID >= 0x50) {
-        std::cout << "ERROR: BINK2002 and beyond is not supported in this application at this time" << std::endl;
-        return 1;
-    }
-
-    if (options.channelID > 999) {
-        std::cout << "ERROR: refusing to create a key with a siteID greater than 999" << std::endl;
+    json keys;
+    if (validateCommandLine(&options, argv, &keys) < 0) {
         return 1;
     }
 
@@ -75,19 +34,18 @@ int main(int argc, char *argv[]) {
     BN_dec2bn(&privateKey, keys["BINK"][BINKID]["priv"].get<std::string>().c_str());
 
     if (options.verbose) {
-        std::cout << "-----------------------------------------------------------"    << std::endl
-                  << "Loaded the following curve constraints: BINK[" << BINKID << "]" << std::endl
-                  << "-----------------------------------------------------------"    << std::endl
-                  << " P: " << keys["BINK"][BINKID]["p"].get<std::string>()           << std::endl
-                  << " a: " << keys["BINK"][BINKID]["a"].get<std::string>()           << std::endl
-                  << " b: " << keys["BINK"][BINKID]["b"].get<std::string>()           << std::endl
-                  << "Gx: " << keys["BINK"][BINKID]["g"]["x"].get<std::string>()      << std::endl
-                  << "Gy: " << keys["BINK"][BINKID]["g"]["y"].get<std::string>()      << std::endl
-                  << "Kx: " << keys["BINK"][BINKID]["pub"]["x"].get<std::string>()    << std::endl
-                  << "Ky: " << keys["BINK"][BINKID]["pub"]["y"].get<std::string>()    << std::endl
-                  << " n: " << keys["BINK"][BINKID]["n"].get<std::string>()           << std::endl
-                  << " k: " << keys["BINK"][BINKID]["priv"].get<std::string>()        << std::endl
-                  << std::endl << std::endl;
+        fmt::print("----------------------------------------------------------- \n");
+        fmt::print("Loaded the following curve constraints: BINK[{}]\n", BINKID);
+        fmt::print("----------------------------------------------------------- \n");
+        fmt::print(" P: {}\n", keys["BINK"][BINKID]["p"].get<std::string>());
+        fmt::print(" a: {}\n", keys["BINK"][BINKID]["a"].get<std::string>());
+        fmt::print(" b: {}\n", keys["BINK"][BINKID]["b"].get<std::string>());
+        fmt::print("Gx: {}\n", keys["BINK"][BINKID]["g"]["x"].get<std::string>());
+        fmt::print("Gy: {}\n", keys["BINK"][BINKID]["g"]["y"].get<std::string>());
+        fmt::print("Kx: {}\n", keys["BINK"][BINKID]["pub"]["x"].get<std::string>());
+        fmt::print("Ky: {}\n", keys["BINK"][BINKID]["pub"]["y"].get<std::string>());
+        fmt::print(" n: {}\n", keys["BINK"][BINKID]["n"].get<std::string>());
+        fmt::print(" k: {}\n", keys["BINK"][BINKID]["priv"].get<std::string>());
     }
 
     EC_POINT *genPoint, *pubPoint;
@@ -118,7 +76,7 @@ int main(int argc, char *argv[]) {
     nRaw += (oRaw &= 0xF423F); // ensure our serial is less than 999999
 
     if (options.verbose) {
-        std::cout << "> PID: " << std::setw(9) << std::setfill('0') << nRaw << std::endl;
+        fmt::print("> PID: {:09d}\n", nRaw);
     }
 
     // generate a key
@@ -129,13 +87,13 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < total; i++) {
         generateXPKey(eCurve, genPoint, genOrder, privateKey, nRaw, pKey);
         print_product_key(pKey);
-        std::cout << std::endl << std::endl;
+        fmt::print("\n\n");
 
         // verify the key
         count += verifyXPKey(eCurve, genPoint, pubPoint, pKey);
     }
 
-    std::cout << "Success count: " << std::dec << count << "/" << total << std::endl;
+    fmt::print("Success count: {}/{}\n", count, total);
 
     return 0;
 }

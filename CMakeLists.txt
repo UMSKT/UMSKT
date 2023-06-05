@@ -19,18 +19,20 @@ CPMAddPackage(
         VERSION 3.11.2
 )
 
+CPMAddPackage("gh:fmtlib/fmt#7.1.3")
+
 CONFIGURE_FILE(keys.json keys.json COPYONLY)
 
 #SET(BUILD_SHARED_LIBS OFF)
 #SET(CMAKE_EXE_LINKER_FLAGS "-static")
 ADD_EXECUTABLE(xpkey src/main.cpp src/xp.cpp src/key.cpp src/util.cpp src/cli.cpp)
 TARGET_INCLUDE_DIRECTORIES(xpkey PUBLIC crypto)
-TARGET_LINK_LIBRARIES(xpkey PUBLIC OpenSSL::Crypto nlohmann_json::nlohmann_json)
+TARGET_LINK_LIBRARIES(xpkey PUBLIC OpenSSL::Crypto nlohmann_json::nlohmann_json fmt)
 
 ADD_EXECUTABLE(srv2003key src/server.cpp src/key.cpp src/util.cpp src/cli.cpp)
 TARGET_INCLUDE_DIRECTORIES(srv2003key PUBLIC crypto)
-TARGET_LINK_LIBRARIES(srv2003key PUBLIC OpenSSL::Crypto nlohmann_json::nlohmann_json)
+TARGET_LINK_LIBRARIES(srv2003key PUBLIC OpenSSL::Crypto nlohmann_json::nlohmann_json fmt)
 
 ADD_EXECUTABLE(xpactivate src/confid.cpp)
 TARGET_INCLUDE_DIRECTORIES(xpactivate PUBLIC crypto)
-TARGET_LINK_LIBRARIES(xpactivate PUBLIC OpenSSL::Crypto nlohmann_json::nlohmann_json)
+TARGET_LINK_LIBRARIES(xpactivate PUBLIC OpenSSL::Crypto nlohmann_json::nlohmann_json fmt)
