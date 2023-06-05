@@ -5,6 +5,10 @@
 #include "header.h"
 
 char pCharset[] = "BCDFGHJKMPQRTVWXY2346789";
+const std::string filename = "keys.json";
+
+using json = nlohmann::json;
+
 
 void unpackServer(
         DWORD (&pRaw)[4],
@@ -316,39 +320,34 @@ void generateServerKey(
 
 int main()
 {
-	BIGNUM *a, *b, *p, *gx, *gy, *pubx, *puby, *n, *priv;
-	BN_CTX *ctx = BN_CTX_new();
-	
-	a = BN_new();
-	b = BN_new();
-	p = BN_new();
-	gx = BN_new();
-	gy = BN_new();
-	pubx = BN_new();
-	puby = BN_new();
-	n = BN_new();
-	priv = BN_new();
+    const char* BINKID = "5A";
 
-	/* Windows Sever 2003 VLK */
-	BN_set_word(a, 1);
-	BN_set_word(b, 0);
-	BN_hex2bn(&p,    "C9AE7AED19F6A7E100AADE98134111AD8118E59B8264734327940064BC675A0C682E19C89695FBFA3A4653E47D47FD7592258C7E3C3C61BBEA07FE5A7E842379");
-	BN_hex2bn(&gx,   "85ACEC9F9F9B456A78E43C3637DC88D21F977A9EC15E5225BD5060CE5B892F24FEDEE574BF5801F06BC232EEF2161074496613698D88FAC4B397CE3B475406A7");
-	BN_hex2bn(&gy,   "66B7D1983F5D4FE43E8B4F1E28685DE0E22BBE6576A1A6B86C67533BF72FD3D082DBA281A556A16E593DB522942C8DD7120BA50C9413DF944E7258BDDF30B3C4");
-	BN_hex2bn(&pubx, "90BF6BD980C536A8DB93B52AA9AEBA640BABF1D31BEC7AA345BB7510194A9B07379F552DA7B4A3EF81A9B87E0B85B5118E1E20A098641EE4CCF2045558C98C0E");
-	BN_hex2bn(&puby, "6B87D1E658D03868362945CDD582E2CF33EE4BA06369E0EFE9E4851F6DCBEC7F15081E250D171EA0CC4CB06435BCFCFEA8F438C9766743A06CBD06E7EFB4C3AE");
-	BN_hex2bn(&n,    "4CC5C56529F0237D"); // from mskey 4in1
-	BN_hex2bn(&priv, "2606120F59C05118");
-	
-	
-	EC_GROUP *ec = EC_GROUP_new_curve_GFp(p, a, b, ctx);
-	EC_POINT *g = EC_POINT_new(ec);
-	EC_POINT_set_affine_coordinates_GFp(ec, g, gx, gy, ctx);
-	EC_POINT *pub = EC_POINT_new(ec);
-	EC_POINT_set_affine_coordinates_GFp(ec, pub, pubx, puby, ctx);
-	
-	assert(EC_POINT_is_on_curve(ec, g, ctx) == 1);
-	assert(EC_POINT_is_on_curve(ec, pub, ctx) == 1);
+    // We cannot produce a valid key without knowing the private key k. The reason for this is that
+    // we need the result of the function K(x; y) = kG(x; y).
+    BIGNUM *privateKey = BN_new();
+
+    // We can, however, validate any given key using the available public key: {p, a, b, G, K}.
+    // genOrder the order of the generator G, a value we have to reverse -> Schoof's Algorithm.
+    BIGNUM *genOrder = BN_new();
+
+    std::ifstream f(filename);
+    json keys = json::parse(f);
+
+    EC_POINT *genPoint, *pubPoint;
+    EC_GROUP *eCurve = initializeEllipticCurve(
+            keys["BINK"][BINKID]["p"].get<std::string>(),
+            keys["BINK"][BINKID]["a"].get<std::string>(),
+            keys["BINK"][BINKID]["b"].get<std::string>(),
+            keys["BINK"][BINKID]["g"]["x"].get<std::string>(),
+            keys["BINK"][BINKID]["g"]["y"].get<std::string>(),
+            keys["BINK"][BINKID]["pub"]["x"].get<std::string>(),
+            keys["BINK"][BINKID]["pub"]["y"].get<std::string>(),
+            genPoint,
+            pubPoint
+    );
+
+    BN_dec2bn(&genOrder, keys["BINK"][BINKID]["n"].get<std::string>().c_str());
+    BN_dec2bn(&privateKey, keys["BINK"][BINKID]["priv"].get<std::string>().c_str());
 
     char pKey[25];
     DWORD pChannelID = 640 << 1, pAuthInfo;
@@ -357,13 +356,11 @@ int main()
     pAuthInfo &= 0x3ff;
 	
 	do {
-		generateServerKey(ec, g, n, priv, pChannelID, pAuthInfo, pKey);
-	} while (!verifyServerKey(ec, g, pub, pKey));
+		generateServerKey(eCurve, genPoint, genOrder, privateKey, pChannelID, pAuthInfo, pKey);
+	} while (!verifyServerKey(eCurve, genPoint, pubPoint, pKey));
 	
 	print_product_key(pKey);
     std::cout << std::endl << std::endl;
 
-	BN_CTX_free(ctx);
-	
 	return 0;
 }
