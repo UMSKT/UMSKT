@@ -45,7 +45,7 @@ bool verifyXPKey(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
-        char (&cdKey)[25]
+        char (&pKey)[25]
 ) {
     BN_CTX *numContext = BN_CTX_new();
 
@@ -56,7 +56,7 @@ bool verifyXPKey(
           pHash = 0;
 
     // Convert Base24 CD-key to bytecode.
-    unbase24((BYTE *)pRaw, cdKey);
+    unbase24((BYTE *)pRaw, pKey);
 
     // Extract RPK, hash and signature from bytecode.
     unpackXP(pRaw, pSerial, pHash, pSignature);

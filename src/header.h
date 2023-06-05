@@ -109,7 +109,7 @@ bool verifyXPKey(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
-        char     (&cdKey)[25]
+        char     (&pKey)[25]
 );
 
 void generateXPKey(

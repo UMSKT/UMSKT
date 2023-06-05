@@ -43,7 +43,12 @@ void packServer(
 }
 
 
-bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey, char *cdKey) {
+bool verifyServerKey(
+        EC_GROUP *eCurve,
+        EC_POINT *basePoint,
+        EC_POINT *publicKey,
+        char (&cdKey)[25]
+) {
     BN_CTX *context = BN_CTX_new();
 
     // Convert Base24 CD-key to bytecode.
@@ -87,11 +92,11 @@ bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey,
     EC_POINT *u = EC_POINT_new(eCurve);
     EC_POINT *v = EC_POINT_new(eCurve);
 
-    // EC_POINT_mul calculates r = generator * n + q * m.
-    // v = s * (s * generator + e * publicKey)
+    // EC_POINT_mul calculates r = basePoint * n + q * m.
+    // v = s * (s * basePoint + e * publicKey)
 
-    // u = generator * s
-    EC_POINT_mul(eCurve, u, nullptr, generator, s, context);
+    // u = basePoint * s
+    EC_POINT_mul(eCurve, u, nullptr, basePoint, s, context);
 
     // v = publicKey * e
     EC_POINT_mul(eCurve, v, nullptr, publicKey, e, context);
@@ -140,7 +145,15 @@ bool verifyServerKey(EC_GROUP *eCurve, EC_POINT *generator, EC_POINT *publicKey,
     return compHash == pHash;
 }
 
-void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM *order, BIGNUM *privateKey, DWORD *osFamily, DWORD *prefix) {
+void generateServerKey(
+        EC_GROUP *eCurve,
+        EC_POINT *basePoint,
+        BIGNUM   *genOrder,
+        BIGNUM   *privateKey,
+        DWORD    pChannelID,
+        DWORD    pAuthInfo,
+        char     (&pKey)[25]
+) {
     EC_POINT *r = EC_POINT_new(eCurve);
     BN_CTX *ctx = BN_CTX_new();
 
@@ -162,8 +175,8 @@ void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM
         // Generate a random number c consisting of 512 bits without any constraints.
         BN_rand(c, FIELD_BITS_2003, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
 
-        // r = generator * c
-        EC_POINT_mul(eCurve, r, nullptr, generator, c, ctx);
+        // r = basePoint * c
+        EC_POINT_mul(eCurve, r, nullptr, basePoint, c, ctx);
 
         // x = r.x; y = r.y;
         EC_POINT_get_affine_coordinates(eCurve, r, x, y, ctx);
@@ -176,8 +189,8 @@ void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM
 
         buf[0] = 0x79;
 
-        buf[1] = (*osFamily & 0xff);
-        buf[2] = (*osFamily & 0xff00) >> 8;
+        buf[1] = (pChannelID & 0xff);
+        buf[2] = (pChannelID & 0xff00) >> 8;
 
         SHA1_Update(&hContext, buf, 3);
 
@@ -201,16 +214,16 @@ void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM
         SHA1_Init(&hContext);
         buf[0] = 0x5D;
 
-        buf[1] = (*osFamily & 0xff);
-        buf[2] = (*osFamily & 0xff00) >> 8;
+        buf[1] = (pChannelID & 0xff);
+        buf[2] = (pChannelID & 0xff00) >> 8;
 
         buf[3] = (hash & 0xff);
         buf[4] = (hash & 0xff00) >> 8;
         buf[5] = (hash & 0xff0000) >> 16;
         buf[6] = (hash & 0xff000000) >> 24;
 
-        buf[7] = prefix[0] & 0xff;
-        buf[8] = (prefix[0] & 0xff00) >> 8;
+        buf[7] = (pAuthInfo & 0xff);
+        buf[8] = (pAuthInfo & 0xff00) >> 8;
 
         buf[9] = 0x00;
         buf[10] = 0x00;
@@ -236,7 +249,7 @@ void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM
          * Signature * (Signature * G + H * k * G) = rG (mod p)
          * Signature^2 * G + Signature * HkG = rG (mod p)
          * G(Signature^2 + Signature * HkG) = G (mod p) * r
-         * ↓ G^(-1)(G (mod p)) = (mod n), n = order of G ↓
+         * ↓ G^(-1)(G (mod p)) = (mod n), n = genOrder of G ↓
          *
          * Signature^2 + Hk * Signature = r (mod n)
          * Signature = -(b +- sqrt(D)) / 2a → Signature = (-Hk +- sqrt((Hk)^2 + 4r)) / 2
@@ -246,20 +259,20 @@ void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM
          * S = s
          * H = b
          * k = privateKey
-         * n = order
+         * n = genOrder
          * r = c
          *
-         * s = ( ( -b * privateKey +- sqrt( (b * privateKey)^2 + 4c ) ) / 2 ) % order
+         * s = ( ( -b * privateKey +- sqrt( (b * privateKey)^2 + 4c ) ) / 2 ) % genOrder
          */
 
-        // b = (b * privateKey) % order
-        BN_mod_mul(b, b, privateKey, order, ctx);
+        // b = (b * privateKey) % genOrder
+        BN_mod_mul(b, b, privateKey, genOrder, ctx);
 
         // s = b
         BN_copy(s, b);
 
-        // s = (s % order)^2
-        BN_mod_sqr(s, s, order, ctx);
+        // s = (s % genOrder)^2
+        BN_mod_sqr(s, s, genOrder, ctx);
 
         // c <<= 2 (c = 4c)
         BN_lshift(c, c, 2);
@@ -267,15 +280,15 @@ void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM
         // s = s + c
         BN_add(s, s, c);
 
-        // s^2 = s % order (order must be prime)
-        BN_mod_sqrt(s, s, order, ctx);
+        // s^2 = s % genOrder (genOrder must be prime)
+        BN_mod_sqrt(s, s, genOrder, ctx);
 
         // s = s - b
-        BN_mod_sub(s, s, b, order, ctx);
+        BN_mod_sub(s, s, b, genOrder, ctx);
 
-        // if s is odd, s = s + order
+        // if s is odd, s = s + genOrder
         if (BN_is_odd(s)) {
-            BN_add(s, s, order);
+            BN_add(s, s, genOrder);
         }
 
         // s >>= 1 (s = s / 2)
@@ -286,7 +299,7 @@ void generateServerKey(char *pKey, EC_GROUP *eCurve, EC_POINT *generator, BIGNUM
         endian((BYTE *)&pSignature, BN_num_bytes(s));
 
         // Pack product key.
-        packServer(bKey, *osFamily, hash, pSignature, *prefix);
+        packServer(bKey, pChannelID, hash, pSignature, pAuthInfo);
 
         BN_free(c);
         BN_free(s);
@@ -337,18 +350,17 @@ int main()
 	assert(EC_POINT_is_on_curve(ec, g, ctx) == 1);
 	assert(EC_POINT_is_on_curve(ec, pub, ctx) == 1);
 
-    char pkey[25];
-    DWORD osfamily[1], prefix[1];
-	
-	osfamily[0] = 1280;
-	RAND_bytes((BYTE *)prefix, 4);
-	prefix[0] &= 0x3ff;
+    char pKey[25];
+    DWORD pChannelID = 640 << 1, pAuthInfo;
+
+	RAND_bytes((BYTE *)&pAuthInfo, 4);
+    pAuthInfo &= 0x3ff;
 	
 	do {
-		generateServerKey(pkey, ec, g, n, priv, osfamily, prefix);
-	} while (!verifyServerKey(ec, g, pub, pkey));
+		generateServerKey(ec, g, n, priv, pChannelID, pAuthInfo, pKey);
+	} while (!verifyServerKey(ec, g, pub, pKey));
 	
-	print_product_key(pkey);
+	print_product_key(pKey);
     std::cout << std::endl << std::endl;
 
 	BN_CTX_free(ctx);
