@@ -86,7 +86,10 @@ bool verifyServerKey(
 
     SHA1(msgBuffer, 11, msgDigest);
 
-    QWORD newHash = (BYDWORD(&msgDigest[4]) >> 2 & BITMASK(30)) << 32 | BYDWORD(msgDigest);
+    DWORD newHash[2]{};
+
+    newHash[0] = BYDWORD(msgDigest);
+    newHash[1] = BYDWORD(&msgDigest[4]) >> 2 & BITMASK(30);
 
     BIGNUM *x = BN_new();
     BIGNUM *y = BN_new();
@@ -162,10 +165,12 @@ void generateServerKey(
     BN_CTX *ctx = BN_CTX_new();
 
     DWORD bKey[4]{};
-
+    BOOL wrong = false;
     QWORD pSignature = 0;
 
     do {
+        wrong = false;
+
         BIGNUM *c = BN_new();
         BIGNUM *s = BN_new();
         BIGNUM *x = BN_new();
@@ -285,7 +290,7 @@ void generateServerKey(
         BN_add(s, s, c);
 
         // s^2 = s % genOrder (genOrder must be prime)
-        BN_mod_sqrt(s, s, genOrder, ctx);
+        if (BN_mod_sqrt(s, s, genOrder, ctx) == nullptr) wrong = true;
 
         // s = s - b
         BN_mod_sub(s, s, b, genOrder, ctx);
@@ -313,7 +318,7 @@ void generateServerKey(
 
     base24(pKey, (BYTE *)bKey);
 
-    std::cout << "attempt pass" << std::endl;
+    std::cout << "attempt pass " << pKey << " key is " << (wrong ? "INVALID" : "VALID") << std::endl;
 
     BN_CTX_free(ctx);
     EC_POINT_free(r);
