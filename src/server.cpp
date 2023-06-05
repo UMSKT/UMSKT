@@ -158,35 +158,34 @@ void generateServerKey(
         DWORD    pAuthInfo,
         char     (&pKey)[25]
 ) {
-    EC_POINT *r = EC_POINT_new(eCurve);
-    BN_CTX *ctx = BN_CTX_new();
-
-    DWORD bKey[4]{};
-    BOOL wrong = false;
-    QWORD pSignature = 0;
+    BN_CTX *numContext = BN_CTX_new();
 
     BIGNUM *c = BN_new();
     BIGNUM *s = BN_new();
     BIGNUM *x = BN_new();
     BIGNUM *y = BN_new();
-    BIGNUM *b = BN_new();
+    BIGNUM *e = BN_new();
+
+    DWORD pRaw[4]{};
+    BOOL wrong = false;
+    QWORD pSignature = 0;
 
     do {
+        EC_POINT *r = EC_POINT_new(eCurve);
+
         wrong = false;
 
         DWORD hash = 0;
         QWORD h = 0;
 
-        memset(bKey, 0, 4);
-
         // Generate a random number c consisting of 512 bits without any constraints.
         BN_rand(c, FIELD_BITS_2003, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
 
         // r = basePoint * c
-        EC_POINT_mul(eCurve, r, nullptr, basePoint, c, ctx);
+        EC_POINT_mul(eCurve, r, nullptr, basePoint, c, numContext);
 
         // x = r.x; y = r.y;
-        EC_POINT_get_affine_coordinates(eCurve, r, x, y, ctx);
+        EC_POINT_get_affine_coordinates(eCurve, r, x, y, numContext);
 
         BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
                 msgBuffer[SHA_MSG_LENGTH_2003]{},
@@ -229,7 +228,7 @@ void generateServerKey(
         // First word.
         h = (BYDWORD(&msgDigest[4]) >> 2 & BITMASK(30)) << 32 | BYDWORD(msgDigest);
 
-        BN_lebin2bn((BYTE *)&h, sizeof(h), b);
+        BN_lebin2bn((BYTE *)&h, sizeof(h), e);
 
         /*
          * Signature * (Signature * G + H * K) = rG (mod p)
@@ -241,27 +240,27 @@ void generateServerKey(
          * ↓ G^(-1)(G (mod p)) = (mod n), n = genOrder of G ↓
          *
          * Signature^2 + Hk * Signature = r (mod n)
-         * Signature = -(b +- sqrt(D)) / 2a → Signature = (-Hk +- sqrt((Hk)^2 + 4r)) / 2
+         * Signature = -(e +- sqrt(D)) / 2a → Signature = (-Hk +- sqrt((Hk)^2 + 4r)) / 2
          *
          * S = (-Hk +- sqrt((Hk)^2 + 4r)) (mod n) / 2
          *
          * S = s
-         * H = b
+         * H = e
          * k = privateKey
          * n = genOrder
          * r = c
          *
-         * s = ( ( -b * privateKey +- sqrt( (b * privateKey)^2 + 4c ) ) / 2 ) % genOrder
+         * s = ( ( -e * privateKey +- sqrt( (e * privateKey)^2 + 4c ) ) / 2 ) % genOrder
          */
 
-        // b = (b * privateKey) % genOrder
-        BN_mod_mul(b, b, privateKey, genOrder, ctx);
+        // e = (e * privateKey) % genOrder
+        BN_mod_mul(e, e, privateKey, genOrder, numContext);
 
-        // s = b
-        BN_copy(s, b);
+        // s = e
+        BN_copy(s, e);
 
         // s = (s % genOrder)^2
-        BN_mod_sqr(s, s, genOrder, ctx);
+        BN_mod_sqr(s, s, genOrder, numContext);
 
         // c <<= 2 (c = 4c)
         BN_lshift(c, c, 2);
@@ -270,10 +269,10 @@ void generateServerKey(
         BN_add(s, s, c);
 
         // s^2 = s % genOrder (genOrder must be prime)
-        if (BN_mod_sqrt(s, s, genOrder, ctx) == nullptr) wrong = true;
+        if (BN_mod_sqrt(s, s, genOrder, numContext) == nullptr) wrong = true;
 
-        // s = s - b
-        BN_mod_sub(s, s, b, genOrder, ctx);
+        // s = s - e
+        BN_mod_sub(s, s, e, genOrder, numContext);
 
         // if s is odd, s = s + genOrder
         if (BN_is_odd(s)) {
@@ -287,10 +286,12 @@ void generateServerKey(
         BN_bn2lebinpad(s, (BYTE *)&pSignature, BN_num_bytes(s));
 
         // Pack product key.
-        packServer(bKey, pChannelID, hash, pSignature, pAuthInfo);
+        packServer(pRaw, pChannelID, hash, pSignature, pAuthInfo);
+
+        EC_POINT_free(r);
     } while (HIBYTES(pSignature, sizeof(DWORD)) >= 0x40000000);
 
-    base24(pKey, (BYTE *)bKey);
+    base24(pKey, (BYTE *)pRaw);
 
     std::cout << "attempt pass " << pKey << " key is " << (wrong ? "INVALID" : "VALID") << std::endl;
 
@@ -298,10 +299,9 @@ void generateServerKey(
     BN_free(s);
     BN_free(x);
     BN_free(y);
-    BN_free(b);
+    BN_free(e);
 
-    BN_CTX_free(ctx);
-    EC_POINT_free(r);
+    BN_CTX_free(numContext);
 }
 
 int main()
@@ -335,7 +335,7 @@ int main()
     BN_dec2bn(&genOrder, keys["BINK"][BINKID]["n"].get<std::string>().c_str());
     BN_dec2bn(&privateKey, keys["BINK"][BINKID]["priv"].get<std::string>().c_str());
 
-    char pKey[25];
+    char pKey[25]{};
     DWORD pChannelID = 640 << 1, pAuthInfo;
 
 	RAND_bytes((BYTE *)&pAuthInfo, 4);
