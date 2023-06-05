@@ -299,8 +299,7 @@ void generateServerKey(
         BN_rshift1(s, s);
 
         // Convert s from BigNum back to bytecode and reverse the endianness.
-        BN_bn2bin(s, (BYTE *)&pSignature);
-        endian((BYTE *)&pSignature, BN_num_bytes(s));
+        BN_bn2lebinpad(s, (BYTE *)&pSignature, BN_num_bytes(s));
 
         // Pack product key.
         packServer(bKey, pChannelID, hash, pSignature, pAuthInfo);
@@ -310,9 +309,11 @@ void generateServerKey(
         BN_free(x);
         BN_free(y);
         BN_free(b);
-    } while ((pSignature >> 32) >= 0x40000000);
+    } while (HIBYTES(pSignature, sizeof(DWORD)) >= 0x40000000);
 
     base24(pKey, (BYTE *)bKey);
+
+    std::cout << "attempt pass" << std::endl;
 
     BN_CTX_free(ctx);
     EC_POINT_free(r);
