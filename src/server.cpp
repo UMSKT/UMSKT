@@ -86,12 +86,12 @@ bool verifyServerKey(
 
     SHA1(msgBuffer, 11, msgDigest);
 
-    QWORD newHash2 = (QWORD)(BYDWORD(&msgDigest[4]) >> 2 & BITMASK(30)) << 32 | BYDWORD(msgDigest);
+    QWORD newHash = (BYDWORD(&msgDigest[4]) >> 2 & BITMASK(30)) << 32 | BYDWORD(msgDigest);
 
     BIGNUM *x = BN_new();
     BIGNUM *y = BN_new();
     BIGNUM *s = BN_lebin2bn((BYTE *)&pSignature, sizeof(pSignature), nullptr);
-    BIGNUM *e = BN_lebin2bn((BYTE *)&newHash2, 8, nullptr);
+    BIGNUM *e = BN_lebin2bn((BYTE *)&newHash, sizeof(newHash), nullptr);
 
     EC_POINT *u = EC_POINT_new(eCurve);
     EC_POINT *v = EC_POINT_new(eCurve);
@@ -165,16 +165,17 @@ void generateServerKey(
     BOOL wrong = false;
     QWORD pSignature = 0;
 
+    BIGNUM *c = BN_new();
+    BIGNUM *s = BN_new();
+    BIGNUM *x = BN_new();
+    BIGNUM *y = BN_new();
+    BIGNUM *b = BN_new();
+
     do {
         wrong = false;
 
-        BIGNUM *c = BN_new();
-        BIGNUM *s = BN_new();
-        BIGNUM *x = BN_new();
-        BIGNUM *y = BN_new();
-        BIGNUM *b = BN_new();
-
-        DWORD hash = 0, h[2]{};
+        DWORD hash = 0;
+        QWORD h = 0;
 
         memset(bKey, 0, 4);
 
@@ -187,66 +188,48 @@ void generateServerKey(
         // x = r.x; y = r.y;
         EC_POINT_get_affine_coordinates(eCurve, r, x, y, ctx);
 
-        SHA_CTX hContext;
-        BYTE md[SHA_DIGEST_LENGTH]{}, buf[FIELD_BYTES_2003]{};
+        BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
+                msgBuffer[SHA_MSG_LENGTH_2003]{},
+                xBin[FIELD_BYTES_2003]{},
+                yBin[FIELD_BYTES_2003]{};
 
+        // Convert resulting point coordinates to bytes.
+        BN_bn2lebin(x, xBin, FIELD_BYTES_2003);
+        BN_bn2lebin(y, yBin, FIELD_BYTES_2003);
+
+        // Assemble the SHA message.
         // Hash = SHA-1(79 || OS Family || r.x || r.y)
-        SHA1_Init(&hContext);
+        msgBuffer[0x00] = 0x79;
+        msgBuffer[0x01] = (pChannelID & 0x00FF);
+        msgBuffer[0x02] = (pChannelID & 0xFF00) >> 8;
 
-        buf[0] = 0x79;
+        memcpy((void *)&msgBuffer[3], (void *)xBin, FIELD_BYTES_2003);
+        memcpy((void *)&msgBuffer[3 + FIELD_BYTES_2003], (void *)yBin, FIELD_BYTES_2003);
 
-        buf[1] = (pChannelID & 0xff);
-        buf[2] = (pChannelID & 0xff00) >> 8;
+        // Retrieve the message digest.
+        SHA1(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
 
-        SHA1_Update(&hContext, buf, 3);
-
-        memset(buf, 0, FIELD_BYTES_2003);
-
-        BN_bn2bin(x, buf);
-        endian((BYTE *)buf, FIELD_BYTES_2003);
-        SHA1_Update(&hContext, buf, FIELD_BYTES_2003);
-
-        memset(buf, 0, FIELD_BYTES_2003);
-
-        BN_bn2bin(y, buf);
-        endian((BYTE *)buf, FIELD_BYTES_2003);
-
-        SHA1_Update(&hContext, buf, FIELD_BYTES_2003);
-        SHA1_Final(md, &hContext);
-
-        hash = (md[0] | (md[1] << 8) | (md[2] << 16) | (md[3] << 24)) & 0x7fffffff;
+        hash = BYDWORD(msgDigest) & BITMASK(31);
 
         // H = SHA-1(5D || OS Family || Hash || Prefix || 00 00)
-        SHA1_Init(&hContext);
-        buf[0] = 0x5D;
+        msgBuffer[0x00] = 0x5D;
+        msgBuffer[0x01] = (pChannelID & 0x00FF);
+        msgBuffer[0x02] = (pChannelID & 0xFF00) >> 8;
+        msgBuffer[0x03] = (hash & 0x000000FF);
+        msgBuffer[0x04] = (hash & 0x0000FF00) >> 8;
+        msgBuffer[0x05] = (hash & 0x00FF0000) >> 16;
+        msgBuffer[0x06] = (hash & 0xFF000000) >> 24;
+        msgBuffer[0x07] = (pAuthInfo & 0x00FF);
+        msgBuffer[0x08] = (pAuthInfo & 0xFF00) >> 8;
+        msgBuffer[0x09] = 0x00;
+        msgBuffer[0x0A] = 0x00;
 
-        buf[1] = (pChannelID & 0xff);
-        buf[2] = (pChannelID & 0xff00) >> 8;
-
-        buf[3] = (hash & 0xff);
-        buf[4] = (hash & 0xff00) >> 8;
-        buf[5] = (hash & 0xff0000) >> 16;
-        buf[6] = (hash & 0xff000000) >> 24;
-
-        buf[7] = (pAuthInfo & 0xff);
-        buf[8] = (pAuthInfo & 0xff00) >> 8;
-
-        buf[9] = 0x00;
-        buf[10] = 0x00;
-
-        // Input length is 11 BYTEs.
-        SHA1_Update(&hContext, buf, 11);
-        SHA1_Final(md, &hContext);
+        SHA1(msgBuffer, 11, msgDigest);
 
         // First word.
-        h[0] = md[0] | (md[1] << 8) | (md[2] << 16) | (md[3] << 24);
+        h = (BYDWORD(&msgDigest[4]) >> 2 & BITMASK(30)) << 32 | BYDWORD(msgDigest);
 
-        // Second word, right shift 2 bits.
-        h[1] = (md[4] | (md[5] << 8) | (md[6] << 16) | (md[7] << 24)) >> 2;
-        h[1] &= 0x3FFFFFFF;
-
-        endian((BYTE *)h, 8);
-        BN_bin2bn((BYTE *)h, 8, b);
+        BN_lebin2bn((BYTE *)&h, sizeof(h), b);
 
         /*
          * Signature * (Signature * G + H * K) = rG (mod p)
@@ -305,17 +288,17 @@ void generateServerKey(
 
         // Pack product key.
         packServer(bKey, pChannelID, hash, pSignature, pAuthInfo);
-
-        BN_free(c);
-        BN_free(s);
-        BN_free(x);
-        BN_free(y);
-        BN_free(b);
     } while (HIBYTES(pSignature, sizeof(DWORD)) >= 0x40000000);
 
     base24(pKey, (BYTE *)bKey);
 
     std::cout << "attempt pass " << pKey << " key is " << (wrong ? "INVALID" : "VALID") << std::endl;
+
+    BN_free(c);
+    BN_free(s);
+    BN_free(x);
+    BN_free(y);
+    BN_free(b);
 
     BN_CTX_free(ctx);
     EC_POINT_free(r);
