@@ -60,11 +60,11 @@
     "Plus! Digital Media Edition for Windows XP": {
       "BINK": ["52", "53"]
     },
-    "Windows Server 2003": {
-      "BINK": ["54", "55", "58", "59"]
-    },
     "Windows Longhorn (6.0.4033.0)": {
       "BINK": ["54", "55"]
+    },
+    "Windows Server 2003": {
+      "BINK": ["54", "55", "58", "59"]
     },
     "Windows Server 2003 VLK": {
       "BINK": ["5A", "5B"]
