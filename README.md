@@ -1,7 +1,7 @@
 # **Windows XP / Server 2003 Keygen**
 
 [![Zulip chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://umskt.zulipchat.com) 
-[![libera.chat - #mspid](https://img.shields.io/badge/libera.chat-%23mspid-brightgreen)](ircs://irc.libera.chat:6697/#mspid)
+[![libera.chat - #mspid](https://img.shields.io/badge/libera.chat-%23mspid-brightgreen)](https://web.libera.chat/gamja/?nick=Guest?#mspid)
 
 ### **Plan of Action / ToDo List**
 
