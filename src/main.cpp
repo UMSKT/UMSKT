@@ -10,14 +10,16 @@ int main(int argc, char *argv[]) {
     Options options;
 
     if (!parseCommandLine(argc, argv, &options)) {
-        fmt::print("error parsing command line\n");
+        fmt::print("error parsing command line options\n");
         showHelp(argv);
         return !options.error ? 0 : 1;
     }
 
     json keys;
-    if (validateCommandLine(&options, argv, &keys) < 0) {
-        return 1;
+    int status = validateCommandLine(&options, argv, &keys);
+
+    if (status > 0) {
+        return status;
     }
 
     const char* BINKID = options.binkid.c_str();

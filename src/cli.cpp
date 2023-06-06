@@ -6,12 +6,17 @@
 
 bool loadJSON(const fs::path& filename, json *output) {
     if (!fs::exists(filename)) {
-        fmt::print("{} does not exist", filename.string());
+        fmt::print("ERROR: File {} does not exist\n", filename.string());
         return false;
     }
 
     std::ifstream f(filename);
-    *output = json::parse(f);
+    *output = json::parse(f, nullptr, false, false);
+
+    if (output->is_discarded()) {
+        fmt::print("ERROR: Unable to parse keys from {}\n", filename.string());
+        return false;
+    }
 
     return true;
 }
@@ -53,6 +58,11 @@ int parseCommandLine(int argc, char* argv[], Options* options) {
         } else if (arg == "-h" || arg == "--help") {
             options->help = true;
         } else if (arg == "-n" || arg == "--number") {
+            if (i == argc - 1) {
+                options->error = true;
+                break;
+            }
+
             int nKeys;
             if (!sscanf(argv[i+1], "%d", &nKeys)) {
                 options->error = true;
@@ -61,11 +71,21 @@ int parseCommandLine(int argc, char* argv[], Options* options) {
             }
             i++;
         } else if (arg == "-b" || arg == "--bink") {
+            if (i == argc - 1) {
+                options->error = true;
+                break;
+            }
+
             options->binkid = argv[i+1];
             i++;
         } else if (arg == "-l" || arg == "--list") {
             options->list = true;
         } else if (arg == "-c" || arg == "--channelid") {
+            if (i == argc - 1) {
+                options->error = true;
+                break;
+            }
+
             int siteID;
             if (!sscanf(argv[i+1], "%d", &siteID)) {
                 options->error = true;
@@ -74,9 +94,19 @@ int parseCommandLine(int argc, char* argv[], Options* options) {
             }
             i++;
         } else if (arg == "-f" || arg == "--file") {
+            if (i == argc - 1) {
+                options->error = true;
+                break;
+            }
+
             options->keysFilename = argv[i+1];
             i++;
         } else if (arg == "-i" || arg == "--instid") {
+            if (i == argc - 1) {
+                options->error = true;
+                break;
+            }
+
             options->instid = argv[i+1];
             i++;
         } else {
@@ -88,16 +118,8 @@ int parseCommandLine(int argc, char* argv[], Options* options) {
 }
 
 int validateCommandLine(Options* options, char *argv[], json *keys) {
-    if (options->help || options->error) {
-        if (options->error) {
-            fmt::print("error parsing command line options\n");
-        }
-        showHelp(argv);
-        return 1;
-    }
-
     if (options->verbose) {
-        fmt::print("loading {}\n", options->keysFilename);
+        fmt::print("Loading keys file {}\n", options->keysFilename);
     }
 
     if (!loadJSON(options->keysFilename, keys)) {
@@ -105,7 +127,15 @@ int validateCommandLine(Options* options, char *argv[], json *keys) {
     }
 
     if (options->verbose) {
-        fmt::print("loaded {} successfully\n",options->keysFilename);
+        fmt::print("Loaded keys from {} successfully\n",options->keysFilename);
+    }
+
+    if (options->help || options->error) {
+        if (options->error) {
+            fmt::print("error parsing command line options\n");
+        }
+        showHelp(argv);
+        return 1;
     }
 
     if (options->list) {
