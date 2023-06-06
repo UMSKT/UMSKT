@@ -69,33 +69,38 @@ int main(int argc, char *argv[]) {
         
         switch (err) {
             case ERR_TOO_SHORT:
-                std::cout << "ERROR: Installation ID is too short." << std::endl;
+                fmt::print("ERROR: Installation ID is too short.\n");
                 return 1;
             case ERR_TOO_LARGE:
-                std::cout << "ERROR: Installation ID is too long." << std::endl;
+                fmt::print("ERROR: Installation ID is too long.\n");
                 return 1;
             case ERR_INVALID_CHARACTER:
-                std::cout << "ERROR: Invalid character in installation ID."  << std::endl;
+                fmt::print("ERROR: Invalid character in installation ID.\n");
                 return 1;
             case ERR_INVALID_CHECK_DIGIT:
-                std::cout << "ERROR: Installation ID checksum failed. Please check that it is typed correctly." << std::endl;
+                fmt::print("ERROR: Installation ID checksum failed. Please check that it is typed correctly.\n");
                 return 1;
             case ERR_UNKNOWN_VERSION:
-                std::cout << "ERROR: Unknown installation ID version." << std::endl;
+                fmt::print("ERROR: Unknown installation ID version.\n");
                 return 1;
             case ERR_UNLUCKY:
-                std::cout << "ERROR: Unable to generate valid confirmation ID." << std::endl;
+                fmt::print("ERROR: Unable to generate valid confirmation ID.\n");
                 return 1;
             case SUCCESS:
-                std::cout << "Confirmation ID: " << confirmation_id << std::endl;
+                fmt::print("Confirmation ID: {}\n", confirmation_id);
                 return 0;
+
+            default:
+                fmt::print("Unknown error occurred during Confirmation ID generation: {}\n", err);
         }
+        return 1;
     }
 
     // Calculation
     char pKey[25];
     int count = 0, total = options.numKeys;
 
+    // BINK2002 Generation
     if (options.isBink2002) {
         DWORD pChannelID = options.channelID << 1;
 
@@ -123,36 +128,38 @@ int main(int argc, char *argv[]) {
 
         fmt::print("Success count: {}/{}\n", count, total);
         return 0;
-    } else {
-        DWORD nRaw = options.channelID * 1000000 ; /* <- change */
-
-        BIGNUM *bnrand = BN_new();
-        BN_rand(bnrand, 19, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
-
-        int oRaw;
-        char *cRaw = BN_bn2dec(bnrand);
-
-        sscanf(cRaw, "%d", &oRaw);
-        nRaw += (oRaw &= 0xF423F); // ensure our serial is less than 999999
-
-        if (options.verbose) {
-            fmt::print("> PID: {:09d}\n", nRaw);
-        }
-
-        // generate a key
-        BN_sub(privateKey, genOrder, privateKey);
-        nRaw <<= 1;
-
-        for (int i = 0; i < total; i++) {
-            generateXPKey(eCurve, genPoint, genOrder, privateKey, nRaw, pKey);
-            print_product_key(pKey);
-            fmt::print("\n\n");
-
-            // verify the key
-            count += verifyXPKey(eCurve, genPoint, pubPoint, pKey);
-        }
-
-        fmt::print("Success count: {}/{}\n", count, total);
-        return 0;
     }
+
+    // BINK1998 Generation
+
+    DWORD nRaw = options.channelID * 1000000 ; /* <- change */
+
+    BIGNUM *bnrand = BN_new();
+    BN_rand(bnrand, 19, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
+
+    int oRaw;
+    char *cRaw = BN_bn2dec(bnrand);
+
+    sscanf(cRaw, "%d", &oRaw);
+    nRaw += (oRaw &= 0xF423F); // ensure our serial is less than 999999
+
+    if (options.verbose) {
+        fmt::print("> PID: {:09d}\n", nRaw);
+    }
+
+    // generate a key
+    BN_sub(privateKey, genOrder, privateKey);
+    nRaw <<= 1;
+
+    for (int i = 0; i < total; i++) {
+        generateXPKey(eCurve, genPoint, genOrder, privateKey, nRaw, pKey);
+        print_product_key(pKey);
+        fmt::print("\n\n");
+
+        // verify the key
+        count += verifyXPKey(eCurve, genPoint, pubPoint, pKey);
+    }
+
+    fmt::print("Success count: {}/{}\n", count, total);
+    return 0;
 }
