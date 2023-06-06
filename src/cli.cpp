@@ -142,7 +142,7 @@ int validateCommandLine(Options* options, char *argv[], json *keys) {
         for (auto el : (*keys)["Products"].items()) {
             int id;
             sscanf((el.value()["BINK"][0]).get<std::string>().c_str(), "%x", &id);
-            std::cout << el.key() << ": " << el.value()["BINK"] << std::endl;
+            fmt::print("{}: {}\n", el.key(), el.value()["BINK"]);
         }
 
         fmt::print("\n\n");
@@ -159,7 +159,7 @@ int validateCommandLine(Options* options, char *argv[], json *keys) {
     }
 
     if (options->channelID > 999) {
-        std::cout << "ERROR: refusing to create a key with a siteID greater than 999" << std::endl;
+        fmt::print("ERROR: refusing to create a key with a siteID greater than 999\n");
         return 1;
     }
 

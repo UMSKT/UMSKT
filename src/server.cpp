@@ -63,11 +63,12 @@ bool verifyServerKey(
     unpackServer(bKey, pChannelID, pHash, pSignature, pAuthInfo);
 
     if (options.verbose) {
-        std::cout << "Validation results:\n    Serial: 0x" << std::hex << std::setw(8) << std::setfill('0') << pChannelID << std::endl
-                << "      Hash: 0x" << std::hex << std::setw(8) << std::setfill('0') << pHash << std::endl
-                << " Signature: 0x" << std::hex << std::setw(8) << std::setfill('0') << pSignature << std::endl
-                << "  AuthInfo: 0x" << std::hex << std::setw(8) << std::setfill('0') << pAuthInfo << std::endl
-                << std::endl;
+        fmt::print("Validation results:\n");
+        fmt::print("    Serial: 0x{:08x}\n", pChannelID);
+        fmt::print("      Hash: 0x{:08x}\n", pHash);
+        fmt::print(" Signature: 0x{:08x}\n", pSignature);
+        fmt::print("  AuthInfo: 0x{:08x}\n", pAuthInfo);
+        fmt::print("\n");
     }
 
     BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
@@ -292,11 +293,12 @@ void generateServerKey(
         packServer(pRaw, pChannelID, hash, pSignature, pAuthInfo);
 
         if (options.verbose) {
-            std::cout << "Generation results:\n    Serial: 0x" << std::hex << std::setw(8) << std::setfill('0') << pChannelID << std::endl
-                  << "      Hash: 0x" << std::hex << std::setw(8) << std::setfill('0') << hash << std::endl
-                  << " Signature: 0x" << std::hex << std::setw(8) << std::setfill('0') << pSignature << std::endl
-                  << "  AuthInfo: 0x" << std::hex << std::setw(8) << std::setfill('0') << pAuthInfo << std::endl
-                  << std::endl;
+            fmt::print("Generation results:\n");
+            fmt::print("    Serial: 0x{:08x}\n", pChannelID);
+            fmt::print("      Hash: 0x{:08x}\n", hash);
+            fmt::print(" Signature: 0x{:08x}\n", pSignature);
+            fmt::print("  AuthInfo: 0x{:08x}\n", pAuthInfo);
+            fmt::print("\n");
         }
 
         EC_POINT_free(r);
