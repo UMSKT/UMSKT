@@ -111,7 +111,7 @@ bool verifyXPKey(
     memcpy((void *)&msgBuffer[4], (void *)xBin, FIELD_BYTES);
     memcpy((void *)&msgBuffer[4 + FIELD_BYTES], (void *)yBin, FIELD_BYTES);
 
-    // Retrieve the message digest.
+    // compHash = SHA1(pSerial || P.x || P.y)
     SHA1(msgBuffer, SHA_MSG_LENGTH_XP, msgDigest);
 
     // Translate the byte digest into a 32-bit integer - this is our computed hash.
@@ -143,10 +143,10 @@ void generateXPKey(
 ) {
     BN_CTX *numContext = BN_CTX_new();
 
-    BIGNUM *c = BN_new();
-    BIGNUM *s = BN_new();
-    BIGNUM *x = BN_new();
-    BIGNUM *y = BN_new();
+    BIGNUM *c = BN_new(),
+           *s = BN_new(),
+           *x = BN_new(),
+           *y = BN_new();
 
     QWORD pRaw[2]{};
 
@@ -181,7 +181,7 @@ void generateXPKey(
         memcpy((void *)&msgBuffer[4], (void *)xBin, FIELD_BYTES);
         memcpy((void *)&msgBuffer[4 + FIELD_BYTES], (void *)yBin, FIELD_BYTES);
 
-        // Retrieve the message digest.
+        // pHash = SHA1(pSerial || R.x || R.y)
         SHA1(msgBuffer, SHA_MSG_LENGTH_XP, msgDigest);
 
         // Translate the byte digest into a 32-bit integer - this is our computed pHash.

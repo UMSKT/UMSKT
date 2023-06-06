@@ -96,7 +96,7 @@ bool verifyServerKey(
     SHA1(msgBuffer, 11, msgDigest);
 
     // Translate the byte digest into a 64-bit integer - this is our computed intermediate signature.
-    // As the signature is only 62 bits long at most, we have to truncate it by shifting the high DWORD right 2 bits (by spec).
+    // As the signature is only 62 bits long at most, we have to truncate it by shifting the high DWORD right 2 bits (per spec).
     QWORD iSignature = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
 
     /*
@@ -150,7 +150,7 @@ bool verifyServerKey(
     memcpy((void *)&msgBuffer[3], (void *)xBin, FIELD_BYTES_2003);
     memcpy((void *)&msgBuffer[3 + FIELD_BYTES_2003], (void *)yBin, FIELD_BYTES_2003);
 
-    // newHash = SHA1(79 || Channel ID || p.x || p.y)
+    // compHash = SHA1(79 || Channel ID || p.x || p.y)
     SHA1(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
 
     // Translate the byte digest into a 32-bit integer - this is our computed hash.
@@ -182,30 +182,30 @@ void generateServerKey(
 ) {
     BN_CTX *numContext = BN_CTX_new();
 
-    BIGNUM *c = BN_new();
-    BIGNUM *s = BN_new();
-    BIGNUM *x = BN_new();
-    BIGNUM *y = BN_new();
-    BIGNUM *e = BN_new();
+    BIGNUM *c = BN_new(),
+           *e = BN_new(),
+           *s = BN_new(),
+           *x = BN_new(),
+           *y = BN_new();
 
-    QWORD pRaw[2]{};
+    QWORD pRaw[2]{},
+          pSignature = 0;
+
     BOOL wrong = false;
-    QWORD pSignature = 0;
 
     do {
         EC_POINT *r = EC_POINT_new(eCurve);
 
         wrong = false;
 
-        QWORD sig = 0;
-
         // Generate a random number c consisting of 512 bits without any constraints.
         BN_rand(c, FIELD_BITS_2003, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
 
-        // r = basePoint * c
+        // R = cG
         EC_POINT_mul(eCurve, r, nullptr, basePoint, c, numContext);
 
-        // x = r.x; y = r.y;
+        // Acquire its coordinates.
+        // x = R.x; y = R.y;
         EC_POINT_get_affine_coordinates(eCurve, r, x, y, numContext);
 
         BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
@@ -217,8 +217,7 @@ void generateServerKey(
         BN_bn2lebin(x, xBin, FIELD_BYTES_2003);
         BN_bn2lebin(y, yBin, FIELD_BYTES_2003);
 
-        // Assemble the SHA message.
-        // Hash = SHA-1(79 || OS Family || r.x || r.y)
+        // Assemble the first SHA message.
         msgBuffer[0x00] = 0x79;
         msgBuffer[0x01] = (pChannelID & 0x00FF);
         msgBuffer[0x02] = (pChannelID & 0xFF00) >> 8;
@@ -226,30 +225,34 @@ void generateServerKey(
         memcpy((void *)&msgBuffer[3], (void *)xBin, FIELD_BYTES_2003);
         memcpy((void *)&msgBuffer[3 + FIELD_BYTES_2003], (void *)yBin, FIELD_BYTES_2003);
 
-        // Retrieve the message digest.
+        // pHash = SHA1(79 || Channel ID || R.x || R.y)
         SHA1(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
 
-        DWORD hash = BYDWORD(msgDigest) & BITMASK(31);
+        // Translate the byte digest into a 32-bit integer - this is our computed hash.
+        // Truncate the hash to 31 bits.
+        DWORD pHash = BYDWORD(msgDigest) & BITMASK(31);
 
-        // H = SHA-1(5D || OS Family || Hash || Prefix || 00 00)
+        // Assemble the second SHA message.
         msgBuffer[0x00] = 0x5D;
         msgBuffer[0x01] = (pChannelID & 0x00FF);
         msgBuffer[0x02] = (pChannelID & 0xFF00) >> 8;
-        msgBuffer[0x03] = (hash & 0x000000FF);
-        msgBuffer[0x04] = (hash & 0x0000FF00) >> 8;
-        msgBuffer[0x05] = (hash & 0x00FF0000) >> 16;
-        msgBuffer[0x06] = (hash & 0xFF000000) >> 24;
+        msgBuffer[0x03] = (pHash & 0x000000FF);
+        msgBuffer[0x04] = (pHash & 0x0000FF00) >> 8;
+        msgBuffer[0x05] = (pHash & 0x00FF0000) >> 16;
+        msgBuffer[0x06] = (pHash & 0xFF000000) >> 24;
         msgBuffer[0x07] = (pAuthInfo & 0x00FF);
         msgBuffer[0x08] = (pAuthInfo & 0xFF00) >> 8;
         msgBuffer[0x09] = 0x00;
         msgBuffer[0x0A] = 0x00;
 
+        // newSignature = SHA1(5D || Channel ID || Hash || AuthInfo || 00 00)
         SHA1(msgBuffer, 11, msgDigest);
 
-        // First word.
-        sig = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
+        // Translate the byte digest into a 64-bit integer - this is our computed intermediate signature.
+        // As the signature is only 62 bits long at most, we have to truncate it by shifting the high DWORD right 2 bits (per spec).
+        QWORD iSignature = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
 
-        BN_lebin2bn((BYTE *)&sig, sizeof(sig), e);
+        BN_lebin2bn((BYTE *)&iSignature, sizeof(iSignature), e);
 
         /*
          * Signature * (Signature * G + H * K) = rG (mod p)
@@ -274,62 +277,59 @@ void generateServerKey(
          * s = ( ( -e * privateKey +- sqrt( (e * privateKey)^2 + 4c ) ) / 2 ) % genOrder
          */
 
-        // e = (e * privateKey) % genOrder
+        // e = ek (mod n)
         BN_mod_mul(e, e, privateKey, genOrder, numContext);
 
         // s = e
         BN_copy(s, e);
 
-        // s = (s % genOrder)^2
+        // s = (s (mod n))^2
         BN_mod_sqr(s, s, genOrder, numContext);
 
-        // c <<= 2 (c = 4c)
+        // c <<= 2 (c *= 4)
         BN_lshift(c, c, 2);
 
-        // s = s + c
+        // s += c
         BN_add(s, s, c);
 
-        // s^2 = s % genOrder (genOrder must be prime)
+        // Around half of numbers modulo a prime are not squares -> BN_sqrt_mod fails about half of the times,
+        // hence if BN_sqrt_mod returns NULL, we need to restart with a different seed.
+        // s = sqrt(s (mod n))
         if (BN_mod_sqrt(s, s, genOrder, numContext) == nullptr) wrong = true;
 
-        // s = s - e
+        // s = s (mod n) - e
         BN_mod_sub(s, s, e, genOrder, numContext);
 
-        // if s is odd, s = s + genOrder
-        if (BN_is_odd(s)) {
+        // If s is odd, add order to it.
+        // s += n
+        if (BN_is_odd(s))
             BN_add(s, s, genOrder);
-        }
 
-        // s >>= 1 (s = s / 2)
+        // s >>= 1 (s /= 2)
         BN_rshift1(s, s);
 
-        // Convert s from BigNum back to bytecode and reverse the endianness.
+        // Translate resulting scalar into a 64-bit integer (the byte order is little-endian).
         BN_bn2lebinpad(s, (BYTE *)&pSignature, BN_num_bytes(s));
 
         // Pack product key.
-        packServer(pRaw, pChannelID, hash, pSignature, pAuthInfo);
+        packServer(pRaw, pChannelID, pHash, pSignature, pAuthInfo);
 
         if (options.verbose) {
             fmt::print("Generation results:\n");
             fmt::print("    Serial: 0x{:08x}\n", pChannelID);
-            fmt::print("      Hash: 0x{:08x}\n", hash);
+            fmt::print("      Hash: 0x{:08x}\n", pHash);
             fmt::print(" Signature: 0x{:08x}\n", pSignature);
             fmt::print("  AuthInfo: 0x{:08x}\n", pAuthInfo);
             fmt::print("\n");
         }
 
         EC_POINT_free(r);
+    } while (pSignature > BITMASK(62) || wrong);
+    // ↑ ↑ ↑
+    // The signature can't be longer than 62 bits, else it will
+    // overlap with the AuthInfo segment next to it.
 
-        DWORD chkChannelID, chkHash, chkAuthInfo;
-        QWORD chkSignature;
-
-        unpackServer(pRaw, chkChannelID, chkHash, chkSignature, chkAuthInfo);
-
-        if (chkHash != hash || chkSignature != pSignature) {
-            wrong = true;
-        }
-    } while ((HIBYTES(pSignature, sizeof(DWORD)) >= 0x40000000) || wrong);
-
+    // Convert bytecode to Base24 CD-key.
     base24(pKey, (BYTE *)pRaw);
 
     BN_free(c);
