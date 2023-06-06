@@ -108,7 +108,7 @@ struct Options {
     std::string instid;
     bool help;
     bool list;
-    bool genServer;
+    bool isBink2002;
     bool verbose;
     bool error;
 };

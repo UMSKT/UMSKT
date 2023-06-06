@@ -155,7 +155,7 @@ int validateCommandLine(Options* options, char *argv[], json *keys) {
     sscanf(options->binkid.c_str(), "%x", &intBinkID);
 
     if (intBinkID >= 0x40) {
-        options->genServer = true;
+        options->isBink2002 = true;
     }
 
     if (options->channelID > 999) {

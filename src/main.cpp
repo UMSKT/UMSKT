@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
     char pKey[25];
     int count = 0, total = options.numKeys;
 
-    if (options.genServer) {
+    if (options.isBink2002) {
         DWORD pChannelID = options.channelID << 1;
 
         if (options.verbose) {
