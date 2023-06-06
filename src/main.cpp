@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
             pubPoint
     );
 
-    if (options.instid != "") {
+    if (!options.instid.empty()) {
         char confirmation_id[49];
         int err = generateConfId(options.instid.c_str(), confirmation_id);
         
@@ -120,6 +120,9 @@ int main(int argc, char *argv[]) {
             // verify a key
             count += verifyServerKey(eCurve, genPoint, pubPoint, pKey);
         }
+
+        fmt::print("Success count: {}/{}\n", count, total);
+        return 0;
     } else {
         DWORD nRaw = options.channelID * 1000000 ; /* <- change */
 
@@ -148,8 +151,8 @@ int main(int argc, char *argv[]) {
             // verify the key
             count += verifyXPKey(eCurve, genPoint, pubPoint, pKey);
         }
-    }
 
-    fmt::print("Success count: {}/{}\n", count, total);
-    return 0;
+        fmt::print("Success count: {}/{}\n", count, total);
+        return 0;
+    }
 }
