@@ -33,7 +33,7 @@ In light of the recent exponential interest in this project I've decided to put 
 
     * If on **Linux** please clone and compile this repository using `cd build && cmake ../ && make` and run using `./xpkey` to generate a Volume License Key
 
-2. (For retail only): After installation, you will be prompted to activate Windows. Select the *telephone activation* method, then, run `./xpactivate <Installation ID>` using the installation ID that the activation wizard gave you.
+2. (For retail only): After installation, you will be prompted to activate Windows. Select the *telephone activation* method, then, run `./xpkey -i <Installation ID>` using the installation ID that the activation wizard gave you.
 
 3. Click "**Next**"
 
@@ -52,6 +52,7 @@ The list of people who have helped to bring the XP generation to where it is now
 * pottzman
 * Endermanch
 * Neo-Desktop
+* WitherOrNot
 
 (the list will be updated to add more collaborators)
 
