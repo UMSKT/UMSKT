@@ -4,11 +4,6 @@
 
 #include "header.h"
 
-char pCharset[] = "BCDFGHJKMPQRTVWXY2346789";
-const std::string filename = "keys.json";
-
-using json = nlohmann::json;
-
 /* Unpacks the Windows XP-like Product Key. */
 void unpackServer(
         QWORD (&pRaw)[2],
@@ -67,11 +62,14 @@ bool verifyServerKey(
     // Extract segments from the bytecode and reverse the signature.
     unpackServer(bKey, pChannelID, pHash, pSignature, pAuthInfo);
 
-    std::cout << "Validation results:\n    Serial: 0x" << std::hex << std::setw(8) << std::setfill('0') << pChannelID << std::endl
-              << "      Hash: 0x" << std::hex << std::setw(8) << std::setfill('0') << pHash << std::endl
-              << " Signature: 0x" << std::hex << std::setw(8) << std::setfill('0') << pSignature << std::endl
-              << "  AuthInfo: 0x" << std::hex << std::setw(8) << std::setfill('0') << pAuthInfo << std::endl
-              << std::endl;
+    if (options.verbose) {
+        fmt::print("Validation results:\n");
+        fmt::print("    Serial: 0x{:08x}\n", pChannelID);
+        fmt::print("      Hash: 0x{:08x}\n", pHash);
+        fmt::print(" Signature: 0x{:08x}\n", pSignature);
+        fmt::print("  AuthInfo: 0x{:08x}\n", pAuthInfo);
+        fmt::print("\n");
+    }
 
     BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
             msgBuffer[SHA_MSG_LENGTH_2003]{},
@@ -294,18 +292,28 @@ void generateServerKey(
         // Pack product key.
         packServer(pRaw, pChannelID, hash, pSignature, pAuthInfo);
 
-        std::cout << "Generation results:\n    Serial: 0x" << std::hex << std::setw(8) << std::setfill('0') << pChannelID << std::endl
-                  << "      Hash: 0x" << std::hex << std::setw(8) << std::setfill('0') << hash << std::endl
-                  << " Signature: 0x" << std::hex << std::setw(8) << std::setfill('0') << pSignature << std::endl
-                  << "  AuthInfo: 0x" << std::hex << std::setw(8) << std::setfill('0') << pAuthInfo << std::endl
-                  << std::endl;
+        if (options.verbose) {
+            fmt::print("Generation results:\n");
+            fmt::print("    Serial: 0x{:08x}\n", pChannelID);
+            fmt::print("      Hash: 0x{:08x}\n", hash);
+            fmt::print(" Signature: 0x{:08x}\n", pSignature);
+            fmt::print("  AuthInfo: 0x{:08x}\n", pAuthInfo);
+            fmt::print("\n");
+        }
 
         EC_POINT_free(r);
-    } while (HIBYTES(pSignature, sizeof(DWORD)) >= 0x40000000);
+
+        DWORD chkChannelID, chkHash, chkAuthInfo;
+        QWORD chkSignature;
+
+        unpackServer(pRaw, chkChannelID, chkHash, chkSignature, chkAuthInfo);
+
+        if (chkHash != hash || chkSignature != pSignature) {
+            wrong = true;
+        }
+    } while ((HIBYTES(pSignature, sizeof(DWORD)) >= 0x40000000) || wrong);
 
     base24(pKey, (BYTE *)pRaw);
-
-    std::cout << "attempt pass " << pKey << " key is " << (wrong ? "INVALID" : "VALID") << std::endl;
 
     BN_free(c);
     BN_free(s);
@@ -314,53 +322,4 @@ void generateServerKey(
     BN_free(e);
 
     BN_CTX_free(numContext);
-}
-
-int main()
-{
-    const char* BINKID = "5A";
-
-    // We cannot produce a valid key without knowing the private key k. The reason for this is that
-    // we need the result of the function K(x; y) = kG(x; y).
-    BIGNUM *privateKey = BN_new();
-
-    // We can, however, validate any given key using the available public key: {p, a, b, G, K}.
-    // genOrder the order of the generator G, a value we have to reverse -> Schoof's Algorithm.
-    BIGNUM *genOrder = BN_new();
-
-    std::ifstream f(filename);
-    json keys = json::parse(f);
-
-    EC_POINT *genPoint, *pubPoint;
-    EC_GROUP *eCurve = initializeEllipticCurve(
-            keys["BINK"][BINKID]["p"].get<std::string>(),
-            keys["BINK"][BINKID]["a"].get<std::string>(),
-            keys["BINK"][BINKID]["b"].get<std::string>(),
-            keys["BINK"][BINKID]["g"]["x"].get<std::string>(),
-            keys["BINK"][BINKID]["g"]["y"].get<std::string>(),
-            keys["BINK"][BINKID]["pub"]["x"].get<std::string>(),
-            keys["BINK"][BINKID]["pub"]["y"].get<std::string>(),
-            genPoint,
-            pubPoint
-    );
-
-    BN_dec2bn(&genOrder, keys["BINK"][BINKID]["n"].get<std::string>().c_str());
-    BN_dec2bn(&privateKey, keys["BINK"][BINKID]["priv"].get<std::string>().c_str());
-
-    char pKey[25]{};
-    DWORD pChannelID = 640 << 1, pAuthInfo;
-
-	RAND_bytes((BYTE *)&pAuthInfo, 4);
-    pAuthInfo &= 0x3ff;
-
-    printf("AuthInfo: %d\n", pAuthInfo);
-
-	do {
-		generateServerKey(eCurve, genPoint, genOrder, privateKey, pChannelID, pAuthInfo, pKey);
-	} while (!verifyServerKey(eCurve, genPoint, pubPoint, pKey));
-	
-	print_product_key(pKey);
-    std::cout << std::endl << std::endl;
-
-	return 0;
 }

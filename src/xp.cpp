@@ -219,10 +219,13 @@ void generateXPKey(
         // Pack product key.
         packXP(pRaw, pSerial, pHash, pSignature);
 
-        fmt::print("    Serial: 0x{:08x}\n", pSerial);
-        fmt::print("      Hash: 0x{:08x}\n", pHash);
-        fmt::print(" Signature: 0x{:08x}\n", pSignature);
-        fmt::print("\n");
+        if (options.verbose) {
+            fmt::print("Generation results:\n");
+            fmt::print("    Serial: 0x{:08x}\n", pSerial);
+            fmt::print("      Hash: 0x{:08x}\n", pHash);
+            fmt::print(" Signature: 0x{:08x}\n", pSignature);
+            fmt::print("\n");
+        }
 
         EC_POINT_free(r);
     } while (pRaw[1] > BITMASK(50));

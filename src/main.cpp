@@ -5,18 +5,20 @@
 #include "header.h"
 
 char pCharset[] = "BCDFGHJKMPQRTVWXY2346789";
+Options options;
 
 int main(int argc, char *argv[]) {
-    Options options;
-
     if (!parseCommandLine(argc, argv, &options)) {
-        fmt::print("error parsing command line\n");
+        fmt::print("error parsing command line options\n");
+        showHelp(argv);
         return !options.error ? 0 : 1;
     }
 
     json keys;
-    if (validateCommandLine(&options, argv, &keys) < 0) {
-        return 1;
+    int status = validateCommandLine(&options, argv, &keys);
+
+    if (status > 0) {
+        return status;
     }
 
     const char* BINKID = options.binkid.c_str();
@@ -61,8 +63,74 @@ int main(int argc, char *argv[]) {
             pubPoint
     );
 
+    if (!options.instid.empty()) {
+        char confirmation_id[49];
+        int err = generateConfId(options.instid.c_str(), confirmation_id);
+        
+        switch (err) {
+            case ERR_TOO_SHORT:
+                fmt::print("ERROR: Installation ID is too short.\n");
+                return 1;
+            case ERR_TOO_LARGE:
+                fmt::print("ERROR: Installation ID is too long.\n");
+                return 1;
+            case ERR_INVALID_CHARACTER:
+                fmt::print("ERROR: Invalid character in installation ID.\n");
+                return 1;
+            case ERR_INVALID_CHECK_DIGIT:
+                fmt::print("ERROR: Installation ID checksum failed. Please check that it is typed correctly.\n");
+                return 1;
+            case ERR_UNKNOWN_VERSION:
+                fmt::print("ERROR: Unknown installation ID version.\n");
+                return 1;
+            case ERR_UNLUCKY:
+                fmt::print("ERROR: Unable to generate valid confirmation ID.\n");
+                return 1;
+            case SUCCESS:
+                fmt::print("Confirmation ID: {}\n", confirmation_id);
+                return 0;
+
+            default:
+                fmt::print("Unknown error occurred during Confirmation ID generation: {}\n", err);
+        }
+        return 1;
+    }
+
     // Calculation
     char pKey[25];
+    int count = 0, total = options.numKeys;
+
+    // BINK2002 Generation
+    if (options.isBink2002) {
+        DWORD pChannelID = options.channelID << 1;
+
+        if (options.verbose) {
+            fmt::print("> Channel ID: {:03d}\n", options.channelID);
+        }
+
+        // generate a key
+        for (int i = 0; i < total; i++) {
+            DWORD pAuthInfo;
+            RAND_bytes((BYTE *)&pAuthInfo, 4);
+            pAuthInfo &= 0x3ff;
+
+            if (options.verbose) {
+                fmt::print("> AuthInfo: {}\n", pAuthInfo);
+            }
+
+            generateServerKey(eCurve, genPoint, genOrder, privateKey, pChannelID, pAuthInfo, pKey);
+            print_product_key(pKey);
+            fmt::print("\n\n");
+
+            // verify a key
+            count += verifyServerKey(eCurve, genPoint, pubPoint, pKey);
+        }
+
+        fmt::print("Success count: {}/{}\n", count, total);
+        return 0;
+    }
+
+    // BINK1998 Generation
 
     DWORD nRaw = options.channelID * 1000000 ; /* <- change */
 
@@ -82,7 +150,6 @@ int main(int argc, char *argv[]) {
     // generate a key
     BN_sub(privateKey, genOrder, privateKey);
     nRaw <<= 1;
-    int count = 0, total = 1000;
 
     for (int i = 0; i < total; i++) {
         generateXPKey(eCurve, genPoint, genOrder, privateKey, nRaw, pKey);
@@ -94,6 +161,5 @@ int main(int argc, char *argv[]) {
     }
 
     fmt::print("Success count: {}/{}\n", count, total);
-
     return 0;
 }

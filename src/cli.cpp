@@ -6,12 +6,17 @@
 
 bool loadJSON(const fs::path& filename, json *output) {
     if (!fs::exists(filename)) {
-        fmt::print("{} does not exist", filename.string());
+        fmt::print("ERROR: File {} does not exist\n", filename.string());
         return false;
     }
 
     std::ifstream f(filename);
-    *output = json::parse(f);
+    *output = json::parse(f, nullptr, false, false);
+
+    if (output->is_discarded()) {
+        fmt::print("ERROR: Unable to parse keys from {}\n", filename.string());
+        return false;
+    }
 
     return true;
 }
@@ -21,7 +26,9 @@ void showHelp(char *argv[]) {
     fmt::print("usage: {} \n", argv[0]);
     fmt::print("\t-h --help\tshow this message\n");
     fmt::print("\t-v --verbose\tenable verbose output\n");
+    fmt::print("\t-n --number\tnumber of keys to generate (defaults to 1)\n");
     fmt::print("\t-f --file\tspecify which keys file to load (defaults to keys.json)\n");
+    fmt::print("\t-i --instid\tinstallation ID used to generate confirmation ID\n");
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
@@ -34,6 +41,10 @@ int parseCommandLine(int argc, char* argv[], Options* options) {
         "2E",
         640,
         "keys.json",
+        1,
+        "",
+        false,
+        false,
         false,
         false,
         false
@@ -46,12 +57,35 @@ int parseCommandLine(int argc, char* argv[], Options* options) {
             options->verbose = true;
         } else if (arg == "-h" || arg == "--help") {
             options->help = true;
+        } else if (arg == "-n" || arg == "--number") {
+            if (i == argc - 1) {
+                options->error = true;
+                break;
+            }
+
+            int nKeys;
+            if (!sscanf(argv[i+1], "%d", &nKeys)) {
+                options->error = true;
+            } else {
+                options->numKeys = nKeys;
+            }
+            i++;
         } else if (arg == "-b" || arg == "--bink") {
+            if (i == argc - 1) {
+                options->error = true;
+                break;
+            }
+
             options->binkid = argv[i+1];
             i++;
         } else if (arg == "-l" || arg == "--list") {
             options->list = true;
         } else if (arg == "-c" || arg == "--channelid") {
+            if (i == argc - 1) {
+                options->error = true;
+                break;
+            }
+
             int siteID;
             if (!sscanf(argv[i+1], "%d", &siteID)) {
                 options->error = true;
@@ -60,7 +94,20 @@ int parseCommandLine(int argc, char* argv[], Options* options) {
             }
             i++;
         } else if (arg == "-f" || arg == "--file") {
+            if (i == argc - 1) {
+                options->error = true;
+                break;
+            }
+
             options->keysFilename = argv[i+1];
+            i++;
+        } else if (arg == "-i" || arg == "--instid") {
+            if (i == argc - 1) {
+                options->error = true;
+                break;
+            }
+
+            options->instid = argv[i+1];
             i++;
         } else {
             options->error = true;
@@ -71,6 +118,18 @@ int parseCommandLine(int argc, char* argv[], Options* options) {
 }
 
 int validateCommandLine(Options* options, char *argv[], json *keys) {
+    if (options->verbose) {
+        fmt::print("Loading keys file {}\n", options->keysFilename);
+    }
+
+    if (!loadJSON(options->keysFilename, keys)) {
+        return 2;
+    }
+
+    if (options->verbose) {
+        fmt::print("Loaded keys from {} successfully\n",options->keysFilename);
+    }
+
     if (options->help || options->error) {
         if (options->error) {
             fmt::print("error parsing command line options\n");
@@ -79,26 +138,11 @@ int validateCommandLine(Options* options, char *argv[], json *keys) {
         return 1;
     }
 
-    if (options->verbose) {
-        fmt::print("loading {}\n", options->keysFilename);
-    }
-
-    if (!loadJSON(options->keysFilename, keys)) {
-        return 2;
-    }
-
-    if (options->verbose) {
-        fmt::print("loaded {} successfully\n",options->keysFilename);
-    }
-
     if (options->list) {
         for (auto el : (*keys)["Products"].items()) {
             int id;
             sscanf((el.value()["BINK"][0]).get<std::string>().c_str(), "%x", &id);
-            if (id >= 0x50) {
-                continue;
-            }
-            std::cout << el.key() << ": " << el.value()["BINK"] << std::endl;
+            fmt::print("{}: {}\n", el.key(), el.value()["BINK"]);
         }
 
         fmt::print("\n\n");
@@ -110,13 +154,12 @@ int validateCommandLine(Options* options, char *argv[], json *keys) {
     int intBinkID;
     sscanf(options->binkid.c_str(), "%x", &intBinkID);
 
-    if (intBinkID >= 0x50) {
-        std::cout << "ERROR: BINK2002 and beyond is not supported in this application at this time" << std::endl;
-        return 1;
+    if (intBinkID >= 0x40) {
+        options->isBink2002 = true;
     }
 
     if (options->channelID > 999) {
-        std::cout << "ERROR: refusing to create a key with a siteID greater than 999" << std::endl;
+        fmt::print("ERROR: refusing to create a key with a siteID greater than 999\n");
         return 1;
     }
 
