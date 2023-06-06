@@ -106,12 +106,13 @@ struct Options {
     std::string keysFilename;
     int numKeys;
     std::string instid;
-    bool verbose;
     bool help;
     bool list;
-    bool error;
     bool genServer;
+    bool verbose;
+    bool error;
 };
+extern Options options;
 
 int parseCommandLine(int argc, char* argv[], Options* output);
 int validateCommandLine(Options* options, char* argv[], json* output);
@@ -123,8 +124,7 @@ bool verifyXPKey(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
-        char (&pKey)[25],
-        bool verbose
+        char (&pKey)[25]
 );
 
 void generateXPKey(
@@ -133,8 +133,7 @@ void generateXPKey(
         BIGNUM   *genOrder,
         BIGNUM   *privateKey,
         DWORD    pSerial,
-        char     (&pKey)[25],
-        bool     verbose
+        char     (&pKey)[25]
 );
 
 // server.cpp
@@ -142,8 +141,7 @@ bool verifyServerKey(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
-        char (&cdKey)[25],
-        bool verbose
+        char (&cdKey)[25]
 );
 
 void generateServerKey(
@@ -153,8 +151,7 @@ void generateServerKey(
         BIGNUM   *privateKey,
         DWORD    pChannelID,
         DWORD    pAuthInfo,
-        char     (&pKey)[25],
-        bool     verbose
+        char     (&pKey)[25]
 );
 
 // confid.cpp

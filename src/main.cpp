@@ -5,10 +5,9 @@
 #include "header.h"
 
 char pCharset[] = "BCDFGHJKMPQRTVWXY2346789";
+Options options;
 
 int main(int argc, char *argv[]) {
-    Options options;
-
     if (!parseCommandLine(argc, argv, &options)) {
         fmt::print("error parsing command line options\n");
         showHelp(argv);
@@ -114,12 +113,12 @@ int main(int argc, char *argv[]) {
                 fmt::print("> AuthInfo: {}\n", pAuthInfo);
             }
 
-            generateServerKey(eCurve, genPoint, genOrder, privateKey, pChannelID, pAuthInfo, pKey, options.verbose);
+            generateServerKey(eCurve, genPoint, genOrder, privateKey, pChannelID, pAuthInfo, pKey);
             print_product_key(pKey);
             fmt::print("\n\n");
 
             // verify a key
-            count += verifyServerKey(eCurve, genPoint, pubPoint, pKey, options.verbose);
+            count += verifyServerKey(eCurve, genPoint, pubPoint, pKey);
         }
     } else {
         DWORD nRaw = options.channelID * 1000000 ; /* <- change */
@@ -142,12 +141,12 @@ int main(int argc, char *argv[]) {
         nRaw <<= 1;
 
         for (int i = 0; i < total; i++) {
-            generateXPKey(eCurve, genPoint, genOrder, privateKey, nRaw, pKey, options.verbose);
+            generateXPKey(eCurve, genPoint, genOrder, privateKey, nRaw, pKey);
             print_product_key(pKey);
             fmt::print("\n\n");
 
             // verify the key
-            count += verifyXPKey(eCurve, genPoint, pubPoint, pKey, options.verbose);
+            count += verifyXPKey(eCurve, genPoint, pubPoint, pKey);
         }
     }
 

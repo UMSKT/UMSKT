@@ -47,8 +47,7 @@ bool verifyServerKey(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
-        char (&cdKey)[25],
-        bool verbose
+        char (&cdKey)[25]
 ) {
     BN_CTX *context = BN_CTX_new();
 
@@ -63,7 +62,7 @@ bool verifyServerKey(
     // Extract segments from the bytecode and reverse the signature.
     unpackServer(bKey, pChannelID, pHash, pSignature, pAuthInfo);
 
-    if (verbose) {
+    if (options.verbose) {
         std::cout << "Validation results:\n    Serial: 0x" << std::hex << std::setw(8) << std::setfill('0') << pChannelID << std::endl
                 << "      Hash: 0x" << std::hex << std::setw(8) << std::setfill('0') << pHash << std::endl
                 << " Signature: 0x" << std::hex << std::setw(8) << std::setfill('0') << pSignature << std::endl
@@ -161,8 +160,7 @@ void generateServerKey(
         BIGNUM   *privateKey,
         DWORD    pChannelID,
         DWORD    pAuthInfo,
-        char     (&pKey)[25],
-        bool     verbose
+        char     (&pKey)[25]
 ) {
     BN_CTX *numContext = BN_CTX_new();
 
@@ -293,7 +291,7 @@ void generateServerKey(
         // Pack product key.
         packServer(pRaw, pChannelID, hash, pSignature, pAuthInfo);
 
-        if (verbose) {
+        if (options.verbose) {
             std::cout << "Generation results:\n    Serial: 0x" << std::hex << std::setw(8) << std::setfill('0') << pChannelID << std::endl
                   << "      Hash: 0x" << std::hex << std::setw(8) << std::setfill('0') << hash << std::endl
                   << " Signature: 0x" << std::hex << std::setw(8) << std::setfill('0') << pSignature << std::endl
