@@ -1,0 +1,11 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto eol=lf
+
+*.c text
+*.h text
+*.cpp text
+*.hpp text
+*.json text
+*.txt text
+LICENSE text
+*.md text
