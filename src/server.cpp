@@ -191,12 +191,12 @@ void generateServerKey(
     QWORD pRaw[2]{},
           pSignature = 0;
 
-    BOOL wrong = false;
+    BOOL noSquare = false;
 
     do {
         EC_POINT *r = EC_POINT_new(eCurve);
 
-        wrong = false;
+        noSquare = false;
 
         // Generate a random number c consisting of 512 bits without any constraints.
         BN_rand(c, FIELD_BITS_2003, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
@@ -295,7 +295,7 @@ void generateServerKey(
         // Around half of numbers modulo a prime are not squares -> BN_sqrt_mod fails about half of the times,
         // hence if BN_sqrt_mod returns NULL, we need to restart with a different seed.
         // s = sqrt(s (mod n))
-        if (BN_mod_sqrt(s, s, genOrder, numContext) == nullptr) wrong = true;
+        noSquare = BN_mod_sqrt(s, s, genOrder, numContext) == nullptr;
 
         // s = s (mod n) - e
         BN_mod_sub(s, s, e, genOrder, numContext);
@@ -324,7 +324,7 @@ void generateServerKey(
         }
 
         EC_POINT_free(r);
-    } while (pSignature > BITMASK(62) || wrong);
+    } while (pSignature > BITMASK(62) || noSquare);
     // ↑ ↑ ↑
     // The signature can't be longer than 62 bits, else it will
     // overlap with the AuthInfo segment next to it.

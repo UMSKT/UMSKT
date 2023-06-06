@@ -148,13 +148,11 @@ void generateXPKey(
            *x = BN_new(),
            *y = BN_new();
 
-    QWORD pRaw[2]{};
+    QWORD pRaw[2]{},
+          pSignature = 0;
 
     do {
         EC_POINT *r = EC_POINT_new(eCurve);
-
-        QWORD pSignature = 0;
-        DWORD pHash;
 
         // Generate a random number c consisting of 384 bits without any constraints.
         BN_rand(c, FIELD_BITS, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
@@ -186,7 +184,7 @@ void generateXPKey(
 
         // Translate the byte digest into a 32-bit integer - this is our computed pHash.
         // Truncate the pHash to 28 bits.
-        pHash = BYDWORD(msgDigest) >> 4 & BITMASK(28);
+        DWORD pHash = BYDWORD(msgDigest) >> 4 & BITMASK(28);
 
         /*
          *
@@ -228,10 +226,10 @@ void generateXPKey(
         }
 
         EC_POINT_free(r);
-    } while (pRaw[1] > BITMASK(50));
+    } while (pSignature > BITMASK(55));
     // ↑ ↑ ↑
-    // pRaw[1] can't be longer than 50 bits, else the signature part
-    // will make the CD-key longer than 25 characters.
+    // The signature can't be longer than 55 bits, else it will
+    // make the CD-key longer than 25 characters.
 
     // Convert bytecode to Base24 CD-key.
     base24(pKey, (BYTE *)pRaw);
