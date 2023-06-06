@@ -88,13 +88,13 @@ bool verifyXPKey(
     // t = sG
     EC_POINT_mul(eCurve, t, nullptr, basePoint, s, numContext);
 
-    // p = eK
+    // P = eK
     EC_POINT_mul(eCurve, p, nullptr, publicKey, e, numContext);
 
-    // p += t
+    // P += t
     EC_POINT_add(eCurve, p, t, p, numContext);
 
-    // x = p.x; y = p.y;
+    // x = P.x; y = P.y;
     EC_POINT_get_affine_coordinates(eCurve, p, x, y, numContext);
 
     BYTE    msgDigest[SHA_DIGEST_LENGTH]{},

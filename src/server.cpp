@@ -4,7 +4,7 @@
 
 #include "header.h"
 
-/* Unpacks the Windows XP-like Product Key. */
+/* Unpacks the Windows Server 2003-like Product Key. */
 void unpackServer(
         QWORD (&pRaw)[2],
         DWORD &pChannelID,
@@ -30,6 +30,7 @@ void unpackServer(
     pAuthInfo = NEXTSNBITS(pRaw[1], 10, 40);
 }
 
+/* Packs the Windows Server 2003-like Product Key. */
 void packServer(
         QWORD (&pRaw)[2],
         DWORD pChannelID,
@@ -42,7 +43,7 @@ void packServer(
     pRaw[1] = FIRSTNBITS(pAuthInfo, 10) << 40 | NEXTSNBITS(pSignature, 40, 22);
 }
 
-
+/* Verifies the Windows Server 2003-like Product Key. */
 bool verifyServerKey(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
@@ -51,15 +52,17 @@ bool verifyServerKey(
 ) {
     BN_CTX *context = BN_CTX_new();
 
+    QWORD bKey[2]{},
+          pSignature = 0;
+
+    DWORD pChannelID,
+          pHash,
+          pAuthInfo;
+
     // Convert Base24 CD-key to bytecode.
-    DWORD pChannelID, pHash, pAuthInfo;
-    QWORD bKey[2]{};
-
-    QWORD pSignature = 0;
-
     unbase24((BYTE *)bKey, cdKey);
 
-    // Extract segments from the bytecode and reverse the signature.
+    // Extract product key segments from bytecode.
     unpackServer(bKey, pChannelID, pHash, pSignature, pAuthInfo);
 
     if (options.verbose) {
@@ -76,7 +79,7 @@ bool verifyServerKey(
             xBin[FIELD_BYTES_2003]{},
             yBin[FIELD_BYTES_2003]{};
 
-    // H = SHA-1(5D || OS Family || Hash || Prefix || 00 00)
+    // Assemble the first SHA message.
     msgBuffer[0x00] = 0x5D;
     msgBuffer[0x01] = (pChannelID & 0x00FF);
     msgBuffer[0x02] = (pChannelID & 0xFF00) >> 8;
@@ -89,42 +92,57 @@ bool verifyServerKey(
     msgBuffer[0x09] = 0x00;
     msgBuffer[0x0A] = 0x00;
 
+    // newSignature = SHA1(5D || Channel ID || Hash || AuthInfo || 00 00)
     SHA1(msgBuffer, 11, msgDigest);
 
-    QWORD newHash = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
+    // Translate the byte digest into a 64-bit integer - this is our computed intermediate signature.
+    // As the signature is only 62 bits long at most, we have to truncate it by shifting the high DWORD right 2 bits (by spec).
+    QWORD iSignature = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
 
-    BIGNUM *x = BN_new();
-    BIGNUM *y = BN_new();
-    BIGNUM *s = BN_lebin2bn((BYTE *)&pSignature, sizeof(pSignature), nullptr);
-    BIGNUM *e = BN_lebin2bn((BYTE *)&newHash, sizeof(newHash), nullptr);
+    /*
+     *
+     * Scalars:
+     *  e = Hash
+     *  s = Schnorr Signature
+     *
+     * Points:
+     *  G(x, y) = Generator (Base Point)
+     *  K(x, y) = Public Key
+     *
+     * Equation:
+     *  P = s(sG + eK)
+     *
+     */
 
-    EC_POINT *u = EC_POINT_new(eCurve);
-    EC_POINT *v = EC_POINT_new(eCurve);
+    BIGNUM *e = BN_lebin2bn((BYTE *)&iSignature, sizeof(iSignature), nullptr),
+           *s = BN_lebin2bn((BYTE *)&pSignature, sizeof(pSignature), nullptr),
+           *x = BN_new(),
+           *y = BN_new();
 
-    // EC_POINT_mul calculates r = basePoint * n + q * m.
-    // v = s * (s * basePoint + e * publicKey)
+    // Create 2 points on the elliptic curve.
+    EC_POINT *p = EC_POINT_new(eCurve);
+    EC_POINT *t = EC_POINT_new(eCurve);
 
-    // u = basePoint * s
-    EC_POINT_mul(eCurve, u, nullptr, basePoint, s, context);
+    // t = sG
+    EC_POINT_mul(eCurve, t, nullptr, basePoint, s, context);
 
-    // v = publicKey * e
-    EC_POINT_mul(eCurve, v, nullptr, publicKey, e, context);
+    // p = eK
+    EC_POINT_mul(eCurve, p, nullptr, publicKey, e, context);
 
-    // v += u
-    EC_POINT_add(eCurve, v, u, v, context);
+    // p += t
+    EC_POINT_add(eCurve, p, t, p, context);
 
-    // v *= s
-    EC_POINT_mul(eCurve, v, nullptr, v, s, context);
+    // p *= s
+    EC_POINT_mul(eCurve, p, nullptr, p, s, context);
 
-    // EC_POINT_get_affine_coordinates() sets x and y, either of which may be nullptr, to the corresponding coordinates of p.
-    // x = v.x; y = v.y;
-    EC_POINT_get_affine_coordinates(eCurve, v, x, y, context);
+    // x = p.x; y = p.y;
+    EC_POINT_get_affine_coordinates(eCurve, p, x, y, context);
 
     // Convert resulting point coordinates to bytes.
     BN_bn2lebin(x, xBin, FIELD_BYTES_2003);
     BN_bn2lebin(y, yBin, FIELD_BYTES_2003);
 
-    // Assemble the SHA message.
+    // Assemble the second SHA message.
     msgBuffer[0x00] = 0x79;
     msgBuffer[0x01] = (pChannelID & 0x00FF);
     msgBuffer[0x02] = (pChannelID & 0xFF00) >> 8;
@@ -132,12 +150,11 @@ bool verifyServerKey(
     memcpy((void *)&msgBuffer[3], (void *)xBin, FIELD_BYTES_2003);
     memcpy((void *)&msgBuffer[3 + FIELD_BYTES_2003], (void *)yBin, FIELD_BYTES_2003);
 
-    // Retrieve the message digest.
+    // newHash = SHA1(79 || Channel ID || p.x || p.y)
     SHA1(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
 
-    // Translate the byte digest into a 32-bit integer - this is our computed pHash.
-    // Truncate the pHash to 28 bits.
-    // Hash = First31(SHA-1(79 || OS Family || v.x || v.y))
+    // Translate the byte digest into a 32-bit integer - this is our computed hash.
+    // Truncate the hash to 31 bits.
     DWORD compHash = BYDWORD(msgDigest) & BITMASK(31);
 
     BN_free(s);
@@ -147,10 +164,10 @@ bool verifyServerKey(
 
     BN_CTX_free(context);
 
-    EC_POINT_free(v);
-    EC_POINT_free(u);
+    EC_POINT_free(p);
+    EC_POINT_free(t);
 
-    // If we managed to generate a key with the same pHash, the key is correct.
+    // If the computed hash checks out, the key is valid.
     return compHash == pHash;
 }
 
