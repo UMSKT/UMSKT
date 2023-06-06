@@ -142,7 +142,7 @@ int validateCommandLine(Options* options, char *argv[], json *keys) {
         for (auto el : (*keys)["Products"].items()) {
             int id;
             sscanf((el.value()["BINK"][0]).get<std::string>().c_str(), "%x", &id);
-            fmt::print("{}: {}\n", el.key(), el.value()["BINK"]);
+            std::cout << el.key() << ": " << el.value()["BINK"] << std::endl;
         }
 
         fmt::print("\n\n");
