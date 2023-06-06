@@ -104,10 +104,13 @@ struct Options {
     std::string binkid;
     int channelID;
     std::string keysFilename;
+    int numKeys;
+    std::string instid;
     bool verbose;
     bool help;
     bool list;
     bool error;
+    bool genServer;
 };
 
 int parseCommandLine(int argc, char* argv[], Options* output);
@@ -120,7 +123,8 @@ bool verifyXPKey(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
-        char     (&pKey)[25]
+        char (&pKey)[25],
+        bool verbose
 );
 
 void generateXPKey(
@@ -129,9 +133,31 @@ void generateXPKey(
         BIGNUM   *genOrder,
         BIGNUM   *privateKey,
         DWORD    pSerial,
-        char     (&cdKey)[25]
+        char     (&pKey)[25],
+        bool     verbose
 );
 
 // server.cpp
+bool verifyServerKey(
+        EC_GROUP *eCurve,
+        EC_POINT *basePoint,
+        EC_POINT *publicKey,
+        char (&cdKey)[25],
+        bool verbose
+);
+
+void generateServerKey(
+        EC_GROUP *eCurve,
+        EC_POINT *basePoint,
+        BIGNUM   *genOrder,
+        BIGNUM   *privateKey,
+        DWORD    pChannelID,
+        DWORD    pAuthInfo,
+        char     (&pKey)[25],
+        bool     verbose
+);
+
+// confid.cpp
+int generateConfId(const char* installation_id_str, char confirmation_id[49]);
 
 #endif //WINDOWSXPKG_HEADER_H

@@ -21,7 +21,9 @@ void showHelp(char *argv[]) {
     fmt::print("usage: {} \n", argv[0]);
     fmt::print("\t-h --help\tshow this message\n");
     fmt::print("\t-v --verbose\tenable verbose output\n");
+    fmt::print("\t-n --number\tnumber of keys to generate (defaults to 1)\n");
     fmt::print("\t-f --file\tspecify which keys file to load (defaults to keys.json)\n");
+    fmt::print("\t-i --instid\tinstallation ID used to generate confirmation ID\n");
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
@@ -34,6 +36,10 @@ int parseCommandLine(int argc, char* argv[], Options* options) {
         "2E",
         640,
         "keys.json",
+        1,
+        "",
+        false,
+        false,
         false,
         false,
         false
@@ -46,6 +52,14 @@ int parseCommandLine(int argc, char* argv[], Options* options) {
             options->verbose = true;
         } else if (arg == "-h" || arg == "--help") {
             options->help = true;
+        } else if (arg == "-n" || arg == "--number") {
+            int nKeys;
+            if (!sscanf(argv[i+1], "%d", &nKeys)) {
+                options->error = true;
+            } else {
+                options->numKeys = nKeys;
+            }
+            i++;
         } else if (arg == "-b" || arg == "--bink") {
             options->binkid = argv[i+1];
             i++;
@@ -61,6 +75,9 @@ int parseCommandLine(int argc, char* argv[], Options* options) {
             i++;
         } else if (arg == "-f" || arg == "--file") {
             options->keysFilename = argv[i+1];
+            i++;
+        } else if (arg == "-i" || arg == "--instid") {
+            options->instid = argv[i+1];
             i++;
         } else {
             options->error = true;
@@ -95,9 +112,6 @@ int validateCommandLine(Options* options, char *argv[], json *keys) {
         for (auto el : (*keys)["Products"].items()) {
             int id;
             sscanf((el.value()["BINK"][0]).get<std::string>().c_str(), "%x", &id);
-            if (id >= 0x50) {
-                continue;
-            }
             std::cout << el.key() << ": " << el.value()["BINK"] << std::endl;
         }
 
@@ -110,9 +124,8 @@ int validateCommandLine(Options* options, char *argv[], json *keys) {
     int intBinkID;
     sscanf(options->binkid.c_str(), "%x", &intBinkID);
 
-    if (intBinkID >= 0x50) {
-        std::cout << "ERROR: BINK2002 and beyond is not supported in this application at this time" << std::endl;
-        return 1;
+    if (intBinkID >= 0x40) {
+        options->genServer = true;
     }
 
     if (options->channelID > 999) {

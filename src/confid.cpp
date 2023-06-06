@@ -629,12 +629,11 @@ static void Unmix(unsigned char* buffer, size_t bufSize, const unsigned char* ke
 	}
 }
 
-#define CHARTYPE char
-static int generateConfId(const CHARTYPE* installation_id_str, CHARTYPE confirmation_id[49])
+int generateConfId(const char* installation_id_str, char confirmation_id[49])
 {
 	unsigned char installation_id[19]; // 10**45 < 256**19
 	size_t installation_id_len = 0;
-	const CHARTYPE* p = installation_id_str;
+	const char* p = installation_id_str;
 	size_t count = 0, totalCount = 0;
 	unsigned check = 0;
 	size_t i;
@@ -787,7 +786,7 @@ static int generateConfId(const CHARTYPE* installation_id_str, CHARTYPE confirma
 		decimal[34 - i] = c4;
 	}
 	assert(e.encoded[0] == 0 && e.encoded[1] == 0 && e.encoded[2] == 0 && e.encoded[3] == 0);
-	CHARTYPE* q = confirmation_id;
+	char* q = confirmation_id;
 	for (i = 0; i < 7; i++) {
 		if (i)
 			*q++ = '-';
@@ -802,39 +801,4 @@ static int generateConfId(const CHARTYPE* installation_id_str, CHARTYPE confirma
 	}
 	*q++ = 0;
 	return 0;
-}
-
-int main(int argc, char** argv) {
-	if (argc < 2) {
-		std::cout << "usage:" << std::endl;
-		std::cout << argv[0] << " <Installation ID>" << std::endl;
-		return 1;
-	}
-	
-	char confirmation_id[49];
-	int err = generateConfId(argv[1], confirmation_id);
-	
-	switch (err) {
-		case ERR_TOO_SHORT:
-			std::cout << "ERROR: Installation ID is too short" << std::endl;
-			return 1;
-		case ERR_TOO_LARGE:
-			std::cout << "ERROR: Installation ID is too long" << std::endl;
-			return 1;
-		case ERR_INVALID_CHARACTER:
-			std::cout << "ERROR: Invalid character in installation ID"  << std::endl;
-			return 1;
-		case ERR_INVALID_CHECK_DIGIT:
-			std::cout << "ERROR: Installation ID checksum failed. Please check that it is typed correctly" << std::endl;
-			return 1;
-		case ERR_UNKNOWN_VERSION:
-			std::cout << "ERROR: Unknown installation ID version" << std::endl;
-			return 1;
-		case ERR_UNLUCKY:
-			std::cout << "ERROR: Unable to generate valid confirmation ID" << std::endl;
-			return 1;
-		case SUCCESS:
-			std::cout << "Confirmation ID: " << confirmation_id << std::endl;
-			return 0;
-	}
 }

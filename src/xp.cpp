@@ -45,7 +45,8 @@ bool verifyXPKey(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
-        char (&pKey)[25]
+        char (&pKey)[25],
+        bool verbose
 ) {
     BN_CTX *numContext = BN_CTX_new();
 
@@ -139,7 +140,8 @@ void generateXPKey(
         BIGNUM   *genOrder,
         BIGNUM   *privateKey,
         DWORD    pSerial,
-        char     (&pKey)[25]
+        char     (&pKey)[25],
+        bool     verbose
 ) {
     BN_CTX *numContext = BN_CTX_new();
 
@@ -219,10 +221,12 @@ void generateXPKey(
         // Pack product key.
         packXP(pRaw, pSerial, pHash, pSignature);
 
-        fmt::print("    Serial: 0x{:08x}\n", pSerial);
-        fmt::print("      Hash: 0x{:08x}\n", pHash);
-        fmt::print(" Signature: 0x{:08x}\n", pSignature);
-        fmt::print("\n");
+        if (verbose) {
+            fmt::print("    Serial: 0x{:08x}\n", pSerial);
+            fmt::print("      Hash: 0x{:08x}\n", pHash);
+            fmt::print(" Signature: 0x{:08x}\n", pSignature);
+            fmt::print("\n");
+        }
 
         EC_POINT_free(r);
     } while (pRaw[1] > BITMASK(50));
