@@ -57,14 +57,27 @@
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
-// Confirmation ID generator constants
-#define SUCCESS 0
-#define ERR_TOO_SHORT 1
-#define ERR_TOO_LARGE 2
-#define ERR_INVALID_CHARACTER 3
-#define ERR_INVALID_CHECK_DIGIT 4
-#define ERR_UNKNOWN_VERSION 5
-#define ERR_UNLUCKY 6
+enum MODE {
+    MODE_BINK1998 = 0,
+    MODE_BINK2002 = 1,
+    MODE_CONFIRMATION_ID = 2,
+};
+
+struct Options {
+    std::string binkid;
+    std::string keysFilename;
+    std::string instid;
+    int channelID;
+    int numKeys;
+    bool verbose;
+    bool help;
+    bool error;
+    bool list;
+
+    MODE applicationMode;
+};
+
+extern Options options;
 
 // Type definitions
 typedef bool     BOOL;
@@ -73,8 +86,11 @@ typedef uint16_t WORD;
 typedef uint32_t DWORD;
 typedef uint64_t QWORD;
 
+#ifdef __SIZEOF_INT128__
+typedef unsigned __int128 DQWORD;
+#endif
+
 // Global variables
-extern char pCharset[];
 
 // util.cpp
 int  BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen); // Hello OpenSSL developers, please tell me, where is this function at?
@@ -96,65 +112,5 @@ EC_GROUP *initializeEllipticCurve(
 void unbase24(BYTE *byteSeq, const char *cdKey);
 void base24(char *cdKey, BYTE *byteSeq);
 
-// cli.cpp
-void print_product_key(char *pk);
-void print_product_id(DWORD *pid);
-
-struct Options {
-    std::string binkid;
-    int channelID;
-    std::string keysFilename;
-    int numKeys;
-    std::string instid;
-    bool help;
-    bool list;
-    bool isBink2002;
-    bool verbose;
-    bool error;
-};
-extern Options options;
-
-int parseCommandLine(int argc, char* argv[], Options* output);
-int validateCommandLine(Options* options, char* argv[], json* output);
-void showHelp(char* argv[]);
-bool loadJSON(const fs::path& filename, json *output);
-
-// xp.cpp
-bool verifyXPKey(
-        EC_GROUP *eCurve,
-        EC_POINT *basePoint,
-        EC_POINT *publicKey,
-        char (&pKey)[25]
-);
-
-void generateXPKey(
-        EC_GROUP *eCurve,
-        EC_POINT *basePoint,
-        BIGNUM   *genOrder,
-        BIGNUM   *privateKey,
-        DWORD    pSerial,
-        char     (&pKey)[25]
-);
-
-// server.cpp
-bool verifyServerKey(
-        EC_GROUP *eCurve,
-        EC_POINT *basePoint,
-        EC_POINT *publicKey,
-        char (&cdKey)[25]
-);
-
-void generateServerKey(
-        EC_GROUP *eCurve,
-        EC_POINT *basePoint,
-        BIGNUM   *genOrder,
-        BIGNUM   *privateKey,
-        DWORD    pChannelID,
-        DWORD    pAuthInfo,
-        char     (&pKey)[25]
-);
-
-// confid.cpp
-int generateConfId(const char* installation_id_str, char confirmation_id[49]);
 
 #endif //WINDOWSXPKG_HEADER_H

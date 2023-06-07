@@ -2,10 +2,10 @@
 // Created by Andrew on 01/06/2023.
 //
 
-#include "header.h"
+#include "BINK1998.h"
 
 /* Unpacks the Windows XP-like Product Key. */
-void unpackXP(
+void BINK1998::Unpack(
         QWORD (&pRaw)[2],
         DWORD &pSerial,
         DWORD &pHash,
@@ -25,7 +25,7 @@ void unpackXP(
 }
 
 /* Packs the Windows XP-like Product Key. */
-void packXP(
+void BINK1998::Pack(
         QWORD (&pRaw)[2],
         DWORD pSerial,
         DWORD pHash,
@@ -41,7 +41,7 @@ void packXP(
 }
 
 /* Verifies the Windows XP-like Product Key. */
-bool verifyXPKey(
+bool BINK1998::Verify(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
@@ -59,7 +59,7 @@ bool verifyXPKey(
     unbase24((BYTE *)pRaw, pKey);
 
     // Extract RPK, hash and signature from bytecode.
-    unpackXP(pRaw, pSerial, pHash, pSignature);
+    Unpack(pRaw, pSerial, pHash, pSignature);
 
     /*
      *
@@ -133,7 +133,7 @@ bool verifyXPKey(
 }
 
 /* Generate a valid Product Key. */
-void generateXPKey(
+void BINK1998::Generate(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         BIGNUM   *genOrder,
@@ -215,7 +215,7 @@ void generateXPKey(
         BN_bn2lebinpad(s, (BYTE *)&pSignature, BN_num_bytes(s));
 
         // Pack product key.
-        packXP(pRaw, pSerial, pHash, pSignature);
+        Pack(pRaw, pSerial, pHash, pSignature);
 
         if (options.verbose) {
             fmt::print("Generation results:\n");

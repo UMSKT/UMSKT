@@ -4,6 +4,8 @@
 
 #include "header.h"
 
+char pCharset[] = "BCDFGHJKMPQRTVWXY2346789";
+
 /* Converts from CD-key to a byte sequence. */
 void unbase24(BYTE *byteSeq, const char *cdKey) {
     BYTE pDecodedKey[PK_LENGTH + NULL_TERMINATOR]{};

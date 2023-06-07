@@ -2,32 +2,24 @@
 // Created by WitherOrNot on 06/02/2023.
 //
 
-#include "header.h"
-
-typedef int64_t i64;
-typedef uint64_t ui64;
+#include "confid.h"
 
 #define MOD 0x16A6B036D7F2A79ULL
 #define NON_RESIDUE 43
-static const ui64 f[6] = {0, 0x21840136C85381ULL, 0x44197B83892AD0ULL, 0x1400606322B3B04ULL, 0x1400606322B3B04ULL, 1};
+static const QWORD f[6] = {0, 0x21840136C85381ULL, 0x44197B83892AD0ULL, 0x1400606322B3B04ULL, 0x1400606322B3B04ULL, 1};
 
-typedef struct {
-	ui64 u[2];
-	ui64 v[2];
-} TDivisor;
-
-static ui64 residue_add(ui64 x, ui64 y)
+QWORD ConfirmationID::residue_add(QWORD x, QWORD y)
 {
-	ui64 z = x + y;
+	QWORD z = x + y;
 	//z = z - (z >= MOD ? MOD : 0);
 	if (z >= MOD)
 		z -= MOD;
 	return z;
 }
 
-static ui64 residue_sub(ui64 x, ui64 y)
+QWORD ConfirmationID::residue_sub(QWORD x, QWORD y)
 {
-	ui64 z = x - y;
+	QWORD z = x - y;
 	//z += (x < y ? MOD : 0);
 	if (x < y)
 		z += MOD;
@@ -36,82 +28,82 @@ static ui64 residue_sub(ui64 x, ui64 y)
 
 #if defined(__x86_64__) || defined(_M_AMD64) || defined(__aarch64__) || (defined(__arm64__) && defined(__APPLE__))
 #ifdef __GNUC__
-static inline uint64_t __umul128(uint64_t a, uint64_t b, uint64_t* hi)
+inline QWORD ConfirmationID::__umul128(QWORD a, QWORD b, QWORD* hi)
 {
-    unsigned __int128 r = (unsigned __int128) a * (unsigned __int128) b;
+    DQWORD r = (DQWORD)a * (DQWORD)b;
     *hi = r >> 64;
-    return (uint64_t) r;
+    return (QWORD) r;
 }
 #else
 #define __umul128 _umul128
 #endif
 #elif defined(__i386__) || defined(_M_IX86) || defined(__arm__)
-static inline uint64_t __umul128(uint64_t multiplier, uint64_t multiplicand, uint64_t *product_hi) {
+inline QWORD ConfirmationID::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi) {
     // multiplier   = ab = a * 2^32 + b
     // multiplicand = cd = c * 2^32 + d
     // ab * cd = a * c * 2^64 + (a * d + b * c) * 2^32 + b * d
-    uint64_t a = multiplier >> 32;
-    uint64_t b = multiplier & 0xFFFFFFFF;
-    uint64_t c = multiplicand >> 32;
-    uint64_t d = multiplicand & 0xFFFFFFFF;
+    QWORD a = multiplier >> 32;
+    QWORD b = multiplier & 0xFFFFFFFF;
+    QWORD c = multiplicand >> 32;
+    QWORD d = multiplicand & 0xFFFFFFFF;
 
-    //uint64_t ac = a * c;
-    uint64_t ad = a * d;
-    //uint64_t bc = b * c;
-    uint64_t bd = b * d;
+    //QWORD ac = a * c;
+    QWORD ad = a * d;
+    //QWORD bc = b * c;
+    QWORD bd = b * d;
 
-    uint64_t adbc = ad + (b * c);
-    uint64_t adbc_carry = adbc < ad ? 1 : 0;
+    QWORD adbc = ad + (b * c);
+    QWORD adbc_carry = adbc < ad ? 1 : 0;
 
     // multiplier * multiplicand = product_hi * 2^64 + product_lo
-    uint64_t product_lo = bd + (adbc << 32);
-    uint64_t product_lo_carry = product_lo < bd ? 1 : 0;
+    QWORD product_lo = bd + (adbc << 32);
+    QWORD product_lo_carry = product_lo < bd ? 1 : 0;
     *product_hi = (a * c) + (adbc >> 32) + (adbc_carry << 32) + product_lo_carry;
 
     return product_lo;
 }
 #endif
 
-static ui64 ui128_quotient_mod(ui64 lo, ui64 hi)
+QWORD ConfirmationID::ui128_quotient_mod(QWORD lo, QWORD hi)
 {
 	// hi:lo * ceil(2**170/MOD) >> (64 + 64 + 42)
-	ui64 prod1;
+	QWORD prod1;
 	__umul128(lo, 0x604fa6a1c6346a87, &prod1);
-	ui64 part1hi;
-	ui64 part1lo = __umul128(lo, 0x2d351c6d04f8b, &part1hi);
-	ui64 part2hi;
-	ui64 part2lo = __umul128(hi, 0x604fa6a1c6346a87, &part2hi);
-	ui64 sum1 = part1lo + part2lo;
+	QWORD part1hi;
+	QWORD part1lo = __umul128(lo, 0x2d351c6d04f8b, &part1hi);
+	QWORD part2hi;
+	QWORD part2lo = __umul128(hi, 0x604fa6a1c6346a87, &part2hi);
+	QWORD sum1 = part1lo + part2lo;
 	unsigned sum1carry = (sum1 < part1lo);
 	sum1 += prod1;
 	sum1carry += (sum1 < prod1);
-	ui64 prod2 = part1hi + part2hi + sum1carry;
-	ui64 prod3hi;
-	ui64 prod3lo = __umul128(hi, 0x2d351c6d04f8b, &prod3hi);
+	QWORD prod2 = part1hi + part2hi + sum1carry;
+	QWORD prod3hi;
+	QWORD prod3lo = __umul128(hi, 0x2d351c6d04f8b, &prod3hi);
 	prod3lo += prod2;
 	prod3hi += (prod3lo < prod2);
 	return (prod3lo >> 42) | (prod3hi << 22);
 }
 
-static ui64 residue_mul(ui64 x, ui64 y)
+QWORD ConfirmationID::residue_mul(QWORD x, QWORD y)
 {
 // * ceil(2**170/MOD) = 0x2d351 c6d04f8b|604fa6a1 c6346a87 for (p-1)*(p-1) max
-	ui64 hi;
-	ui64 lo = __umul128(x, y, &hi);
-	ui64 quotient = ui128_quotient_mod(lo, hi);
+	QWORD hi;
+	QWORD lo = __umul128(x, y, &hi);
+	QWORD quotient = ui128_quotient_mod(lo, hi);
 	return lo - quotient * MOD;
 }
 
-static ui64 residue_pow(ui64 x, ui64 y)
+QWORD ConfirmationID::residue_pow(QWORD x, QWORD y)
 {
 	if (y == 0)
 		return 1;
-	ui64 cur = x;
+	QWORD cur = x;
 	while (!(y & 1)) {
 		cur = residue_mul(cur, cur);
 		y >>= 1;
 	}
-	ui64 res = cur;
+	QWORD res = cur;
 	while ((y >>= 1) != 0) {
 		cur = residue_mul(cur, cur);
 		if (y & 1)
@@ -120,14 +112,14 @@ static ui64 residue_pow(ui64 x, ui64 y)
 	return res;
 }
 
-static ui64 inverse(ui64 u, ui64 v)
+QWORD ConfirmationID::inverse(QWORD u, QWORD v)
 {
 	//assert(u);
-	i64 tmp;
-	i64 xu = 1, xv = 0;
-	ui64 v0 = v;
+	int64_t tmp;
+	int64_t xu = 1, xv = 0;
+	QWORD v0 = v;
 	while (u > 1) {
-		ui64 d = v / u; ui64 remainder = v % u;
+		QWORD d = v / u; QWORD remainder = v % u;
 		tmp = u; u = remainder; v = tmp;
 		tmp = xu; xu = xv - d * xu; xv = tmp;
 	}
@@ -135,20 +127,27 @@ static ui64 inverse(ui64 u, ui64 v)
 	return xu;
 }
 
-static ui64 residue_inv(ui64 x)
-{ return inverse(x, MOD); }
-//{ return residue_pow(x, MOD - 2); }
+QWORD ConfirmationID::residue_inv(QWORD x)
+{
+    return inverse(x, MOD);
+    // return residue_pow(x, MOD - 2);
+}
 
 #define BAD 0xFFFFFFFFFFFFFFFFull
 
-static ui64 residue_sqrt(ui64 what)
+QWORD ConfirmationID::residue_sqrt(QWORD what)
 {
-	if (!what)
-		return 0;
-	ui64 g = NON_RESIDUE, z, y, r, x, b, t;
-	ui64 e = 0, q = MOD - 1;
-	while (!(q & 1))
-		e++, q >>= 1;
+	if (!what) {
+        return 0;
+    }
+
+	QWORD g = NON_RESIDUE, z, y, r, x, b, t;
+	QWORD e = 0, q = MOD - 1;
+
+	while (!(q & 1)) {
+        e++, q >>= 1;
+    }
+
 	z = residue_pow(g, q);
 	y = z;
 	r = e;
@@ -156,39 +155,46 @@ static ui64 residue_sqrt(ui64 what)
 	b = residue_mul(residue_mul(what, x), x);
 	x = residue_mul(what, x);
 	while (b != 1) {
-		ui64 m = 0, b2 = b;
-		do {
+		QWORD m = 0, b2 = b;
+
+        do {
 			m++;
 			b2 = residue_mul(b2, b2);
 		} while (b2 != 1);
-		if (m == r)
-			return BAD;
+
+        if (m == r) {
+            return BAD;
+        }
+
 		t = residue_pow(y, 1 << (r - m - 1));
 		y = residue_mul(t, t);
 		r = m;
 		x = residue_mul(x, t);
 		b = residue_mul(b, y);
 	}
+
 	if (residue_mul(x, x) != what) {
 		//printf("internal error in sqrt\n");
 		return BAD;
 	}
+
 	return x;
 }
 
-int find_divisor_v(TDivisor* d)
+int ConfirmationID::find_divisor_v(TDivisor* d)
 {
 	// u | v^2 - f
 	// u = u0 + u1*x + x^2
 	// f%u = f0 + f1*x
-	ui64 v1;
-	ui64 f2[6];
-	int i, j;
-	for (i = 0; i < 6; i++)
-		f2[i] = f[i];
-	const ui64 u0 = d->u[0];
-	const ui64 u1 = d->u[1];
-	for (j = 4; j--; ) {
+	QWORD v1, f2[6];
+
+    for (int i = 0; i < 6; i++) {
+        f2[i] = f[i];
+    }
+
+	const QWORD u0 = d->u[0];
+	const QWORD u1 = d->u[1];
+	for (int j = 4; j--; ) {
 		f2[j] = residue_sub(f2[j], residue_mul(u0, f2[j + 2]));
 		f2[j + 1] = residue_sub(f2[j + 1], residue_mul(u1, f2[j + 2]));
 		f2[j + 2] = 0;
@@ -200,11 +206,11 @@ int find_divisor_v(TDivisor* d)
 	// v0^2 = f0 + u0*v1^2 = (f1 + u1*v1^2)^2 / (2*v1)^2
 	// (f1^2) + 2*(f1*u1-2*f0) * v1^2 + (u1^2-4*u0) * v1^4 = 0
 	// v1^2 = ((2*f0-f1*u1) +- 2*sqrt(-f0*f1*u1 + f0^2 + f1^2*u0))) / (u1^2-4*u0)
-	const ui64 f0 = f2[0];
-	const ui64 f1 = f2[1];
-	const ui64 u0double = residue_add(u0, u0);
-	const ui64 coeff2 = residue_sub(residue_mul(u1, u1), residue_add(u0double, u0double));
-	const ui64 coeff1 = residue_sub(residue_add(f0, f0), residue_mul(f1, u1));
+	const QWORD f0 = f2[0];
+	const QWORD f1 = f2[1];
+	const QWORD u0double = residue_add(u0, u0);
+	const QWORD coeff2 = residue_sub(residue_mul(u1, u1), residue_add(u0double, u0double));
+	const QWORD coeff1 = residue_sub(residue_add(f0, f0), residue_mul(f1, u1));
 	if (coeff2 == 0) {
 		if (coeff1 == 0) {
 			if (f1 == 0) {
@@ -213,34 +219,39 @@ int find_divisor_v(TDivisor* d)
 			}
 			return 0;
 		}
-		ui64 sqr = residue_mul(residue_mul(f1, f1), residue_inv(residue_add(coeff1, coeff1)));
+		QWORD sqr = residue_mul(residue_mul(f1, f1), residue_inv(residue_add(coeff1, coeff1)));
 		v1 = residue_sqrt(sqr);
-		if (v1 == BAD)
-			return 0;
+		if (v1 == BAD) {
+            return 0;
+        }
 	} else {
-		ui64 d = residue_add(residue_mul(f0, f0), residue_mul(f1, residue_sub(residue_mul(f1, u0), residue_mul(f0, u1))));
+		QWORD d = residue_add(residue_mul(f0, f0), residue_mul(f1, residue_sub(residue_mul(f1, u0), residue_mul(f0, u1))));
 		d = residue_sqrt(d);
-		if (d == BAD)
-			return 0;
+		if (d == BAD) {
+            return 0;
+        }
+
 		d = residue_add(d, d);
-		ui64 inv = residue_inv(coeff2);
-		ui64 root = residue_mul(residue_add(coeff1, d), inv);
+		QWORD inv = residue_inv(coeff2);
+		QWORD root = residue_mul(residue_add(coeff1, d), inv);
 		v1 = residue_sqrt(root);
 		if (v1 == BAD) {
 			root = residue_mul(residue_sub(coeff1, d), inv);
 			v1 = residue_sqrt(root);
-			if (v1 == BAD)
-				return 0;
+			if (v1 == BAD) {
+                return 0;
+            }
 		}
 	}
-	ui64 v0 = residue_mul(residue_add(f1, residue_mul(u1, residue_mul(v1, v1))), residue_inv(residue_add(v1, v1)));
+
+	QWORD v0 = residue_mul(residue_add(f1, residue_mul(u1, residue_mul(v1, v1))), residue_inv(residue_add(v1, v1)));
 	d->v[0] = v0;
 	d->v[1] = v1;
 	return 1;
 }
 
 // generic short slow code
-static int polynomial_mul(int adeg, const ui64 a[], int bdeg, const ui64 b[], int resultprevdeg, ui64 result[])
+int ConfirmationID::polynomial_mul(int adeg, const QWORD a[], int bdeg, const QWORD b[], int resultprevdeg, QWORD result[])
 {
 	if (adeg < 0 || bdeg < 0)
 		return resultprevdeg;
@@ -255,13 +266,14 @@ static int polynomial_mul(int adeg, const ui64 a[], int bdeg, const ui64 b[], in
 		--resultprevdeg;
 	return resultprevdeg;
 }
-static int polynomial_div_monic(int adeg, ui64 a[], int bdeg, const ui64 b[], ui64* quotient)
+
+int ConfirmationID::polynomial_div_monic(int adeg, QWORD a[], int bdeg, const QWORD b[], QWORD* quotient)
 {
 	assert(bdeg >= 0);
 	assert(b[bdeg] == 1);
 	int i, j;
 	for (i = adeg - bdeg; i >= 0; i--) {
-		ui64 q = a[i + bdeg];
+		QWORD q = a[i + bdeg];
 		if (quotient)
 			quotient[i] = q;
 		for (j = 0; j < bdeg; j++)
@@ -273,18 +285,18 @@ static int polynomial_div_monic(int adeg, ui64 a[], int bdeg, const ui64 b[], ui
 		i--;
 	return i;
 }
-static void polynomial_xgcd(int adeg, const ui64 a[3], int bdeg, const ui64 b[3], int* pgcddeg, ui64 gcd[3], int* pmult1deg, ui64 mult1[3], int* pmult2deg, ui64 mult2[3])
+void ConfirmationID::polynomial_xgcd(int adeg, const QWORD a[3], int bdeg, const QWORD b[3], int* pgcddeg, QWORD gcd[3], int* pmult1deg, QWORD mult1[3], int* pmult2deg, QWORD mult2[3])
 {
 	int sdeg = -1;
-	ui64 s[3] = {0, 0, 0};
+	QWORD s[3] = {0, 0, 0};
 	int mult1deg = 0;
 	mult1[0] = 1; mult1[1] = 0; mult1[2] = 0;
 	int tdeg = 0;
-	ui64 t[3] = {1, 0, 0};
+	QWORD t[3] = {1, 0, 0};
 	int mult2deg = -1;
 	mult2[0] = 0; mult2[1] = 0; mult2[2] = 0;
 	int rdeg = bdeg;
-	ui64 r[3] = {b[0], b[1], b[2]};
+	QWORD r[3] = {b[0], b[1], b[2]};
 	int gcddeg = adeg;
 	gcd[0] = a[0]; gcd[1] = a[1]; gcd[2] = a[2];
 	// s*u1 + t*u2 = r
@@ -296,7 +308,7 @@ static void polynomial_xgcd(int adeg, const ui64 a[3], int bdeg, const ui64 b[3]
 			tmp = rdeg; rdeg = gcddeg; gcddeg = tmp;
 			tmpi = sdeg; sdeg = mult1deg; mult1deg = tmpi;
 			tmpi = tdeg; tdeg = mult2deg; mult2deg = tmpi;
-			ui64 tmp2;
+			QWORD tmp2;
 			tmp2 = r[0]; r[0] = gcd[0]; gcd[0] = tmp2;
 			tmp2 = r[1]; r[1] = gcd[1]; gcd[1] = tmp2;
 			tmp2 = r[2]; r[2] = gcd[2]; gcd[2] = tmp2;
@@ -309,7 +321,7 @@ static void polynomial_xgcd(int adeg, const ui64 a[3], int bdeg, const ui64 b[3]
 			continue;
 		}
 		int delta = gcddeg - rdeg;
-		ui64 mult = residue_mul(gcd[gcddeg], residue_inv(r[rdeg]));
+		QWORD mult = residue_mul(gcd[gcddeg], residue_inv(r[rdeg]));
 		// quotient = mult * x**delta
 		assert(rdeg + delta < 3);
 		for (int i = 0; i <= rdeg; i++)
@@ -336,7 +348,8 @@ static void polynomial_xgcd(int adeg, const ui64 a[3], int bdeg, const ui64 b[3]
 	*pmult1deg = mult1deg;
 	*pmult2deg = mult2deg;
 }
-static int u2poly(const TDivisor* src, ui64 polyu[3], ui64 polyv[2])
+
+int ConfirmationID::u2poly(const TDivisor* src, QWORD polyu[3], QWORD polyv[2])
 {
 	if (src->u[1] != BAD) {
 		polyu[0] = src->u[0];
@@ -358,27 +371,28 @@ static int u2poly(const TDivisor* src, ui64 polyu[3], ui64 polyv[2])
 	polyv[1] = 0;
 	return 0;
 }
-static void divisor_add(const TDivisor* src1, const TDivisor* src2, TDivisor* dst)
+
+void ConfirmationID::divisor_add(const TDivisor* src1, const TDivisor* src2, TDivisor* dst)
 {
-	ui64 u1[3], u2[3], v1[2], v2[2];
+	QWORD u1[3], u2[3], v1[2], v2[2];
 	int u1deg = u2poly(src1, u1, v1);
 	int u2deg = u2poly(src2, u2, v2);
 	// extended gcd: d1 = gcd(u1, u2) = e1*u1 + e2*u2
 	int d1deg, e1deg, e2deg;
-	ui64 d1[3], e1[3], e2[3];
+	QWORD d1[3], e1[3], e2[3];
 	polynomial_xgcd(u1deg, u1, u2deg, u2, &d1deg, d1, &e1deg, e1, &e2deg, e2);
 	assert(e1deg <= 1);
 	assert(e2deg <= 1);
 	// extended gcd again: d = gcd(d1, v1+v2) = c1*d1 + c2*(v1+v2)
-	ui64 b[3] = {residue_add(v1[0], v2[0]), residue_add(v1[1], v2[1]), 0};
+	QWORD b[3] = {residue_add(v1[0], v2[0]), residue_add(v1[1], v2[1]), 0};
 	int bdeg = (b[1] == 0 ? (b[0] == 0 ? -1 : 0) : 1);
 	int ddeg, c1deg, c2deg;
-	ui64 d[3], c1[3], c2[3];
+	QWORD d[3], c1[3], c2[3];
 	polynomial_xgcd(d1deg, d1, bdeg, b, &ddeg, d, &c1deg, c1, &c2deg, c2);
 	assert(c1deg <= 0);
 	assert(c2deg <= 1);
 	assert(ddeg >= 0);
-	ui64 dmult = residue_inv(d[ddeg]);
+	QWORD dmult = residue_inv(d[ddeg]);
 	int i;
 	for (i = 0; i < ddeg; i++)
 		d[i] = residue_mul(d[i], dmult);
@@ -387,10 +401,10 @@ static void divisor_add(const TDivisor* src1, const TDivisor* src2, TDivisor* ds
 		c1[i] = residue_mul(c1[i], dmult);
 	for (i = 0; i <= c2deg; i++)
 		c2[i] = residue_mul(c2[i], dmult);
-	ui64 u[5];
+	QWORD u[5];
 	int udeg = polynomial_mul(u1deg, u1, u2deg, u2, -1, u);
 	// u is monic
-	ui64 v[7], tmp[7];
+	QWORD v[7], tmp[7];
 	int vdeg, tmpdeg;
 	// c1*(e1*u1*v2 + e2*u2*v1) + c2*(v1*v2 + f)
 	// c1*(e1*u1*(v2-v1) + d1*v1) + c2*(v1*v2 + f)
@@ -407,7 +421,7 @@ static void divisor_add(const TDivisor* src1, const TDivisor* src2, TDivisor* ds
 	vdeg = polynomial_mul(c2deg, c2, tmpdeg, tmp, vdeg, v);
 	if (ddeg > 0) {
 		assert(udeg >= 2*ddeg);
-		ui64 udiv[5];
+		QWORD udiv[5];
 		polynomial_div_monic(udeg, u, ddeg, d, udiv); udeg -= ddeg;
 		polynomial_div_monic(udeg, udiv, ddeg, d, u); udeg -= ddeg;
 		if (vdeg >= 0) {
@@ -429,10 +443,10 @@ static void divisor_add(const TDivisor* src1, const TDivisor* src2, TDivisor* ds
 		for (; i <= 5; i++)
 			tmp[i] = f[i];
 		tmpdeg = i - 1;
-		ui64 udiv[5];
+		QWORD udiv[5];
 		polynomial_div_monic(tmpdeg, tmp, udeg, u, udiv);
 		udeg = tmpdeg - udeg;
-		ui64 mult = residue_inv(udiv[udeg]);
+		QWORD mult = residue_inv(udiv[udeg]);
 		for (i = 0; i < udeg; i++)
 			u[i] = residue_mul(udiv[i], mult);
 		u[i] = 1;
@@ -458,9 +472,10 @@ static void divisor_add(const TDivisor* src1, const TDivisor* src2, TDivisor* ds
 		dst->v[1] = BAD;
 	}
 }
+
 #define divisor_double(src, dst) divisor_add(src, src, dst)
 
-static void divisor_mul(const TDivisor* src, ui64 mult, TDivisor* dst)
+void ConfirmationID::divisor_mul(const TDivisor* src, QWORD mult, TDivisor* dst)
 {
 	if (mult == 0) {
 		dst->u[0] = BAD;
@@ -482,7 +497,7 @@ static void divisor_mul(const TDivisor* src, ui64 mult, TDivisor* dst)
 	}
 }
 
-static void divisor_mul128(const TDivisor* src, ui64 mult_lo, ui64 mult_hi, TDivisor* dst)
+void ConfirmationID::divisor_mul128(const TDivisor* src, QWORD mult_lo, QWORD mult_hi, TDivisor* dst)
 {
 	if (mult_lo == 0 && mult_hi == 0) {
 		dst->u[0] = BAD;
@@ -513,13 +528,13 @@ static void divisor_mul128(const TDivisor* src, ui64 mult_lo, ui64 mult_hi, TDiv
 	}
 }
 
-static unsigned rol(unsigned x, int shift)
+unsigned ConfirmationID::rol(unsigned x, int shift)
 {
 	//assert(shift > 0 && shift < 32);
 	return (x << shift) | (x >> (32 - shift));
 }
 
-static void sha1_single_block(unsigned char input[64], unsigned char output[20])
+void ConfirmationID::sha1_single_block(unsigned char input[64], unsigned char output[20])
 {
 	unsigned a, b, c, d, e;
 	a = 0x67452301;
@@ -577,7 +592,7 @@ static void sha1_single_block(unsigned char input[64], unsigned char output[20])
 	output[16] = e >> 24; output[17] = e >> 16; output[18] = e >> 8; output[19] = e;
 }
 
-static void Mix(unsigned char* buffer, size_t bufSize, const unsigned char* key, size_t keySize)
+void ConfirmationID::Mix(unsigned char* buffer, size_t bufSize, const unsigned char* key, size_t keySize)
 {
 	unsigned char sha1_input[64];
 	unsigned char sha1_result[20];
@@ -591,7 +606,7 @@ static void Mix(unsigned char* buffer, size_t bufSize, const unsigned char* key,
 		sha1_input[half + keySize] = 0x80;
 		sha1_input[sizeof(sha1_input) - 1] = (half + keySize) * 8;
 		sha1_input[sizeof(sha1_input) - 2] = (half + keySize) * 8 / 0x100;
-		sha1_single_block(sha1_input, sha1_result);
+        sha1_single_block(sha1_input, sha1_result);
 		size_t i;
 		for (i = half & ~3; i < half; i++)
 			sha1_result[i] = sha1_result[i + 4 - (half & 3)];
@@ -603,7 +618,7 @@ static void Mix(unsigned char* buffer, size_t bufSize, const unsigned char* key,
 	}
 }
 
-static void Unmix(unsigned char* buffer, size_t bufSize, const unsigned char* key, size_t keySize)
+void ConfirmationID::Unmix(unsigned char* buffer, size_t bufSize, const unsigned char* key, size_t keySize)
 {
 	unsigned char sha1_input[64];
 	unsigned char sha1_result[20];
@@ -617,7 +632,7 @@ static void Unmix(unsigned char* buffer, size_t bufSize, const unsigned char* ke
 		sha1_input[half + keySize] = 0x80;
 		sha1_input[sizeof(sha1_input) - 1] = (half + keySize) * 8;
 		sha1_input[sizeof(sha1_input) - 2] = (half + keySize) * 8 / 0x100;
-		sha1_single_block(sha1_input, sha1_result);
+        sha1_single_block(sha1_input, sha1_result);
 		size_t i;
 		for (i = half & ~3; i < half; i++)
 			sha1_result[i] = sha1_result[i + 4 - (half & 3)];
@@ -629,7 +644,7 @@ static void Unmix(unsigned char* buffer, size_t bufSize, const unsigned char* ke
 	}
 }
 
-int generateConfId(const char* installation_id_str, char confirmation_id[49])
+int ConfirmationID::Generate(const char* installation_id_str, char confirmation_id[49])
 {
 	unsigned char installation_id[19]; // 10**45 < 256**19
 	size_t installation_id_len = 0;
@@ -679,8 +694,8 @@ int generateConfId(const char* installation_id_str, char confirmation_id[49])
 
 #pragma pack(push, 1)
 	struct {
-		ui64 HardwareID;
-		ui64 ProductIDLow;
+		QWORD HardwareID;
+		QWORD ProductIDLow;
 		unsigned char ProductIDHigh;
 		unsigned short KeySHA1;
 	} parsed;
@@ -697,7 +712,7 @@ int generateConfId(const char* installation_id_str, char confirmation_id[49])
 
 	unsigned char keybuf[16];
 	memcpy(keybuf, &parsed.HardwareID, 8);
-	ui64 productIdMixed = (ui64)productId1 << 41 | (ui64)productId2 << 58 | (ui64)productId3 << 17 | productId4;
+	QWORD productIdMixed = (QWORD)productId1 << 41 | (QWORD)productId2 << 58 | (QWORD)productId3 << 17 | productId4;
 	memcpy(keybuf + 8, &productIdMixed, 8);
 
 	TDivisor d;
@@ -706,16 +721,16 @@ int generateConfId(const char* installation_id_str, char confirmation_id[49])
 		union {
 			unsigned char buffer[14];
 			struct {
-				ui64 lo;
-				ui64 hi;
+				QWORD lo;
+				QWORD hi;
 			};
 		} u;
 		u.lo = 0;
 		u.hi = 0;
 		u.buffer[7] = attempt;
 		Mix(u.buffer, 14, keybuf, 16);
-		ui64 x2 = ui128_quotient_mod(u.lo, u.hi);
-		ui64 x1 = u.lo - x2 * MOD;
+		QWORD x2 = ui128_quotient_mod(u.lo, u.hi);
+		QWORD x1 = u.lo - x2 * MOD;
 		x2++;
 		d.u[0] = residue_sub(residue_mul(x1, x1), residue_mul(NON_RESIDUE, residue_mul(x2, x2)));
 		d.u[1] = residue_add(x1, x1);
@@ -727,7 +742,7 @@ int generateConfId(const char* installation_id_str, char confirmation_id[49])
 	divisor_mul128(&d, 0x04e21b9d10f127c1, 0x40da7c36d44c, &d);
 	union {
 		struct {
-			ui64 encoded_lo, encoded_hi;
+			QWORD encoded_lo, encoded_hi;
 		};
 		struct {
 			uint32_t encoded[4];
@@ -743,9 +758,9 @@ int generateConfId(const char* installation_id_str, char confirmation_id[49])
 		e.encoded_lo += MOD;
 		e.encoded_hi += (e.encoded_lo < MOD);
 	} else {
-		ui64 x1 = (d.u[1] % 2 ? d.u[1] + MOD : d.u[1]) / 2;
-		ui64 x2sqr = residue_sub(residue_mul(x1, x1), d.u[0]);
-		ui64 x2 = residue_sqrt(x2sqr);
+		QWORD x1 = (d.u[1] % 2 ? d.u[1] + MOD : d.u[1]) / 2;
+		QWORD x2sqr = residue_sub(residue_mul(x1, x1), d.u[0]);
+		QWORD x2 = residue_sqrt(x2sqr);
 		if (x2 == BAD) {
 			x2 = residue_sqrt(residue_mul(x2sqr, residue_inv(NON_RESIDUE)));
 			assert(x2 != BAD);
@@ -754,17 +769,17 @@ int generateConfId(const char* installation_id_str, char confirmation_id[49])
 			e.encoded_hi += (e.encoded_lo < x1);
 		} else {
 			// points (-x1+x2, v(-x1+x2)) and (-x1-x2, v(-x1-x2))
-			ui64 x1a = residue_sub(x1, x2);
-			ui64 y1 = residue_sub(d.v[0], residue_mul(d.v[1], x1a));
-			ui64 x2a = residue_add(x1, x2);
-			ui64 y2 = residue_sub(d.v[0], residue_mul(d.v[1], x2a));
+			QWORD x1a = residue_sub(x1, x2);
+			QWORD y1 = residue_sub(d.v[0], residue_mul(d.v[1], x1a));
+			QWORD x2a = residue_add(x1, x2);
+			QWORD y2 = residue_sub(d.v[0], residue_mul(d.v[1], x2a));
 			if (x1a > x2a) {
-				ui64 tmp = x1a;
+				QWORD tmp = x1a;
 				x1a = x2a;
 				x2a = tmp;
 			}
 			if ((y1 ^ y2) & 1) {
-				ui64 tmp = x1a;
+				QWORD tmp = x1a;
 				x1a = x2a;
 				x2a = tmp;
 			}
@@ -777,14 +792,15 @@ int generateConfId(const char* installation_id_str, char confirmation_id[49])
 	for (i = 0; i < 35; i++) {
 		unsigned c = e.encoded[3] % 10;
 		e.encoded[3] /= 10;
-		unsigned c2 = ((ui64)c << 32 | e.encoded[2]) % 10;
-		e.encoded[2] = ((ui64)c << 32 | e.encoded[2]) / 10;
-		unsigned c3 = ((ui64)c2 << 32 | e.encoded[1]) % 10;
-		e.encoded[1] = ((ui64)c2 << 32 | e.encoded[1]) / 10;
-		unsigned c4 = ((ui64)c3 << 32 | e.encoded[0]) % 10;
-		e.encoded[0] = ((ui64)c3 << 32 | e.encoded[0]) / 10;
+		unsigned c2 = ((QWORD)c << 32 | e.encoded[2]) % 10;
+		e.encoded[2] = ((QWORD)c << 32 | e.encoded[2]) / 10;
+		unsigned c3 = ((QWORD)c2 << 32 | e.encoded[1]) % 10;
+		e.encoded[1] = ((QWORD)c2 << 32 | e.encoded[1]) / 10;
+		unsigned c4 = ((QWORD)c3 << 32 | e.encoded[0]) % 10;
+		e.encoded[0] = ((QWORD)c3 << 32 | e.encoded[0]) / 10;
 		decimal[34 - i] = c4;
 	}
+
 	assert(e.encoded[0] == 0 && e.encoded[1] == 0 && e.encoded[2] == 0 && e.encoded[3] == 0);
 	char* q = confirmation_id;
 	for (i = 0; i < 7; i++) {

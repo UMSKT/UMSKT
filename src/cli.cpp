@@ -2,9 +2,12 @@
 // Created by Andrew on 01/06/2023.
 //
 
-#include "header.h"
+#include "cli.h"
+#include "confid.h"
+#include "BINK1998.h"
+#include "BINK2002.h"
 
-bool loadJSON(const fs::path& filename, json *output) {
+bool CLI::loadJSON(const fs::path& filename, json *output) {
     if (!fs::exists(filename)) {
         fmt::print("ERROR: File {} does not exist\n", filename.string());
         return false;
@@ -22,7 +25,7 @@ bool loadJSON(const fs::path& filename, json *output) {
 }
 
 
-void showHelp(char *argv[]) {
+void CLI::showHelp(char *argv[]) {
     fmt::print("usage: {} \n", argv[0]);
     fmt::print("\t-h --help\tshow this message\n");
     fmt::print("\t-v --verbose\tenable verbose output\n");
@@ -35,20 +38,20 @@ void showHelp(char *argv[]) {
     fmt::print("\n\n");
 }
 
-int parseCommandLine(int argc, char* argv[], Options* options) {
-    // set default options
+int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
     *options = Options {
-        "2E",
-        640,
-        "keys.json",
-        1,
-        "",
-        false,
-        false,
-        false,
-        false,
-        false
+            "2E",
+            "keys.json",
+            "",
+            640,
+            1,
+            false,
+            false,
+            false,
+            false,
+            MODE_BINK1998
     };
+    // set default options
 
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
@@ -117,7 +120,7 @@ int parseCommandLine(int argc, char* argv[], Options* options) {
     return !options->error;
 }
 
-int validateCommandLine(Options* options, char *argv[], json *keys) {
+int CLI::validateCommandLine(Options* options, char *argv[], json *keys) {
     if (options->verbose) {
         fmt::print("Loading keys file {}\n", options->keysFilename);
     }
@@ -155,18 +158,18 @@ int validateCommandLine(Options* options, char *argv[], json *keys) {
     sscanf(options->binkid.c_str(), "%x", &intBinkID);
 
     if (intBinkID >= 0x40) {
-        options->isBink2002 = true;
+        options->applicationMode = MODE_BINK2002;
     }
 
     if (options->channelID > 999) {
-        fmt::print("ERROR: refusing to create a key with a siteID greater than 999\n");
+        fmt::print("ERROR: refusing to create a key with a Channel ID greater than 999\n");
         return 1;
     }
 
     return 0;
 }
 
-void print_product_id(DWORD *pid)
+void CLI::print_product_id(DWORD *pid)
 {
     char raw[12];
     char b[6], c[8];
@@ -196,7 +199,7 @@ void print_product_id(DWORD *pid)
     fmt::print("Product ID: PPPPP-{}-{}-23xxx\n", b, c);
 }
 
-void print_product_key(char *pk) {
+void CLI::print_product_key(char *pk) {
     assert(strlen(pk) == 25);
 
     std::string spk = pk;
@@ -207,3 +210,146 @@ void print_product_key(char *pk) {
                spk.substr(15,5),
                spk.substr(20,5));
 }
+
+CLI::CLI(Options options, json keys) {
+    BINKID = options.binkid.c_str();
+
+    // We cannot produce a valid key without knowing the private key k. The reason for this is that
+    // we need the result of the function K(x; y) = kG(x; y).
+    privateKey = BN_new();
+
+    // We can, however, validate any given key using the available public key: {p, a, b, G, K}.
+    // genOrder the order of the generator G, a value we have to reverse -> Schoof's Algorithm.
+    genOrder = BN_new();
+
+    /* Computed data */
+    BN_dec2bn(&genOrder, keys["BINK"][BINKID]["n"].get<std::string>().c_str());
+    BN_dec2bn(&privateKey, keys["BINK"][BINKID]["priv"].get<std::string>().c_str());
+
+    if (options.verbose) {
+        fmt::print("----------------------------------------------------------- \n");
+        fmt::print("Loaded the following curve constraints: BINK[{}]\n", BINKID);
+        fmt::print("----------------------------------------------------------- \n");
+        fmt::print(" P: {}\n", keys["BINK"][BINKID]["p"].get<std::string>());
+        fmt::print(" a: {}\n", keys["BINK"][BINKID]["a"].get<std::string>());
+        fmt::print(" b: {}\n", keys["BINK"][BINKID]["b"].get<std::string>());
+        fmt::print("Gx: {}\n", keys["BINK"][BINKID]["g"]["x"].get<std::string>());
+        fmt::print("Gy: {}\n", keys["BINK"][BINKID]["g"]["y"].get<std::string>());
+        fmt::print("Kx: {}\n", keys["BINK"][BINKID]["pub"]["x"].get<std::string>());
+        fmt::print("Ky: {}\n", keys["BINK"][BINKID]["pub"]["y"].get<std::string>());
+        fmt::print(" n: {}\n", keys["BINK"][BINKID]["n"].get<std::string>());
+        fmt::print(" k: {}\n", keys["BINK"][BINKID]["priv"].get<std::string>());
+        fmt::print("\n");
+    }
+
+    eCurve = initializeEllipticCurve(
+            keys["BINK"][BINKID]["p"].get<std::string>(),
+            keys["BINK"][BINKID]["a"].get<std::string>(),
+            keys["BINK"][BINKID]["b"].get<std::string>(),
+            keys["BINK"][BINKID]["g"]["x"].get<std::string>(),
+            keys["BINK"][BINKID]["g"]["y"].get<std::string>(),
+            keys["BINK"][BINKID]["pub"]["x"].get<std::string>(),
+            keys["BINK"][BINKID]["pub"]["y"].get<std::string>(),
+            genPoint,
+            pubPoint
+    );
+
+    total = options.numKeys;
+}
+
+int CLI::BINK1998() {
+    DWORD nRaw = options.channelID * 1000000 ; /* <- change */
+
+    BIGNUM *bnrand = BN_new();
+    BN_rand(bnrand, 19, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
+
+    int oRaw;
+    char *cRaw = BN_bn2dec(bnrand);
+
+    sscanf(cRaw, "%d", &oRaw);
+    nRaw += (oRaw &= 0xF423F); // ensure our serial is less than 999999
+
+    if (options.verbose) {
+        fmt::print("> PID: {:09d}\n", nRaw);
+    }
+
+    // generate a key
+    BN_sub(privateKey, genOrder, privateKey);
+    nRaw <<= 1;
+
+    for (int i = 0; i < total; i++) {
+        BINK1998::Generate(eCurve, genPoint, genOrder, privateKey, nRaw, pKey);
+        CLI::print_product_key(pKey);
+        fmt::print("\n\n");
+
+        // verify the key
+        count += BINK1998::Verify(eCurve, genPoint, pubPoint, pKey);
+    }
+
+    fmt::print("Success count: {}/{}\n", count, total);
+    return 0;
+}
+
+int CLI::BINK2002() {
+    DWORD pChannelID = options.channelID << 1;
+
+    if (options.verbose) {
+        fmt::print("> Channel ID: {:03d}\n", options.channelID);
+    }
+
+    // generate a key
+    for (int i = 0; i < total; i++) {
+        DWORD pAuthInfo;
+        RAND_bytes((BYTE *)&pAuthInfo, 4);
+        pAuthInfo &= 0x3ff;
+
+        if (options.verbose) {
+            fmt::print("> AuthInfo: {}\n", pAuthInfo);
+        }
+
+        BINK2002::Generate(eCurve, genPoint, genOrder, privateKey, pChannelID, pAuthInfo, pKey);
+        CLI::print_product_key(pKey);
+        fmt::print("\n\n");
+
+        // verify a key
+        count += BINK2002::Verify(eCurve, genPoint, pubPoint, pKey);
+    }
+
+    fmt::print("Success count: {}/{}\n", count, total);
+    return 0;
+}
+
+int CLI::ConfirmationID() {
+    char confirmation_id[49];
+    int err = ConfirmationID::Generate(options.instid.c_str(), confirmation_id);
+
+    switch (err) {
+        case ERR_TOO_SHORT:
+            fmt::print("ERROR: Installation ID is too short.\n");
+            return 1;
+        case ERR_TOO_LARGE:
+            fmt::print("ERROR: Installation ID is too long.\n");
+            return 1;
+        case ERR_INVALID_CHARACTER:
+            fmt::print("ERROR: Invalid character in installation ID.\n");
+            return 1;
+        case ERR_INVALID_CHECK_DIGIT:
+            fmt::print("ERROR: Installation ID checksum failed. Please check that it is typed correctly.\n");
+            return 1;
+        case ERR_UNKNOWN_VERSION:
+            fmt::print("ERROR: Unknown installation ID version.\n");
+            return 1;
+        case ERR_UNLUCKY:
+            fmt::print("ERROR: Unable to generate valid confirmation ID.\n");
+            return 1;
+        case SUCCESS:
+            fmt::print("Confirmation ID: {}\n", confirmation_id);
+            return 0;
+
+        default:
+            fmt::print("Unknown error occurred during Confirmation ID generation: {}\n", err);
+    }
+    return 1;
+}
+
+
