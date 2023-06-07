@@ -212,6 +212,8 @@ void CLI::print_product_key(char *pk) {
 }
 
 CLI::CLI(Options options, json keys) {
+    this->options = options;
+
     BINKID = options.binkid.c_str();
 
     // We cannot produce a valid key without knowing the private key k. The reason for this is that
