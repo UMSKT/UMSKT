@@ -2,10 +2,10 @@
 // Created by Andrew on 01/06/2023.
 //
 
-#include "header.h"
+#include "BINK2002.h"
 
 /* Unpacks the Windows Server 2003-like Product Key. */
-void unpackServer(
+void BINK2002::Unpack(
         QWORD (&pRaw)[2],
         DWORD &pChannelID,
         DWORD &pHash,
@@ -31,7 +31,7 @@ void unpackServer(
 }
 
 /* Packs the Windows Server 2003-like Product Key. */
-void packServer(
+void BINK2002::Pack(
         QWORD (&pRaw)[2],
         DWORD pChannelID,
         DWORD pHash,
@@ -44,7 +44,7 @@ void packServer(
 }
 
 /* Verifies the Windows Server 2003-like Product Key. */
-bool verifyServerKey(
+bool BINK2002::Verify(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
@@ -63,7 +63,7 @@ bool verifyServerKey(
     unbase24((BYTE *)bKey, cdKey);
 
     // Extract product key segments from bytecode.
-    unpackServer(bKey, pChannelID, pHash, pSignature, pAuthInfo);
+    Unpack(bKey, pChannelID, pHash, pSignature, pAuthInfo);
 
     if (options.verbose) {
         fmt::print("Validation results:\n");
@@ -171,7 +171,7 @@ bool verifyServerKey(
     return compHash == pHash;
 }
 
-void generateServerKey(
+void BINK2002::Generate(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         BIGNUM   *genOrder,
@@ -320,7 +320,7 @@ void generateServerKey(
         BN_bn2lebinpad(s, (BYTE *)&pSignature, BN_num_bytes(s));
 
         // Pack product key.
-        packServer(pRaw, pChannelID, pHash, pSignature, pAuthInfo);
+        Pack(pRaw, pChannelID, pHash, pSignature, pAuthInfo);
 
         if (options.verbose) {
             fmt::print("Generation results:\n");

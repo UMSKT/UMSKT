@@ -25,6 +25,6 @@ CONFIGURE_FILE(keys.json keys.json COPYONLY)
 
 #SET(BUILD_SHARED_LIBS OFF)
 #SET(CMAKE_EXE_LINKER_FLAGS "-static")
-ADD_EXECUTABLE(xpkey src/main.cpp src/server.cpp src/xp.cpp src/key.cpp src/util.cpp src/cli.cpp src/confid.cpp)
+ADD_EXECUTABLE(xpkey src/main.cpp src/BINK2002.cpp src/BINK1998.cpp src/key.cpp src/util.cpp src/cli.cpp src/confid.cpp)
 TARGET_INCLUDE_DIRECTORIES(xpkey PUBLIC crypto)
 TARGET_LINK_LIBRARIES(xpkey PUBLIC OpenSSL::Crypto nlohmann_json::nlohmann_json fmt)
