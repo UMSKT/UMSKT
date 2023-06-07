@@ -194,10 +194,11 @@ void generateXPKey(
          *  s = Signature
          *  n = Order of G
          *  k = Private Key
-         *  K = Public Key
          *
          * Points:
          *  G(x, y) = Generator (Base Point)
+         *  R(x, y) = Random derivative of the generator
+         *  K(x, y) = Public Key
          *
          * We need to find the signature s that satisfies the equation with a given hash:
          *  P = sG + eK

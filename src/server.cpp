@@ -255,26 +255,32 @@ void generateServerKey(
         BN_lebin2bn((BYTE *)&iSignature, sizeof(iSignature), e);
 
         /*
-         * Signature * (Signature * G + H * K) = rG (mod p)
-         * ↓ K = kG ↓
          *
-         * Signature * (Signature * G + H * k * G) = rG (mod p)
-         * Signature^2 * G + Signature * HkG = rG (mod p)
-         * G(Signature^2 + Signature * HkG) = G (mod p) * r
-         * ↓ G^(-1)(G (mod p)) = (mod n), n = genOrder of G ↓
+         * Scalars:
+         *  c = Random multiplier
+         *  e = Intermediate Signature
+         *  s = Signature
+         *  n = Order of G
+         *  k = Private Key
          *
-         * Signature^2 + Hk * Signature = r (mod n)
-         * Signature = -(e +- sqrt(D)) / 2a → Signature = (-Hk +- sqrt((Hk)^2 + 4r)) / 2
+         * Points:
+         *  G(x, y) = Generator (Base Point)
+         *  R(x, y) = Random derivative of the generator
+         *  K(x, y) = Public Key
          *
-         * S = (-Hk +- sqrt((Hk)^2 + 4r)) (mod n) / 2
+         * Equation:
+         *  s(sG + eK) = R (mod p)
+         *  ↓ K = kG; R = cG ↓
          *
-         * S = s
-         * H = e
-         * k = privateKey
-         * n = genOrder
-         * r = c
+         *  s(sG + ekG) = cG (mod p)
+         *  s(s + ek)G = cG (mod p)
+         *  ↓ G cancels out, the scalar arithmetic shrinks to order n ↓
          *
-         * s = ( ( -e * privateKey +- sqrt( (e * privateKey)^2 + 4c ) ) / 2 ) % genOrder
+         *  s(s + ek) = c (mod n)
+         *  s² + (ek)s - c = 0 (mod n)
+         *  ↓ This is a quadratic equation in respect to the signature ↓
+         *
+         *  s = (-ek ± √((ek)² - 4c)) / 2 (mod n)
          */
 
         // e = ek (mod n)
@@ -283,10 +289,10 @@ void generateServerKey(
         // s = e
         BN_copy(s, e);
 
-        // s = (s (mod n))^2
+        // s = (ek (mod n))²
         BN_mod_sqr(s, s, genOrder, numContext);
 
-        // c <<= 2 (c *= 4)
+        // c *= 4 (c <<= 2)
         BN_lshift(c, c, 2);
 
         // s += c
@@ -294,18 +300,20 @@ void generateServerKey(
 
         // Around half of numbers modulo a prime are not squares -> BN_sqrt_mod fails about half of the times,
         // hence if BN_sqrt_mod returns NULL, we need to restart with a different seed.
-        // s = sqrt(s (mod n))
+        // s = √((ek)² + 4c (mod n))
         noSquare = BN_mod_sqrt(s, s, genOrder, numContext) == nullptr;
 
-        // s = s (mod n) - e
+        // s = -ek + √((ek)² + 4c) (mod n)
         BN_mod_sub(s, s, e, genOrder, numContext);
 
         // If s is odd, add order to it.
-        // s += n
+        // The order is a prime, so it can't be even.
         if (BN_is_odd(s))
+
+            // s = -ek + √((ek)² + 4c) + n
             BN_add(s, s, genOrder);
 
-        // s >>= 1 (s /= 2)
+        // s /= 2 (s >>= 1)
         BN_rshift1(s, s);
 
         // Translate resulting scalar into a 64-bit integer (the byte order is little-endian).
