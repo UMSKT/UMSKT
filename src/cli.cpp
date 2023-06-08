@@ -111,6 +111,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             }
 
             options->instid = argv[i+1];
+            options->applicationMode = MODE_CONFIRMATION_ID;
             i++;
         } else {
             options->error = true;
