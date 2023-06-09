@@ -30,7 +30,7 @@ QWORD ConfirmationID::residue_sub(QWORD x, QWORD y)
 #ifdef __GNUC__
 inline QWORD ConfirmationID::__umul128(QWORD a, QWORD b, QWORD* hi)
 {
-    DQWORD r = (DQWORD)a * (DQWORD)b;
+    OWORD r = (OWORD)a * (OWORD)b;
     *hi = r >> 64;
     return (QWORD) r;
 }

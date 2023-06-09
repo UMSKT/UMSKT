@@ -87,7 +87,7 @@ typedef uint32_t DWORD;
 typedef uint64_t QWORD;
 
 #ifdef __SIZEOF_INT128__
-typedef unsigned __int128 DQWORD;
+typedef unsigned __int128 OWORD;
 #endif
 
 // Global variables
@@ -104,8 +104,8 @@ EC_GROUP *initializeEllipticCurve(
         std::string generatorYSel,
         std::string publicKeyXSel,
         std::string publicKeyYSel,
-        EC_POINT    *&genPoint,
-        EC_POINT    *&pubPoint
+           EC_POINT *&genPoint,
+           EC_POINT *&pubPoint
 );
 
 // key.cpp

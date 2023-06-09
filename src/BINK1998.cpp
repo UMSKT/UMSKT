@@ -45,7 +45,7 @@ bool BINK1998::Verify(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
-        char (&pKey)[25]
+            char (&pKey)[25]
 ) {
     BN_CTX *numContext = BN_CTX_new();
 
@@ -136,10 +136,10 @@ bool BINK1998::Verify(
 void BINK1998::Generate(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
-        BIGNUM   *genOrder,
-        BIGNUM   *privateKey,
-        DWORD    pSerial,
-        char     (&pKey)[25]
+          BIGNUM *genOrder,
+          BIGNUM *privateKey,
+           DWORD pSerial,
+            char (&pKey)[25]
 ) {
     BN_CTX *numContext = BN_CTX_new();
 

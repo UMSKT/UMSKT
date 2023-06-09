@@ -35,7 +35,7 @@ void BINK2002::Pack(
         QWORD (&pRaw)[2],
         DWORD pChannelID,
         DWORD pHash,
-        QWORD &pSignature,
+        QWORD pSignature,
         DWORD pAuthInfo
 ) {
     // AuthInfo [113..104] <- Signature [103..42] <- Hash [41..11] <- Channel ID [10..1] <- Upgrade [0]
@@ -48,7 +48,7 @@ bool BINK2002::Verify(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
-        char (&cdKey)[25]
+            char (&cdKey)[25]
 ) {
     BN_CTX *context = BN_CTX_new();
 
@@ -174,11 +174,11 @@ bool BINK2002::Verify(
 void BINK2002::Generate(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
-        BIGNUM   *genOrder,
-        BIGNUM   *privateKey,
-        DWORD    pChannelID,
-        DWORD    pAuthInfo,
-        char     (&pKey)[25]
+          BIGNUM *genOrder,
+          BIGNUM *privateKey,
+           DWORD pChannelID,
+           DWORD pAuthInfo,
+            char (&pKey)[25]
 ) {
     BN_CTX *numContext = BN_CTX_new();
 
