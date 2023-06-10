@@ -296,7 +296,7 @@ int CLI::BINK1998() {
 }
 
 int CLI::BINK2002() {
-    DWORD pChannelID = options.channelID << 1;
+    DWORD pChannelID = options.channelID;
 
     if (options.verbose) {
         fmt::print("> Channel ID: {:03d}\n", options.channelID);
@@ -312,7 +312,7 @@ int CLI::BINK2002() {
             fmt::print("> AuthInfo: {}\n", pAuthInfo);
         }
 
-        BINK2002::Generate(eCurve, genPoint, genOrder, privateKey, pChannelID, pAuthInfo, pKey);
+        BINK2002::Generate(eCurve, genPoint, genOrder, privateKey, pChannelID, pAuthInfo, false, pKey);
         CLI::print_product_key(pKey);
         fmt::print("\n\n");
 

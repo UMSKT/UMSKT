@@ -7,6 +7,7 @@
 /* Unpacks the Windows Server 2003-like Product Key. */
 void BINK2002::Unpack(
         QWORD (&pRaw)[2],
+         BOOL &pUpgrade,
         DWORD &pChannelID,
         DWORD &pHash,
         QWORD &pSignature,
@@ -15,8 +16,11 @@ void BINK2002::Unpack(
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
 
-    // Channel ID = Bits [0..10] -> 11 bits
-    pChannelID = FIRSTNBITS(pRaw[0], 11);
+    // Upgrade = Bit 0
+    pUpgrade = FIRSTNBITS(pRaw[0], 1);
+
+    // Channel ID = Bits [1..10] -> 10 bits
+    pChannelID = NEXTSNBITS(pRaw[0], 10, 1);
 
     // Hash = Bits [11..41] -> 31 bits
     pHash = NEXTSNBITS(pRaw[0], 31, 11);
@@ -33,13 +37,14 @@ void BINK2002::Unpack(
 /* Packs the Windows Server 2003-like Product Key. */
 void BINK2002::Pack(
         QWORD (&pRaw)[2],
+         BOOL pUpgrade,
         DWORD pChannelID,
         DWORD pHash,
         QWORD pSignature,
         DWORD pAuthInfo
 ) {
     // AuthInfo [113..104] <- Signature [103..42] <- Hash [41..11] <- Channel ID [10..1] <- Upgrade [0]
-    pRaw[0] = FIRSTNBITS(pSignature, 22) << 42 | (QWORD)pHash << 11 | pChannelID;
+    pRaw[0] = FIRSTNBITS(pSignature, 22) << 42 | (QWORD)pHash << 11 | pChannelID << 1 | pUpgrade;
     pRaw[1] = FIRSTNBITS(pAuthInfo, 10) << 40 | NEXTSNBITS(pSignature, 40, 22);
 }
 
@@ -55,19 +60,25 @@ bool BINK2002::Verify(
     QWORD bKey[2]{},
           pSignature = 0;
 
-    DWORD pChannelID,
+    DWORD pData,
+          pChannelID,
           pHash,
           pAuthInfo;
+
+    BOOL  pUpgrade;
 
     // Convert Base24 CD-key to bytecode.
     unbase24((BYTE *)bKey, cdKey);
 
     // Extract product key segments from bytecode.
-    Unpack(bKey, pChannelID, pHash, pSignature, pAuthInfo);
+    Unpack(bKey, pUpgrade, pChannelID, pHash, pSignature, pAuthInfo);
+
+    pData = pChannelID << 1 | pUpgrade;
 
     if (options.verbose) {
         fmt::print("Validation results:\n");
-        fmt::print("    Serial: 0x{:08x}\n", pChannelID);
+        fmt::print("   Upgrade: 0x{:08x}\n", pUpgrade);
+        fmt::print("Channel ID: 0x{:08x}\n", pChannelID);
         fmt::print("      Hash: 0x{:08x}\n", pHash);
         fmt::print(" Signature: 0x{:08x}\n", pSignature);
         fmt::print("  AuthInfo: 0x{:08x}\n", pAuthInfo);
@@ -81,8 +92,8 @@ bool BINK2002::Verify(
 
     // Assemble the first SHA message.
     msgBuffer[0x00] = 0x5D;
-    msgBuffer[0x01] = (pChannelID & 0x00FF);
-    msgBuffer[0x02] = (pChannelID & 0xFF00) >> 8;
+    msgBuffer[0x01] = (pData & 0x00FF);
+    msgBuffer[0x02] = (pData & 0xFF00) >> 8;
     msgBuffer[0x03] = (pHash & 0x000000FF);
     msgBuffer[0x04] = (pHash & 0x0000FF00) >> 8;
     msgBuffer[0x05] = (pHash & 0x00FF0000) >> 16;
@@ -144,8 +155,8 @@ bool BINK2002::Verify(
 
     // Assemble the second SHA message.
     msgBuffer[0x00] = 0x79;
-    msgBuffer[0x01] = (pChannelID & 0x00FF);
-    msgBuffer[0x02] = (pChannelID & 0xFF00) >> 8;
+    msgBuffer[0x01] = (pData & 0x00FF);
+    msgBuffer[0x02] = (pData & 0xFF00) >> 8;
 
     memcpy((void *)&msgBuffer[3], (void *)xBin, FIELD_BYTES_2003);
     memcpy((void *)&msgBuffer[3 + FIELD_BYTES_2003], (void *)yBin, FIELD_BYTES_2003);
@@ -178,6 +189,7 @@ void BINK2002::Generate(
           BIGNUM *privateKey,
            DWORD pChannelID,
            DWORD pAuthInfo,
+            BOOL pUpgrade,
             char (&pKey)[25]
 ) {
     BN_CTX *numContext = BN_CTX_new();
@@ -191,12 +203,13 @@ void BINK2002::Generate(
     QWORD pRaw[2]{},
           pSignature = 0;
 
-    BOOL noSquare = false;
+    // Data segment of the RPK.
+    DWORD pData = pChannelID << 1 | pUpgrade;
+
+    BOOL noSquare;
 
     do {
         EC_POINT *r = EC_POINT_new(eCurve);
-
-        noSquare = false;
 
         // Generate a random number c consisting of 512 bits without any constraints.
         BN_rand(c, FIELD_BITS_2003, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
@@ -219,8 +232,8 @@ void BINK2002::Generate(
 
         // Assemble the first SHA message.
         msgBuffer[0x00] = 0x79;
-        msgBuffer[0x01] = (pChannelID & 0x00FF);
-        msgBuffer[0x02] = (pChannelID & 0xFF00) >> 8;
+        msgBuffer[0x01] = (pData & 0x00FF);
+        msgBuffer[0x02] = (pData & 0xFF00) >> 8;
 
         memcpy((void *)&msgBuffer[3], (void *)xBin, FIELD_BYTES_2003);
         memcpy((void *)&msgBuffer[3 + FIELD_BYTES_2003], (void *)yBin, FIELD_BYTES_2003);
@@ -234,8 +247,8 @@ void BINK2002::Generate(
 
         // Assemble the second SHA message.
         msgBuffer[0x00] = 0x5D;
-        msgBuffer[0x01] = (pChannelID & 0x00FF);
-        msgBuffer[0x02] = (pChannelID & 0xFF00) >> 8;
+        msgBuffer[0x01] = (pData & 0x00FF);
+        msgBuffer[0x02] = (pData & 0xFF00) >> 8;
         msgBuffer[0x03] = (pHash & 0x000000FF);
         msgBuffer[0x04] = (pHash & 0x0000FF00) >> 8;
         msgBuffer[0x05] = (pHash & 0x00FF0000) >> 16;
@@ -320,11 +333,12 @@ void BINK2002::Generate(
         BN_bn2lebinpad(s, (BYTE *)&pSignature, BN_num_bytes(s));
 
         // Pack product key.
-        Pack(pRaw, pChannelID, pHash, pSignature, pAuthInfo);
+        Pack(pRaw, pUpgrade, pChannelID, pHash, pSignature, pAuthInfo);
 
         if (options.verbose) {
             fmt::print("Generation results:\n");
-            fmt::print("    Serial: 0x{:08x}\n", pChannelID);
+            fmt::print("   Upgrade: 0x{:08x}\n", pUpgrade);
+            fmt::print("Channel ID: 0x{:08x}\n", pChannelID);
             fmt::print("      Hash: 0x{:08x}\n", pHash);
             fmt::print(" Signature: 0x{:08x}\n", pSignature);
             fmt::print("  AuthInfo: 0x{:08x}\n", pAuthInfo);

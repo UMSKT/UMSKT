@@ -10,6 +10,7 @@
 class BINK2002 {
     static void Unpack(
             QWORD (&pRaw)[2],
+             BOOL &pUpgrade,
             DWORD &pChannelID,
             DWORD &pHash,
             QWORD &pSignature,
@@ -17,6 +18,7 @@ class BINK2002 {
     );
     static void Pack(
             QWORD (&pRaw)[2],
+             BOOL pUpgrade,
             DWORD pChannelID,
             DWORD pHash,
             QWORD pSignature,
@@ -37,6 +39,7 @@ public:
               BIGNUM *privateKey,
                DWORD pChannelID,
                DWORD pAuthInfo,
+                BOOL pUpgrade,
                 char (&pKey)[25]
     );
 };
