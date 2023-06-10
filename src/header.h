@@ -78,7 +78,7 @@ struct Options {
 };
 
 // Type definitions
-typedef uint32_t     BOOL;
+typedef bool     BOOL;
 typedef uint8_t  BYTE;
 typedef uint16_t WORD;
 typedef uint32_t DWORD;
