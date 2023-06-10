@@ -77,10 +77,8 @@ struct Options {
     MODE applicationMode;
 };
 
-extern Options options;
-
 // Type definitions
-typedef bool     BOOL;
+typedef uint32_t     BOOL;
 typedef uint8_t  BYTE;
 typedef uint16_t WORD;
 typedef uint32_t DWORD;
@@ -91,6 +89,7 @@ typedef unsigned __int128 OWORD;
 #endif
 
 // Global variables
+extern Options options;
 
 // util.cpp
 int  BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen); // Hello OpenSSL developers, please tell me, where is this function at?

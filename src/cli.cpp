@@ -270,7 +270,7 @@ int CLI::BINK1998() {
     char *cRaw = BN_bn2dec(bnrand);
 
     sscanf(cRaw, "%d", &oRaw);
-    nRaw += (oRaw &= 0xF423F); // ensure our serial is less than 999999
+    nRaw += (oRaw % 999999); // ensure our serial is less than 999999
 
     if (options.verbose) {
         fmt::print("> PID: {:09d}\n", nRaw);
@@ -278,10 +278,12 @@ int CLI::BINK1998() {
 
     // generate a key
     BN_sub(privateKey, genOrder, privateKey);
-    nRaw <<= 1;
+
+    // Specify whether an upgrade version or not
+    bool bUpgrade = false;
 
     for (int i = 0; i < total; i++) {
-        BINK1998::Generate(eCurve, genPoint, genOrder, privateKey, nRaw, pKey);
+        BINK1998::Generate(eCurve, genPoint, genOrder, privateKey, nRaw, bUpgrade, pKey);
         CLI::print_product_key(pKey);
         fmt::print("\n\n");
 
@@ -304,7 +306,7 @@ int CLI::BINK2002() {
     for (int i = 0; i < total; i++) {
         DWORD pAuthInfo;
         RAND_bytes((BYTE *)&pAuthInfo, 4);
-        pAuthInfo &= 0x3ff;
+        pAuthInfo &= BITMASK(10);
 
         if (options.verbose) {
             fmt::print("> AuthInfo: {}\n", pAuthInfo);

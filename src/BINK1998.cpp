@@ -7,6 +7,7 @@
 /* Unpacks the Windows XP-like Product Key. */
 void BINK1998::Unpack(
         QWORD (&pRaw)[2],
+         BOOL &pUpgrade,
         DWORD &pSerial,
         DWORD &pHash,
         QWORD &pSignature
@@ -14,8 +15,11 @@ void BINK1998::Unpack(
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
 
-    // Serial = Bits [0..30] -> 31 bits
-    pSerial = FIRSTNBITS(pRaw[0], 31);
+    // Upgrade = Bit 0
+    pUpgrade = FIRSTNBITS(pRaw[0], 1);
+
+    // Serial = Bits [1..30] -> 30 bits
+    pSerial = NEXTSNBITS(pRaw[0], 30, 1);
 
     // Hash = Bits [31..58] -> 28 bits
     pHash = NEXTSNBITS(pRaw[0], 28, 31);
@@ -27,6 +31,7 @@ void BINK1998::Unpack(
 /* Packs the Windows XP-like Product Key. */
 void BINK1998::Pack(
         QWORD (&pRaw)[2],
+         BOOL pUpgrade,
         DWORD pSerial,
         DWORD pHash,
         QWORD pSignature
@@ -36,7 +41,7 @@ void BINK1998::Pack(
     // 64 * 2 = 128
 
     // Signature [114..59] <- Hash [58..31] <- Serial [30..1] <- Upgrade [0]
-    pRaw[0] = FIRSTNBITS(pSignature, 5) << 59 | FIRSTNBITS(pHash, 28) << 31 | pSerial;
+    pRaw[0] = FIRSTNBITS(pSignature, 5) << 59 | FIRSTNBITS(pHash, 28) << 31 | pSerial << 1 | pUpgrade;
     pRaw[1] = NEXTSNBITS(pSignature, 51, 5);
 }
 
@@ -50,16 +55,21 @@ bool BINK1998::Verify(
     BN_CTX *numContext = BN_CTX_new();
 
     QWORD pRaw[2]{},
-          pSignature = 0;
+          pSignature;
 
-    DWORD pSerial = 0,
-          pHash = 0;
+    DWORD pData,
+          pSerial,
+          pHash;
+
+    BOOL  pUpgrade;
 
     // Convert Base24 CD-key to bytecode.
     unbase24((BYTE *)pRaw, pKey);
 
     // Extract RPK, hash and signature from bytecode.
-    Unpack(pRaw, pSerial, pHash, pSignature);
+    Unpack(pRaw, pUpgrade, pSerial, pHash, pSignature);
+
+    pData = pSerial << 1 | pUpgrade;
 
     /*
      *
@@ -107,7 +117,7 @@ bool BINK1998::Verify(
     BN_bn2lebin(y, yBin, FIELD_BYTES);
 
     // Assemble the SHA message.
-    memcpy((void *)&msgBuffer[0], (void *)&pSerial, 4);
+    memcpy((void *)&msgBuffer[0], (void *)&pData, 4);
     memcpy((void *)&msgBuffer[4], (void *)xBin, FIELD_BYTES);
     memcpy((void *)&msgBuffer[4 + FIELD_BYTES], (void *)yBin, FIELD_BYTES);
 
@@ -139,6 +149,7 @@ void BINK1998::Generate(
           BIGNUM *genOrder,
           BIGNUM *privateKey,
            DWORD pSerial,
+            BOOL pUpgrade,
             char (&pKey)[25]
 ) {
     BN_CTX *numContext = BN_CTX_new();
@@ -150,6 +161,9 @@ void BINK1998::Generate(
 
     QWORD pRaw[2]{},
           pSignature = 0;
+
+    // Data segment of the RPK.
+    DWORD pData = pSerial << 1 | pUpgrade;
 
     do {
         EC_POINT *r = EC_POINT_new(eCurve);
@@ -175,7 +189,7 @@ void BINK1998::Generate(
         BN_bn2lebin(y, yBin, FIELD_BYTES);
 
         // Assemble the SHA message.
-        memcpy((void *)&msgBuffer[0], (void *)&pSerial, 4);
+        memcpy((void *)&msgBuffer[0], (void *)&pData, 4);
         memcpy((void *)&msgBuffer[4], (void *)xBin, FIELD_BYTES);
         memcpy((void *)&msgBuffer[4 + FIELD_BYTES], (void *)yBin, FIELD_BYTES);
 
@@ -216,10 +230,11 @@ void BINK1998::Generate(
         BN_bn2lebinpad(s, (BYTE *)&pSignature, BN_num_bytes(s));
 
         // Pack product key.
-        Pack(pRaw, pSerial, pHash, pSignature);
+        Pack(pRaw, pUpgrade, pSerial, pHash, pSignature);
 
         if (options.verbose) {
             fmt::print("Generation results:\n");
+            fmt::print("   Upgrade: 0x{:08x}\n", pUpgrade);
             fmt::print("    Serial: 0x{:08x}\n", pSerial);
             fmt::print("      Hash: 0x{:08x}\n", pHash);
             fmt::print(" Signature: 0x{:08x}\n", pSignature);

@@ -10,12 +10,14 @@
 class BINK1998 {
     static void Unpack(
             QWORD (&pRaw)[2],
+             BOOL &pUpgrade,
             DWORD &pSerial,
             DWORD &pHash,
             QWORD &pSignature
     );
     static void Pack(
             QWORD (&pRaw)[2],
+             BOOL pUpgrade,
             DWORD pSerial,
             DWORD pHash,
             QWORD pSignature
@@ -34,6 +36,7 @@ public:
               BIGNUM *genOrder,
               BIGNUM *privateKey,
                DWORD pSerial,
+                BOOL pUpgrade,
                 char (&pKey)[25]
     );
 };
