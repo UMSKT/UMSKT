@@ -170,7 +170,7 @@ int CLI::validateCommandLine(Options* options, char *argv[], json *keys) {
     return 0;
 }
 
-void CLI::print_product_id(DWORD *pid)
+void CLI::printID(DWORD *pid)
 {
     char raw[12];
     char b[6], c[8];
@@ -200,11 +200,11 @@ void CLI::print_product_id(DWORD *pid)
     fmt::print("Product ID: PPPPP-{}-{}-23xxx\n", b, c);
 }
 
-void CLI::print_product_key(char *pk) {
+void CLI::printKey(char *pk) {
     assert(strlen(pk) == 25);
 
     std::string spk = pk;
-    fmt::print("{}-{}-{}-{}-{}",
+    fmt::print("{}-{}-{}-{}-{}\n",
                spk.substr(0,5),
                spk.substr(5,5),
                spk.substr(10,5),
@@ -231,7 +231,7 @@ CLI::CLI(Options options, json keys) {
 
     if (options.verbose) {
         fmt::print("----------------------------------------------------------- \n");
-        fmt::print("Loaded the following curve constraints: BINK[{}]\n", BINKID);
+        fmt::print("Loaded the following elliptic curve parameters: BINK[{}]\n", BINKID);
         fmt::print("----------------------------------------------------------- \n");
         fmt::print(" P: {}\n", keys["BINK"][BINKID]["p"].get<std::string>());
         fmt::print(" a: {}\n", keys["BINK"][BINKID]["a"].get<std::string>());
@@ -261,7 +261,7 @@ CLI::CLI(Options options, json keys) {
 }
 
 int CLI::BINK1998() {
-    DWORD nRaw = options.channelID * 1000000 ; /* <- change */
+    DWORD nRaw = options.channelID * 1'000'000 ; /* <- change */
 
     BIGNUM *bnrand = BN_new();
     BN_rand(bnrand, 19, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
@@ -284,8 +284,8 @@ int CLI::BINK1998() {
 
     for (int i = 0; i < total; i++) {
         BINK1998::Generate(eCurve, genPoint, genOrder, privateKey, nRaw, bUpgrade, pKey);
-        CLI::print_product_key(pKey);
-        fmt::print("\n\n");
+        CLI::printKey(pKey);
+        fmt::print("\n");
 
         // verify the key
         count += BINK1998::Verify(eCurve, genPoint, pubPoint, pKey);
@@ -313,7 +313,7 @@ int CLI::BINK2002() {
         }
 
         BINK2002::Generate(eCurve, genPoint, genOrder, privateKey, pChannelID, pAuthInfo, false, pKey);
-        CLI::print_product_key(pKey);
+        CLI::printKey(pKey);
         fmt::print("\n\n");
 
         // verify a key
