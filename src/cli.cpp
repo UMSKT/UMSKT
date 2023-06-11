@@ -214,54 +214,56 @@ void CLI::printKey(char *pk) {
 
 CLI::CLI(Options options, json keys) {
     this->options = options;
+    this->keys = keys;
 
-    BINKID = options.binkid.c_str();
+    this->BINKID = options.binkid.c_str();
 
     // We cannot produce a valid key without knowing the private key k. The reason for this is that
     // we need the result of the function K(x; y) = kG(x; y).
-    privateKey = BN_new();
+    this->privateKey = BN_new();
 
     // We can, however, validate any given key using the available public key: {p, a, b, G, K}.
     // genOrder the order of the generator G, a value we have to reverse -> Schoof's Algorithm.
-    genOrder = BN_new();
+    this->genOrder = BN_new();
 
     /* Computed data */
-    BN_dec2bn(&genOrder, keys["BINK"][BINKID]["n"].get<std::string>().c_str());
-    BN_dec2bn(&privateKey, keys["BINK"][BINKID]["priv"].get<std::string>().c_str());
+    BN_dec2bn(&this->genOrder,   this->keys["BINK"][this->BINKID]["n"].   get<std::string>().c_str());
+    BN_dec2bn(&this->privateKey, this->keys["BINK"][this->BINKID]["priv"].get<std::string>().c_str());
 
     if (options.verbose) {
         fmt::print("----------------------------------------------------------- \n");
-        fmt::print("Loaded the following elliptic curve parameters: BINK[{}]\n", BINKID);
+        fmt::print("Loaded the following elliptic curve parameters: BINK[{}]\n", this->BINKID);
         fmt::print("----------------------------------------------------------- \n");
-        fmt::print(" P: {}\n", keys["BINK"][BINKID]["p"].get<std::string>());
-        fmt::print(" a: {}\n", keys["BINK"][BINKID]["a"].get<std::string>());
-        fmt::print(" b: {}\n", keys["BINK"][BINKID]["b"].get<std::string>());
-        fmt::print("Gx: {}\n", keys["BINK"][BINKID]["g"]["x"].get<std::string>());
-        fmt::print("Gy: {}\n", keys["BINK"][BINKID]["g"]["y"].get<std::string>());
-        fmt::print("Kx: {}\n", keys["BINK"][BINKID]["pub"]["x"].get<std::string>());
-        fmt::print("Ky: {}\n", keys["BINK"][BINKID]["pub"]["y"].get<std::string>());
-        fmt::print(" n: {}\n", keys["BINK"][BINKID]["n"].get<std::string>());
-        fmt::print(" k: {}\n", keys["BINK"][BINKID]["priv"].get<std::string>());
+        fmt::print(" P: {}\n", this->keys["BINK"][this->BINKID]["p"].get<std::string>());
+        fmt::print(" a: {}\n", this->keys["BINK"][this->BINKID]["a"].get<std::string>());
+        fmt::print(" b: {}\n", this->keys["BINK"][this->BINKID]["b"].get<std::string>());
+        fmt::print("Gx: {}\n", this->keys["BINK"][this->BINKID]["g"]["x"].get<std::string>());
+        fmt::print("Gy: {}\n", this->keys["BINK"][this->BINKID]["g"]["y"].get<std::string>());
+        fmt::print("Kx: {}\n", this->keys["BINK"][this->BINKID]["pub"]["x"].get<std::string>());
+        fmt::print("Ky: {}\n", this->keys["BINK"][this->BINKID]["pub"]["y"].get<std::string>());
+        fmt::print(" n: {}\n", this->keys["BINK"][this->BINKID]["n"].get<std::string>());
+        fmt::print(" k: {}\n", this->keys["BINK"][this->BINKID]["priv"].get<std::string>());
         fmt::print("\n");
     }
 
     eCurve = initializeEllipticCurve(
-            keys["BINK"][BINKID]["p"].get<std::string>(),
-            keys["BINK"][BINKID]["a"].get<std::string>(),
-            keys["BINK"][BINKID]["b"].get<std::string>(),
-            keys["BINK"][BINKID]["g"]["x"].get<std::string>(),
-            keys["BINK"][BINKID]["g"]["y"].get<std::string>(),
-            keys["BINK"][BINKID]["pub"]["x"].get<std::string>(),
-            keys["BINK"][BINKID]["pub"]["y"].get<std::string>(),
-            genPoint,
-            pubPoint
+            this->keys["BINK"][this->BINKID]["p"].get<std::string>(),
+            this->keys["BINK"][this->BINKID]["a"].get<std::string>(),
+            this->keys["BINK"][this->BINKID]["b"].get<std::string>(),
+            this->keys["BINK"][this->BINKID]["g"]["x"].get<std::string>(),
+            this->keys["BINK"][this->BINKID]["g"]["y"].get<std::string>(),
+            this->keys["BINK"][this->BINKID]["pub"]["x"].get<std::string>(),
+            this->keys["BINK"][this->BINKID]["pub"]["y"].get<std::string>(),
+            this->genPoint,
+            this->pubPoint
     );
 
-    total = options.numKeys;
+    this->count = 0;
+    this->total = this->options.numKeys;
 }
 
 int CLI::BINK1998() {
-    DWORD nRaw = options.channelID * 1'000'000 ; /* <- change */
+    DWORD nRaw = this->options.channelID * 1'000'000 ; /* <- change */
 
     BIGNUM *bnrand = BN_new();
     BN_rand(bnrand, 19, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
@@ -272,81 +274,87 @@ int CLI::BINK1998() {
     sscanf(cRaw, "%d", &oRaw);
     nRaw += (oRaw % 999999); // ensure our serial is less than 999999
 
-    if (options.verbose) {
+    if (this->options.verbose) {
         fmt::print("> PID: {:09d}\n", nRaw);
     }
 
     // generate a key
-    BN_sub(privateKey, genOrder, privateKey);
+    BN_sub(this->privateKey, this->genOrder, this->privateKey);
 
     // Specify whether an upgrade version or not
     bool bUpgrade = false;
 
-    for (int i = 0; i < total; i++) {
-        BINK1998::Generate(eCurve, genPoint, genOrder, privateKey, nRaw, bUpgrade, pKey);
-        CLI::printKey(pKey);
+    for (int i = 0; i < this->total; i++) {
+        BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw, bUpgrade, this->pKey);
+        CLI::printKey(this->pKey);
         fmt::print("\n");
 
         // verify the key
-        count += BINK1998::Verify(eCurve, genPoint, pubPoint, pKey);
+        this->count += BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
     }
 
-    fmt::print("Success count: {}/{}\n", count, total);
+    fmt::print("Success count: {}/{}\n", this->count, this->total);
     return 0;
 }
 
 int CLI::BINK2002() {
-    DWORD pChannelID = options.channelID;
+    DWORD pChannelID = this->options.channelID;
 
-    if (options.verbose) {
-        fmt::print("> Channel ID: {:03d}\n", options.channelID);
+    if (this->options.verbose) {
+        fmt::print("> Channel ID: {:03d}\n", this->options.channelID);
     }
 
     // generate a key
-    for (int i = 0; i < total; i++) {
+    for (int i = 0; i < this->total; i++) {
         DWORD pAuthInfo;
         RAND_bytes((BYTE *)&pAuthInfo, 4);
         pAuthInfo &= BITMASK(10);
 
-        if (options.verbose) {
+        if (this->options.verbose) {
             fmt::print("> AuthInfo: {}\n", pAuthInfo);
         }
 
-        BINK2002::Generate(eCurve, genPoint, genOrder, privateKey, pChannelID, pAuthInfo, false, pKey);
-        CLI::printKey(pKey);
+        BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, false, this->pKey);
+        CLI::printKey(this->pKey);
         fmt::print("\n\n");
 
         // verify a key
-        count += BINK2002::Verify(eCurve, genPoint, pubPoint, pKey);
+        this->count += BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
     }
 
-    fmt::print("Success count: {}/{}\n", count, total);
+    fmt::print("Success count: {}/{}\n", this->count, this->total);
     return 0;
 }
 
 int CLI::ConfirmationID() {
     char confirmation_id[49];
-    int err = ConfirmationID::Generate(options.instid.c_str(), confirmation_id);
+    int err = ConfirmationID::Generate(this->options.instid.c_str(), confirmation_id);
 
     switch (err) {
         case ERR_TOO_SHORT:
             fmt::print("ERROR: Installation ID is too short.\n");
             return 1;
+
         case ERR_TOO_LARGE:
             fmt::print("ERROR: Installation ID is too long.\n");
             return 1;
+
         case ERR_INVALID_CHARACTER:
             fmt::print("ERROR: Invalid character in installation ID.\n");
             return 1;
+
         case ERR_INVALID_CHECK_DIGIT:
             fmt::print("ERROR: Installation ID checksum failed. Please check that it is typed correctly.\n");
             return 1;
+
         case ERR_UNKNOWN_VERSION:
             fmt::print("ERROR: Unknown installation ID version.\n");
             return 1;
+
         case ERR_UNLUCKY:
             fmt::print("ERROR: Unable to generate valid confirmation ID.\n");
             return 1;
+
         case SUCCESS:
             fmt::print("Confirmation ID: {}\n", confirmation_id);
             return 0;
