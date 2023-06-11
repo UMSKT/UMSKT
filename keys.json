@@ -12,11 +12,17 @@
     "Office 2000": {
       "BINK": ["04", "05"]
     },
+    "Internet Security and Acceleration (ISA) Server 2004": {
+      "BINK": ["06", "07"]
+    },
     "PLUS! for Windows XP": {
       "BINK": ["08", "09"]
     },
     "Windows 2000 Server (all)": {
       "BINK": ["0A", "13"]
+    },
+    "Office Communicator 2007": {
+      "BINK": ["0C", "0D"]
     },
     "Windows Embedded POSReady 2009": {
       "BINK": ["0D", "0D"]
@@ -24,17 +30,29 @@
     "Windows CE .Net Platform Builder 5": {
       "BINK": ["0D", "0D"]
     },
+    "Commerce Server 2002": {
+      "BINK": ["0E", "0F"]
+    },
     "Windows 2000 Professional": {
       "BINK": ["12", "13"]
     },
+    "Office for Mac 2004 / 2008": {
+      "BINK": ["18", "19"]
+    },
     "Windows ME": {
       "BINK": ["1C", "1D"]
+    },
+    "Office XP Applications": {
+      "BINK": ["20", "21"]
     },
     "Office XP": {
       "BINK": ["22", "23"]
     },
     "Visual Studio .Net / .Net 2003": {
       "BINK": ["24", "25"]
+    },
+    "Windows XP Professional Evaluation": {
+      "BINK": ["28", "29"]
     },
     "Windows XP Home": {
       "BINK": ["2A", "2B"]
@@ -48,6 +66,12 @@
     "Windows XP Pro VLK": {
       "BINK": ["2E", "2F"]
     },
+    "Windows XP Fundamentals for Legacy PCs": {
+      "BINK": ["2E", "2F"]
+    },
+    "Windows XP Professional K": {
+      "BINK": ["30", "31"]
+    },
     "Windows XP Starter Edition": {
       "BINK": ["32", "33"]
     },
@@ -55,6 +79,9 @@
       "BINK": ["40", "41"]
     },
     "Halo: Combat Evolved": {
+      "BINK": ["50", "51"]
+    },
+	"Halo: Custom Edition": {
       "BINK": ["50", "51"]
     },
     "Visual Studio 2005": {
@@ -84,8 +111,35 @@
     "Windows Server 2003 64 Bit VLK": {
       "BINK": ["68", "69", "6C", "6D"]
     },
+    "Office 2003 Applications": {
+      "BINK": ["6E", "6F"]
+    },
+    "Office 2003 Small Business": {
+      "BINK": ["70", "71"]
+    },
+    "Office 2003 Professional": {
+      "BINK": ["72", "73"]
+    },
     "Windows Longhorn (6.0.4039.0 -> Pre PIDGENX)": {
       "BINK": ["74", "75"]
+    },
+    "Identity Lifecycle Manager 2007": {
+      "BINK": ["78", "79"]
+    },
+    "Visual Studio 2008": {
+      "BINK": ["78", "79"]
+    },
+    "Office 2007 Applications": {
+      "BINK": ["7E", "7F"]
+    },
+    "Office 2007 Basic / Small Business": {
+      "BINK": ["80", "81"]
+    },
+    "Office 2007 Standard / Professional / Ultimate / Enterprise": {
+      "BINK": ["82", "83"]
+    },
+    "Office 2007 Home & Student": {
+      "BINK": ["88", "89"]
     }
   },
   "BINK": {
