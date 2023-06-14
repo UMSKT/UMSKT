@@ -4,7 +4,7 @@
 
 #include "BINK1998.h"
 
-/* Unpacks the Windows XP-like Product Key. */
+/* Unpacks a Windows XP-like Product Key. */
 void BINK1998::Unpack(
         QWORD (&pRaw)[2],
          BOOL &pUpgrade,
@@ -28,7 +28,7 @@ void BINK1998::Unpack(
     pSignature = FIRSTNBITS(pRaw[1], 51) << 5 | NEXTSNBITS(pRaw[0], 5, 59);
 }
 
-/* Packs the Windows XP-like Product Key. */
+/* Packs a Windows XP-like Product Key. */
 void BINK1998::Pack(
         QWORD (&pRaw)[2],
          BOOL pUpgrade,
@@ -45,7 +45,7 @@ void BINK1998::Pack(
     pRaw[1] = NEXTSNBITS(pSignature, 51, 5);
 }
 
-/* Verifies the Windows XP-like Product Key. */
+/* Verifies a Windows XP-like Product Key. */
 bool BINK1998::Verify(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
@@ -142,7 +142,7 @@ bool BINK1998::Verify(
     return compHash == pHash;
 }
 
-/* Generate a valid Product Key. */
+/* Generates a Windows XP-like Product Key. */
 void BINK1998::Generate(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
