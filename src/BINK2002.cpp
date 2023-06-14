@@ -4,7 +4,7 @@
 
 #include "BINK2002.h"
 
-/* Unpacks the Windows Server 2003-like Product Key. */
+/* Unpacks a Windows Server 2003-like Product Key. */
 void BINK2002::Unpack(
         QWORD (&pRaw)[2],
          BOOL &pUpgrade,
@@ -34,7 +34,7 @@ void BINK2002::Unpack(
     pAuthInfo = NEXTSNBITS(pRaw[1], 10, 40);
 }
 
-/* Packs the Windows Server 2003-like Product Key. */
+/* Packs a Windows Server 2003-like Product Key. */
 void BINK2002::Pack(
         QWORD (&pRaw)[2],
          BOOL pUpgrade,
@@ -48,7 +48,7 @@ void BINK2002::Pack(
     pRaw[1] = FIRSTNBITS(pAuthInfo, 10) << 40 | NEXTSNBITS(pSignature, 40, 22);
 }
 
-/* Verifies the Windows Server 2003-like Product Key. */
+/* Verifies a Windows Server 2003-like Product Key. */
 bool BINK2002::Verify(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
@@ -182,6 +182,7 @@ bool BINK2002::Verify(
     return compHash == pHash;
 }
 
+/* Generates a Windows Server 2003-like Product Key. */
 void BINK2002::Generate(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
