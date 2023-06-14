@@ -293,7 +293,7 @@ void BINK2002::Generate(
          *  s² + (ek)s - c = 0 (mod n)
          *  ↓ This is a quadratic equation in respect to the signature ↓
          *
-         *  s = (-ek ± √((ek)² - 4c)) / 2 (mod n)
+         *  s = (-ek ± √((ek)² + 4c)) / 2 (mod n)
          */
 
         // e = ek (mod n)
