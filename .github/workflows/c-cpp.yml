@@ -1,4 +1,4 @@
-name: C/C++ CI (Ubuntu)
+name: C/C++ CI (Windows)
 
 on:
   push:
@@ -9,12 +9,12 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v3
     - name: cmake
-      run: cmake ./ -B/home/runner/work/WindowsXPkg/WindowsXPkg/build
+      run: cmake ./
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.1.2
       with:
