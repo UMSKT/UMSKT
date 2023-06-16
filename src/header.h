@@ -1,7 +1,7 @@
 /**
- * This file is a part of the WindowsXPKg Project
+ * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 WindowsXPKg Contributors (et.al.)
+ * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -20,8 +20,8 @@
  * @Maintainer Neo
  */
 
-#ifndef WINDOWSXPKG_HEADER_H
-#define WINDOWSXPKG_HEADER_H
+#ifndef UMSKT_HEADER_H
+#define UMSKT_HEADER_H
 
 #ifdef DEBUG
 #include <cassert>
@@ -130,4 +130,4 @@ void unbase24(BYTE *byteSeq, const char *cdKey);
 void base24(char *cdKey, BYTE *byteSeq);
 
 
-#endif //WINDOWSXPKG_HEADER_H
+#endif //UMSKT_HEADER_H

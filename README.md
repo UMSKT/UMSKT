@@ -1,13 +1,13 @@
-# **Windows XP / Server 2003 Keygen**
+# **Universal MS Key Toolkit (UMSKT)**
 
-[![Zulip chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://umskt.zulipchat.com) 
+[![Zulip chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://umskt.zulipchat.com)
 [![libera.chat - #mspid](https://img.shields.io/badge/libera.chat-%23mspid-brightgreen)](https://web.libera.chat/gamja/?nick=Guest?#mspid)
 
 ### **Plan of Action / ToDo List**
 
 In light of the recent exponential interest in this project I've decided to put updates of this project here:
 
-* [Please see ticket #8 for more information](https://github.com/Neo-Desktop/WindowsXPKg/issues/8)
+* [Please see ticket #8 for more information](../../issues/3)
 
 
 ------
@@ -31,23 +31,23 @@ In light of the recent exponential interest in this project I've decided to put 
 ### **Usage**
 #### 1. Download the latest version of WindowsXPKg
 
-   * *(GitHub account required)*
-     * Download the latest experimental version using the Actions tab ([Windows](https://github.com/Neo-Desktop/WindowsXPKg/actions/workflows/windows.yml), [Linux](https://github.com/Neo-Desktop/WindowsXPKg/actions/workflows/linux.yml)).
+* *(GitHub account required)*
+    * Download the latest experimental version using the Actions tab ([Windows](../../actions/workflows/windows.yml), [Linux](../../actions/workflows/linux.yml)).
 
 
-   * *(GitHub account \*not\* required)*
-     * Download the latest release for your operating system and architecture from [the releases page](https://github.com/Neo-Desktop/WindowsXPKg/releases)
+* *(GitHub account \*not\* required)*
+    * Download the latest release for your operating system and architecture from [the releases page](../../releases)
 
 
-   * **Note:** Before continuing, please ensure you have both the `xpkey` program and the `keys.json` datum extracted and in the same directory
+* **Note:** Before continuing, please ensure you have both the `xpkey` program and the `keys.json` datum extracted and in the same directory
 
 #### 2. Run `xpkey` to generate a key, or add `--help` to see more options.
 
 #### 3. *(Activation step for `Retail` and `OEM` only)*
-  * After installation, you will be prompted to activate Windows.
+* After installation, you will be prompted to activate Windows.
 
 
-  * Select the **telephone activation** method, then, run `xpkey -i <Installation ID>` using the `Installation ID` the activation Wizard provides for you
+* Select the **telephone activation** method, then, run `xpkey -i <Installation ID>` using the `Installation ID` the activation Wizard provides for you
 
 #### 4. Profit!
 

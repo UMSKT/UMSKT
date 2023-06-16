@@ -1,7 +1,7 @@
 /**
- * This file is a part of the WindowsXPKg Project
+ * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 WindowsXPKg Contributors (et.al.)
+ * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -20,8 +20,8 @@
  * @Maintainer Neo
  */
 
-#ifndef WINDOWSXPKG_BINK2002_H
-#define WINDOWSXPKG_BINK2002_H
+#ifndef UMSKT_BINK2002_H
+#define UMSKT_BINK2002_H
 
 #include "header.h"
 
@@ -62,4 +62,4 @@ public:
     );
 };
 
-#endif //WINDOWSXPKG_BINK2002_H
+#endif //UMSKT_BINK2002_H
