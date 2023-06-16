@@ -29,7 +29,7 @@ In light of the recent exponential interest in this project I've decided to put 
 
 
 ### **Usage**
-1. Download the latest version through the Actions tab ([Windows](/actions/workflows/windows.yml), [Linux](/actions/workflows/linux.yml)). Make sure you have both xpkey(.exe) and keys.json, then run `./xpkey` to generate a key, or add `-?` to see more options.
+1. Download the latest version through the Actions tab ([Windows](https://github.com/Neo-Desktop/WindowsXPKg/actions/workflows/windows.yml), [Linux](https://github.com/Neo-Desktop/WindowsXPKg/actions/workflows/linux.yml)). Make sure you have both xpkey(.exe) and keys.json, then run `./xpkey` to generate a key, or add `-?` to see more options.
 
 2. *(For retail and OEM only)* After installation, you will be prompted to activate Windows. Select the *telephone activation* method, then, run `./xpkey -i <Installation ID>` using the installation ID that the activation wizard gave you.
 
