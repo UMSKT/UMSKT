@@ -24,7 +24,7 @@ jobs:
     - name: Move files to correct directory
       run: |
           mkdir -p build/actions_upload
-          mv xpkey keys.json build/actions_upload/
+          mv build/xpkey build/keys.json build/actions_upload/
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v3.1.2

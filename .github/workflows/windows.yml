@@ -22,7 +22,7 @@ jobs:
         run: |
           cd build
           cmake ../
-          msbuild build/ALL_BUILD.vcxproj /P:Configuration=Release
+          msbuild ALL_BUILD.vcxproj /P:Configuration=Release
 
       - name: Copy files and clean up output directory
         run: |
