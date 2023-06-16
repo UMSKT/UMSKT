@@ -16,4 +16,4 @@ jobs:
     - name: cmake
       run: cmake .
     - name: msbuild
-      run: msbuild /home/runner/work/WindowsXPKg/WindowsXPKg
+      run: msbuild /home/runner/work/WindowsXPKg/WindowsXPKg/ALL_BUILD.vcxproj /P:Configuration=Release
