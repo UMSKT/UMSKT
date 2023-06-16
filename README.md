@@ -10,7 +10,7 @@
 
 In light of the recent exponential interest in this project I've decided to put updates of this project here:
 
-* [Please see ticket #8 for more information](../../issues/3)
+* [Please see ticket #8 for more information](../../issues/8)
 
 
 ------
