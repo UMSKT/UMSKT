@@ -19,7 +19,7 @@ jobs:
       run: cmake ./ -BD:/a/WindowsXPKg/WindowsXPKg/build
     - name: Build
       run: msbuild D:/a/WindowsXPKg/WindowsXPKg/build/ALL_BUILD.vcxproj /P:Configuration=Release
-    - name: Copy keys.json to correct folder
+    - name: Copy files to correct directory
       run: copy "D:/a/WindowsXPKg/WindowsXPKg/build/keys.json" "D:/a/WindowsXPKg/WindowsXPKg/build/Release/keys.json" && copy "C:/Program Files/OpenSSL/libcrypto-1_1-x64.dll" "D:/a/WindowsXPKg/WindowsXPKg/build/Release/libcrypto-1_1-x64.dll"
     - name: Upload build artifact
       uses: actions/upload-artifact@v3.1.2
