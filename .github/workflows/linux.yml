@@ -20,7 +20,10 @@ jobs:
 
     - name: Build WindowsXPKg
       uses: threeal/cmake-action@latest
-
+      
+    - name: Test WindowsXPKg
+      run: build/xpkey; build/xpkey -i 319941-863600-898123-625494-221595-379341-028684-143716-854300 # source: https://www.youtube.com/watch?v=O9xfQNAHsJE
+      
     - name: Move files to correct directory
       run: |
           mkdir -p build/actions_upload
