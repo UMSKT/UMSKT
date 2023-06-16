@@ -19,11 +19,10 @@ jobs:
       run: cmake ./ -BD:/a/WindowsXPKg/WindowsXPKg/build
     - name: Build
       run: msbuild D:/a/WindowsXPKg/WindowsXPKg/build/ALL_BUILD.vcxproj /P:Configuration=Release
+    - name: Copy keys.json to correct folder
+      run: copy D:/a/WindowsXPKg/WindowsXPKg/build/keys.json D:/a/WindowsXPKg/WindowsXPKg/build/Release/keys.json
     - name: Upload build artifact
       uses: actions/upload-artifact@v3.1.2
       with:
-        # Artifact name
         name: Build
-        # A file, directory or wildcard pattern that describes what to upload
-        path: D:/a/WindowsXPKg/WindowsXPKg
-        # The desired behavior if no files are found using the provided path.
+        path: D:/a/WindowsXPKg/WindowsXPKg/build/Release
