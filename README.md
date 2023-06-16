@@ -29,11 +29,9 @@ In light of the recent exponential interest in this project I've decided to put 
 
 
 ### **Usage**
-1. Feel free to use [XPKeygen](https://github.com/Endermanch/XPKeygen) on **Windows** to generate a key, and use such key during installation.
+1. Download the latest version through the Actions tab ([Windows](/actions/workflows/windows.yml), [Linux](/actions/workflows/linux.yml)). Make sure you have both xpkey(.exe) and keys.json, then run `./xpkey` to generate a key, or add `-?` to see more options.
 
-    * If on **Linux** please clone and compile this repository using `cd build && cmake ../ && make` and run using `./xpkey` to generate a Volume License Key
-
-2. (For retail only): After installation, you will be prompted to activate Windows. Select the *telephone activation* method, then, run `./xpkey -i <Installation ID>` using the installation ID that the activation wizard gave you.
+2. *(For retail and OEM only)* After installation, you will be prompted to activate Windows. Select the *telephone activation* method, then, run `./xpkey -i <Installation ID>` using the installation ID that the activation wizard gave you.
 
 3. Click "**Next**"
 
