@@ -29,15 +29,27 @@ In light of the recent exponential interest in this project I've decided to put 
 
 
 ### **Usage**
-1. Feel free to use [XPKeygen](https://github.com/Endermanch/XPKeygen) on **Windows** to generate a key, and use such key during installation.
+#### 1. Download the latest version of WindowsXPKg
 
-    * If on **Linux** please clone and compile this repository using `cd build && cmake ../ && make` and run using `./xpkey` to generate a Volume License Key
+   * *(GitHub account required)*
+     * Download the latest experimental version using the Actions tab ([Windows](https://github.com/Neo-Desktop/WindowsXPKg/actions/workflows/windows.yml), [Linux](https://github.com/Neo-Desktop/WindowsXPKg/actions/workflows/linux.yml)).
 
-2. (For retail only): After installation, you will be prompted to activate Windows. Select the *telephone activation* method, then, run `./xpkey -i <Installation ID>` using the installation ID that the activation wizard gave you.
 
-3. Click "**Next**"
+   * *(GitHub account \*not\* required)*
+     * Download the latest release for your operating system and architecture from [the releases page](https://github.com/Neo-Desktop/WindowsXPKg/releases)
 
-4. Profit!
+
+   * **Note:** Before continuing, please ensure you have both the `xpkey` program and the `keys.json` datum extracted and in the same directory
+
+#### 2. Run `xpkey` to generate a key, or add `--help` to see more options.
+
+#### 3. *(Activation step for `Retail` and `OEM` only)*
+  * After installation, you will be prompted to activate Windows.
+
+
+  * Select the **telephone activation** method, then, run `xpkey -i <Installation ID>` using the `Installation ID` the activation Wizard provides for you
+
+#### 4. Profit!
 
 
 ------
@@ -53,9 +65,19 @@ The list of people who have helped to bring the XP generation to where it is now
 * Endermanch
 * Neo-Desktop
 * WitherOrNot
+* TheTank20
 
 (the list will be updated to add more collaborators)
 
-**REQUIREMENTS:**
+------
 
-* `OpenSSL >0.9.8b`
+### **Development Requirements:**
+
+* `CMake, make, gcc` (`build-essential`)
+* `OpenSSL 1.1.1+` (`libssl-dev`)
+* `git`
+
+#### Build Steps:
+
+1. `git clone`
+2. `cd build/ && cmake ../ && make`

@@ -1,0 +1,36 @@
+name: C/C++ CI (Windows)
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Source Tree
+        uses: actions/checkout@v3
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Build WindowsXPKg
+        run: |
+          cd build
+          cmake ../
+          msbuild ALL_BUILD.vcxproj /P:Configuration=Release
+
+      - name: Copy files and clean up output directory
+        run: |
+          del "build/Release/*.lib"
+          copy "keys.json" "build/Release/keys.json"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: WindowsXPKg-Win64
+          path: build/Release

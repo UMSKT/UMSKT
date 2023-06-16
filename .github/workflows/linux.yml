@@ -1,0 +1,33 @@
+name: C/C++ CI (Linux)
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Source Tree
+      uses: actions/checkout@v3
+
+    - name: Setup build environment
+      run: |
+          sudo apt -y update
+          sudo apt -y install build-essential cmake libssl-dev
+
+    - name: Build WindowsXPKg
+      uses: threeal/cmake-action@latest
+
+    - name: Move files to correct directory
+      run: |
+          mkdir -p build/actions_upload
+          mv build/xpkey build/keys.json build/actions_upload/
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: WindowsXPKg-linux-x86_64-static
+        path: build/actions_upload
