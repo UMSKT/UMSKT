@@ -21,5 +21,5 @@ jobs:
         # Artifact name
         name: idk
         # A file, directory or wildcard pattern that describes what to upload
-        path: .\
+        path: /home/runner/work/WindowsXPKg/WindowsXPKg
         # The desired behavior if no files are found using the provided path.
