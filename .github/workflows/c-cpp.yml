@@ -13,11 +13,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1
     - name: Generate vcxproj
       run: cmake ./ -BD:/a/WindowsXPKg/WindowsXPKg/build
     - name: Build
       run: msbuild D:/a/WindowsXPKg/WindowsXPKg/build/ALL_BUILD.vcxproj /P:Configuration=Release
-    - name: Upload a Build Artifact
+    - name: Upload build artifact
       uses: actions/upload-artifact@v3.1.2
       with:
         # Artifact name
