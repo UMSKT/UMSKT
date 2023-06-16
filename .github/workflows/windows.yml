@@ -23,12 +23,17 @@ jobs:
           cd build
           cmake ../
           msbuild ALL_BUILD.vcxproj /P:Configuration=Release
-
+        
       - name: Copy files and clean up output directory
         run: |
           del "build/Release/*.lib"
           copy "keys.json" "build/Release/keys.json"
 
+      - name: Test WindowsXPKg 
+        run: | # source: https://www.youtube.com/watch?v=O9xfQNAHsJE
+          build/Release/xpkey.exe
+          build/Release/xpkey.exe -i 319941-863600-898123-625494-221595-379341-028684-143716-854300
+          
       - name: Upload build artifact
         uses: actions/upload-artifact@v3.1.2
         with:
