@@ -56,4 +56,4 @@ The list of people who have helped to bring the XP generation to where it is now
 
 **REQUIREMENTS:**
 
-* `OpenSSL 1.1.1`
+* `OpenSSL 3.0.2`
