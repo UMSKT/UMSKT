@@ -20,7 +20,7 @@ jobs:
     - name: Build
       run: msbuild D:/a/WindowsXPKg/WindowsXPKg/build/ALL_BUILD.vcxproj /P:Configuration=Release
     - name: Copy keys.json to correct folder
-      run: copy D:/a/WindowsXPKg/WindowsXPKg/build/keys.json D:/a/WindowsXPKg/WindowsXPKg/build/Release/keys.json && curl -o D:/a/WindowsXPKg/WindowsXPKg/build/Release/libcrypto-1_1-x64.dll https://github.com/thepwrtank18/WindowsXPKg/raw/master/lib/libcrypto-1_1-x64.dll 
+      run: copy "D:/a/WindowsXPKg/WindowsXPKg/build/keys.json" "D:/a/WindowsXPKg/WindowsXPKg/build/Release/keys.json" && copy "C:/Program Files/OpenSSL/libcrypto-1_1-x64.dll" "D:/a/WindowsXPKg/WindowsXPKg/build/Release/libcrypto-1_1-x64.dll"
     - name: Upload build artifact
       uses: actions/upload-artifact@v3.1.2
       with:
