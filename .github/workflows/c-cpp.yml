@@ -13,13 +13,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: cmake
-      run: cmake ./
+    - name: Generate vcxproj
+      run: cmake ./ -BD:/a/WindowsXPKg/WindowsXPKg/build
+    - name: Build
+      run: msbuild D:/a/WindowsXPKg/WindowsXPKg/build/ALL_BUILD.vcxproj /P:Configuration=Release
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.1.2
       with:
         # Artifact name
-        name: idk
+        name: Build
         # A file, directory or wildcard pattern that describes what to upload
         path: D:/a/WindowsXPKg/WindowsXPKg
         # The desired behavior if no files are found using the provided path.
