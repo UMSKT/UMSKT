@@ -24,8 +24,7 @@ jobs:
     - name: Move files to correct directory
       run: |
           mkdir -p build/actions_upload
-          tar -czf WindowsXPKg_linux_x86_64-static.tar.gz -C build xpkey keys.json
-          mv WindowsXPKg_linux_x86_64-static.tar.gz build/actions_upload/
+          mv xpkey keys.json build/actions_upload/
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v3.1.2

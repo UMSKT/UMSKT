@@ -12,17 +12,25 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1
-    - name: Generate vcxproj
-      run: cmake ./ -BD:/a/WindowsXPKg/WindowsXPKg/build
-    - name: Build
-      run: msbuild D:/a/WindowsXPKg/WindowsXPKg/build/ALL_BUILD.vcxproj /P:Configuration=Release
-    - name: Copy files to correct directory
-      run: copy "D:/a/WindowsXPKg/WindowsXPKg/build/keys.json" "D:/a/WindowsXPKg/WindowsXPKg/build/Release/keys.json" && copy "C:/Program Files/OpenSSL/libcrypto-1_1-x64.dll" "D:/a/WindowsXPKg/WindowsXPKg/build/Release/libcrypto-1_1-x64.dll"
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v3.1.2
-      with:
-        name: Build
-        path: D:/a/WindowsXPKg/WindowsXPKg/build/Release
+      - name: Checkout Source Tree
+        uses: actions/checkout@v3
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Build WindowsXPKg
+        run: |
+          cd build
+          cmake ../
+          msbuild build/ALL_BUILD.vcxproj /P:Configuration=Release
+
+      - name: Copy files and clean up output directory
+        run: |
+          del "build/Release/*.lib"
+          copy "keys.json" "build/Release/keys.json"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: WindowsXPKg-Win64
+          path: build/Release
