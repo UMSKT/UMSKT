@@ -13,10 +13,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Configure and build this project
+    - name: Build
       uses: threeal/cmake-action@latest
+    - name: Move files to correct directory
+      # stop abbreviating things "cp"
+      run: mkdir /home/runner/work/WindowsXPKg/WindowsXPKg/build/actions_upload; cp /home/runner/work/WindowsXPKg/WindowsXPKg/build/xpkey /home/runner/work/WindowsXPKg/WindowsXPKg/build/actions_upload/xpkey; cp /home/runner/work/WindowsXPKg/WindowsXPKg/build/keys.json /home/runner/work/WindowsXPKg/WindowsXPKg/build/actions_upload/keys.json;
     - name: Upload build artifact
       uses: actions/upload-artifact@v3.1.2
       with:
         name: Build
-        path: /home/runner/work/WindowsXPKg/WindowsXPKg/
+        path: /home/runner/work/WindowsXPKg/WindowsXPKg/build/actions_upload
