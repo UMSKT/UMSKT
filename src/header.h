@@ -91,7 +91,6 @@ struct Options {
     bool help;
     bool error;
     bool list;
-    bool unformatted;
 
     MODE applicationMode;
 };

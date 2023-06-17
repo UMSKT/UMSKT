@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Andrew on 01/06/2023, modified by TheTank20 on 16/06/2023
+ * @FileCreated by Andrew on 01/06/2023
  * @Maintainer Neo
  */
 
@@ -53,7 +53,6 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
-    fmt::print("\t-r --raw\tonly output product key or confirmation ID (will still show verbose if told to)");
     fmt::print("\n\n");
 }
 
@@ -123,18 +122,15 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
 
             options->keysFilename = argv[i+1];
             i++;
-        }
-        else if (arg == "-i" || arg == "--instid") {
+        } else if (arg == "-i" || arg == "--instid") {
             if (i == argc - 1) {
                 options->error = true;
                 break;
             }
 
-            options->instid = argv[i + 1];
+            options->instid = argv[i+1];
             options->applicationMode = MODE_CONFIRMATION_ID;
             i++;
-        } else if (arg == "-r" || arg == "--raw") {
-            options->unformatted = true;
         } else {
             options->error = true;
         }
@@ -222,20 +218,16 @@ void CLI::printID(DWORD *pid)
     fmt::print("Product ID: PPPPP-{}-{}-23xxx\n", b, c);
 }
 
-void CLI::printKey(char *pk, Options options) {
+void CLI::printKey(char *pk) {
     assert(strlen(pk) == 25);
 
     std::string spk = pk;
-    fmt::print("{}-{}-{}-{}-{}",
-        spk.substr(0, 5),
-        spk.substr(5, 5),
-        spk.substr(10, 5),
-        spk.substr(15, 5),
-        spk.substr(20, 5));
-
-    if (!options.unformatted) {
-        fmt::print("\n");
-    }
+    fmt::print("{}-{}-{}-{}-{}\n",
+               spk.substr(0,5),
+               spk.substr(5,5),
+               spk.substr(10,5),
+               spk.substr(15,5),
+               spk.substr(20,5));
 }
 
 CLI::CLI(Options options, json keys) {
@@ -312,16 +304,14 @@ int CLI::BINK1998() {
 
     for (int i = 0; i < this->total; i++) {
         BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw, bUpgrade, this->pKey);
-        CLI::printKey(this->pKey, this->options);
-        if (!this->options.unformatted || i < this->total - 1) {
-            fmt::print("\n");
-        }
+        CLI::printKey(this->pKey);
+        fmt::print("\n");
+
         // verify the key
         this->count += BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
     }
-    if (!this->options.unformatted) {
-        fmt::print("Success count: {}/{}\n", this->count, this->total);
-    }
+
+    fmt::print("Success count: {}/{}\n", this->count, this->total);
     return 0;
 }
 
@@ -343,18 +333,14 @@ int CLI::BINK2002() {
         }
 
         BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, false, this->pKey);
-        CLI::printKey(this->pKey, this->options);
-        if (!this->options.unformatted || i < this->total - 1) {
-            fmt::print("\n");
-        }
+        CLI::printKey(this->pKey);
+        fmt::print("\n\n");
 
         // verify a key
         this->count += BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
     }
 
-    if (!this->options.unformatted) {
-        fmt::print("Success count: {}/{}\n", this->count, this->total);
-    }
+    fmt::print("Success count: {}/{}\n", this->count, this->total);
     return 0;
 }
 
@@ -388,12 +374,7 @@ int CLI::ConfirmationID() {
             return 1;
 
         case SUCCESS:
-            if (this->options.unformatted == true) {
-                fmt::print(confirmation_id);
-            }
-            else {
-                fmt::print("Confirmation ID: {}\n", confirmation_id);
-            }
+            fmt::print("Confirmation ID: {}\n", confirmation_id);
             return 0;
 
         default:

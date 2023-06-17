@@ -43,7 +43,7 @@ public:
     static int parseCommandLine(int argc, char* argv[], Options *options);
     static int validateCommandLine(Options* options, char *argv[], json *keys);
     static void printID(DWORD *pid);
-    static void printKey(char *pk, Options options);
+    static void printKey(char *pk);
 
     int BINK1998();
     int BINK2002();
