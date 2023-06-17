@@ -226,22 +226,16 @@ void CLI::printKey(char *pk, Options options) {
     assert(strlen(pk) == 25);
 
     std::string spk = pk;
-    if (options.unformatted == true) {
-        fmt::print("{}-{}-{}-{}-{}",
-            spk.substr(0, 5),
-            spk.substr(5, 5),
-            spk.substr(10, 5),
-            spk.substr(15, 5),
-            spk.substr(20, 5));
-    }
-    else {
-        fmt::print("{}-{}-{}-{}-{}\n",
-            spk.substr(0, 5),
-            spk.substr(5, 5),
-            spk.substr(10, 5),
-            spk.substr(15, 5),
-            spk.substr(20, 5));
-    }
+	fmt::print("{}-{}-{}-{}-{}",
+		spk.substr(0, 5),
+		spk.substr(5, 5),
+		spk.substr(10, 5),
+		spk.substr(15, 5),
+		spk.substr(20, 5));
+	
+	if (!options.unformatted) {
+		fmt::print("\n");
+	}
 }
 
 CLI::CLI(Options options, json keys) {
