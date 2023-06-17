@@ -304,13 +304,27 @@ int CLI::BINK1998() {
 
     for (int i = 0; i < this->total; i++) {
         BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw, bUpgrade, this->pKey);
-        CLI::printKey(this->pKey);
-        if (i < this->total - 1 || this->options.verbose) {
-            fmt::print("\n");
+
+        bool isValid = BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
+        if (isValid) {
+            CLI::printKey(this->pKey);
+            if (i < this->total - 1 || this->options.verbose) {
+                fmt::print("\n");
+            }
+            this->count += isValid;
         }
-        // verify the key
-        this->count += BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
+        else {
+            if (this->options.verbose) {
+                CLI::printKey(this->pKey);
+                fmt::print(" [Invalid]");
+                if (i < this->total - 1) {
+                    fmt::print("\n");
+                }
+            }
+            this->total++; // queue a redo, basically
+        }
     }
+
     if (this->options.verbose) {
         fmt::print("\nSuccess count: {}/{}", this->count, this->total);
     }
@@ -339,13 +353,25 @@ int CLI::BINK2002() {
         }
 
         BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, false, this->pKey);
-        CLI::printKey(this->pKey);
-        if (i < this->total - 1 || this->options.verbose) {
-            fmt::print("\n");
-        }
 
-        // verify a key
-        this->count += BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
+        bool isValid = BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
+        if (isValid) {
+            CLI::printKey(this->pKey);
+            if (i < this->total - 1 || this->options.verbose) {
+                fmt::print("\n");
+            }
+            this->count += isValid;
+        }
+        else {
+            if (this->options.verbose) {
+                CLI::printKey(this->pKey);
+                fmt::print(" [Invalid]");
+                if (i < this->total - 1) {
+                    fmt::print("\n");
+                }
+            }
+            this->total++; // queue a redo, basically
+        }
     }
 
     if (this->options.verbose) {
