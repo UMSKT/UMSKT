@@ -53,7 +53,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
-    fmt::print("\t-u --unformat\tonly output product key or confirmation ID (will still show verbose if told to)");
+    fmt::print("\t-r --raw\tonly output product key or confirmation ID (will still show verbose if told to)");
     fmt::print("\n\n");
 }
 
@@ -133,7 +133,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             options->instid = argv[i + 1];
             options->applicationMode = MODE_CONFIRMATION_ID;
             i++;
-        } else if (arg == "-u" || arg == "--unformat") {
+        } else if (arg == "-r" || arg == "--raw") {
             options->unformatted = true;
         } else {
             options->error = true;

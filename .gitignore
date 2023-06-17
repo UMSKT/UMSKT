@@ -249,3 +249,5 @@ CMakeSettings.json
 
 # Visual Studio
 .vs/
+/Build.bat
+/build/.gitkeep
