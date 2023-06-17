@@ -305,7 +305,7 @@ int CLI::BINK1998() {
     for (int i = 0; i < this->total; i++) {
         BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw, bUpgrade, this->pKey);
         CLI::printKey(this->pKey);
-        if (i < this->total - 1) {
+        if (i < this->total - 1 || this->options.verbose) {
             fmt::print("\n");
         }
         // verify the key
@@ -340,7 +340,7 @@ int CLI::BINK2002() {
 
         BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, false, this->pKey);
         CLI::printKey(this->pKey);
-        if (i < this->total - 1) {
+        if (i < this->total - 1 || this->options.verbose) {
             fmt::print("\n");
         }
 
