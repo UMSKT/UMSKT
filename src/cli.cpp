@@ -222,7 +222,7 @@ void CLI::printKey(char *pk) {
     assert(strlen(pk) == 25);
 
     std::string spk = pk;
-    fmt::print("{}-{}-{}-{}-{}\n",
+    fmt::print("{}-{}-{}-{}-{}",
                spk.substr(0,5),
                spk.substr(5,5),
                spk.substr(10,5),
@@ -305,13 +305,15 @@ int CLI::BINK1998() {
     for (int i = 0; i < this->total; i++) {
         BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw, bUpgrade, this->pKey);
         CLI::printKey(this->pKey);
-        fmt::print("\n");
-
+        if (i < this->total - 1) {
+            fmt::print("\n");
+        }
         // verify the key
         this->count += BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
     }
-
-    fmt::print("Success count: {}/{}\n", this->count, this->total);
+    if (this->options.verbose) {
+        fmt::print("\nSuccess count: {}/{}", this->count, this->total);
+    }
     return 0;
 }
 
@@ -374,7 +376,7 @@ int CLI::ConfirmationID() {
             return 1;
 
         case SUCCESS:
-            fmt::print("Confirmation ID: {}\n", confirmation_id);
+            fmt::print(confirmation_id);
             return 0;
 
         default:
