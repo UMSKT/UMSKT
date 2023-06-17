@@ -47,7 +47,7 @@ public:
 
     int BINK1998();
     int BINK2002();
-    int ConfirmationID(Options options);
+    int ConfirmationID();
 };
 
 #endif //UMSKT_CLI_H

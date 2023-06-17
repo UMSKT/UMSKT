@@ -226,21 +226,15 @@ void CLI::printKey(char *pk, Options options) {
     assert(strlen(pk) == 25);
 
     std::string spk = pk;
-    if (options.unformatted == true) {
-        fmt::print("{}-{}-{}-{}-{}",
-            spk.substr(0, 5),
-            spk.substr(5, 5),
-            spk.substr(10, 5),
-            spk.substr(15, 5),
-            spk.substr(20, 5));
-    }
-    else {
-        fmt::print("{}-{}-{}-{}-{}\n",
-            spk.substr(0, 5),
-            spk.substr(5, 5),
-            spk.substr(10, 5),
-            spk.substr(15, 5),
-            spk.substr(20, 5));
+    fmt::print("{}-{}-{}-{}-{}",
+        spk.substr(0, 5),
+        spk.substr(5, 5),
+        spk.substr(10, 5),
+        spk.substr(15, 5),
+        spk.substr(20, 5));
+
+    if (!options.unformatted) {
+        fmt::print("\n");
     }
 }
 
@@ -319,13 +313,13 @@ int CLI::BINK1998() {
     for (int i = 0; i < this->total; i++) {
         BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw, bUpgrade, this->pKey);
         CLI::printKey(this->pKey, this->options);
-        if (this->options.unformatted == false || i < this->total-1) {
+        if (!this->options.unformatted || i < this->total - 1) {
             fmt::print("\n");
         }
         // verify the key
         this->count += BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
     }
-    if (this->options.unformatted == false) {
+    if (!this->options.unformatted) {
         fmt::print("Success count: {}/{}\n", this->count, this->total);
     }
     return 0;
@@ -350,7 +344,7 @@ int CLI::BINK2002() {
 
         BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, false, this->pKey);
         CLI::printKey(this->pKey, this->options);
-        if (this->options.unformatted == false || i < this->total-1) {
+        if (!this->options.unformatted || i < this->total - 1) {
             fmt::print("\n");
         }
 
@@ -358,15 +352,13 @@ int CLI::BINK2002() {
         this->count += BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
     }
 
-    if (this->options.unformatted == false) {
+    if (!this->options.unformatted) {
         fmt::print("Success count: {}/{}\n", this->count, this->total);
     }
     return 0;
 }
 
-int CLI::ConfirmationID(Options options) {
-    this->options = options;
-
+int CLI::ConfirmationID() {
     char confirmation_id[49];
     int err = ConfirmationID::Generate(this->options.instid.c_str(), confirmation_id);
 
@@ -396,7 +388,7 @@ int CLI::ConfirmationID(Options options) {
             return 1;
 
         case SUCCESS:
-            if (options.unformatted == true) {
+            if (this->options.unformatted == true) {
                 fmt::print(confirmation_id);
             }
             else {
