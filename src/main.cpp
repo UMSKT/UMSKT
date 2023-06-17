@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
             return run->BINK2002();
 
         case MODE_CONFIRMATION_ID:
-            return run->ConfirmationID();
+            return run->ConfirmationID(options);
 
         default:
             return 1;

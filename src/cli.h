@@ -43,11 +43,11 @@ public:
     static int parseCommandLine(int argc, char* argv[], Options *options);
     static int validateCommandLine(Options* options, char *argv[], json *keys);
     static void printID(DWORD *pid);
-    static void printKey(char *pk);
+    static void printKey(char *pk, Options options);
 
     int BINK1998();
     int BINK2002();
-    int ConfirmationID();
+    int ConfirmationID(Options options);
 };
 
 #endif //UMSKT_CLI_H
