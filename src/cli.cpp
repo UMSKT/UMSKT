@@ -314,6 +314,10 @@ int CLI::BINK1998() {
     if (this->options.verbose) {
         fmt::print("\nSuccess count: {}/{}", this->count, this->total);
     }
+#ifndef _WIN32
+    fmt::print("\n");
+#endif
+
     return 0;
 }
 
@@ -336,13 +340,21 @@ int CLI::BINK2002() {
 
         BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, false, this->pKey);
         CLI::printKey(this->pKey);
-        fmt::print("\n\n");
+        if (i < this->total - 1) {
+            fmt::print("\n");
+        }
 
         // verify a key
         this->count += BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
     }
 
-    fmt::print("Success count: {}/{}\n", this->count, this->total);
+    if (this->options.verbose) {
+        fmt::print("\nSuccess count: {}/{}", this->count, this->total);
+    }
+#ifndef _WIN32
+    fmt::print("\n");
+#endif
+
     return 0;
 }
 
@@ -377,6 +389,9 @@ int CLI::ConfirmationID() {
 
         case SUCCESS:
             fmt::print(confirmation_id);
+#ifndef _WIN32
+            fmt::print("\n");
+#endif
             return 0;
 
         default:
