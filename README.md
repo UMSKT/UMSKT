@@ -35,7 +35,7 @@ In light of the recent exponential interest in this project I've decided to put 
 #### 1. Download the latest version of WindowsXPKg
 
 * *(GitHub account required)*
-    * Download the latest experimental version using the Actions tab ([Windows](../../actions/workflows/windows.yml), [Linux](../../actions/workflows/linux.yml)).
+    * Download the latest experimental version using the Actions tab ([Windows](../../actions/workflows/windows.yml?query=branch%3Amaster), [Linux](../../actions/workflows/linux.yml?query=branch%3Amaster)).
 
 
 * *(GitHub account \*not\* required)*
