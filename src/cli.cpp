@@ -319,7 +319,7 @@ int CLI::BINK1998() {
         // verify the key
         this->count += BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
     }
-    if (this->options.unformatted == false) {
+    if (!this->options.unformatted) {
         fmt::print("Success count: {}/{}\n", this->count, this->total);
     }
     return 0;
