@@ -313,7 +313,7 @@ int CLI::BINK1998() {
     for (int i = 0; i < this->total; i++) {
         BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw, bUpgrade, this->pKey);
         CLI::printKey(this->pKey, this->options);
-        if (this->options.unformatted == false || i < this->total-1) {
+        if (!this->options.unformatted || i < this->total - 1) {
             fmt::print("\n");
         }
         // verify the key
