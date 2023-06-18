@@ -129,7 +129,7 @@ EC_GROUP *initializeEllipticCurve(
 );
 
 // key.cpp
-extern char pKeyCharset[25];
+extern char pKeyCharset[];
 void unbase24(BYTE *byteSeq, const char *cdKey);
 void base24(char *cdKey, BYTE *byteSeq);
 

@@ -23,7 +23,7 @@
 #include "header.h"
 
 /* The allowed character set in a product key. */
-char pKeyCharset[25] = "BCDFGHJKMPQRTVWXY2346789";
+char pKeyCharset[] = "BCDFGHJKMPQRTVWXY2346789";
 
 /* Converts from CD-key to a byte sequence. */
 void unbase24(BYTE *byteSeq, const char *cdKey) {

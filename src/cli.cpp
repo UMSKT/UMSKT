@@ -231,7 +231,7 @@ void CLI::printID(DWORD *pid)
 }
 
 void CLI::printKey(char *pk) {
-    assert(strlen(pk) >= 25);
+    assert(strlen(pk) >= PK_LENGTH);
 
     std::string spk = pk;
     fmt::print("{}-{}-{}-{}-{}\n",
@@ -242,7 +242,7 @@ void CLI::printKey(char *pk) {
                spk.substr(20,5));
 }
 
-int CLI::stripKey(const char *in_key, char *out_key) {
+bool CLI::stripKey(const char *in_key, char out_key[PK_LENGTH]) {
     // copy out the product key stripping out extraneous characters
     const char *p = in_key;
     size_t i = 0;
@@ -250,18 +250,19 @@ int CLI::stripKey(const char *in_key, char *out_key) {
         // strip out space or dash
 		if (*p == ' ' || *p == '-')
 			continue;
-        // check if we've passed 25 to avoid overflow
-        if (i >= 25)
-            return ++i;
-        // if character allowed, copy into array
-        for (int j = 0; j < 24; j++) {
+        // check if we've passed the product key length to avoid overflow
+        if (i >= PK_LENGTH)
+            return false;
+        // convert to uppercase - if character allowed, copy into array
+        for (int j = 0; j < strlen(pKeyCharset); j++) {
             if (toupper(*p) == pKeyCharset[j]) {
                 out_key[i++] = toupper(*p);
                 continue;
             }
         }
     }
-    return i;
+    // only return true if we've handled exactly PK_LENGTH chars
+    return (i == PK_LENGTH);
 }
 
 CLI::CLI(Options options, json keys) {
@@ -381,8 +382,8 @@ int CLI::BINK2002Generate() {
 int CLI::BINK1998Validate() {
     char product_key[PK_LENGTH]{};
 
-    if (CLI::stripKey(this->options.keyToCheck.c_str(), product_key) != 25) {
-        fmt::print("ERROR: Product key is not 25 valid characters!\n");
+    if (!CLI::stripKey(this->options.keyToCheck.c_str(), product_key)) {
+        fmt::print("ERROR: Product key is in an incorrect format!\n");
         return 1;
     }
 
@@ -400,8 +401,8 @@ int CLI::BINK1998Validate() {
 int CLI::BINK2002Validate() {
     char product_key[PK_LENGTH]{};
 
-    if (CLI::stripKey(this->options.keyToCheck.c_str(), product_key) != 25) {
-        fmt::print("ERROR: Product key is not 25 valid characters!\n");
+    if (!CLI::stripKey(this->options.keyToCheck.c_str(), product_key)) {
+        fmt::print("ERROR: Product key is in an incorrect format!\n");
         return 1;
     }
 
