@@ -42,11 +42,17 @@ int main(int argc, char *argv[]) {
     CLI* run = new CLI(options, keys);
 
     switch(options.applicationMode) {
-        case MODE_BINK1998:
-            return run->BINK1998();
+        case MODE_BINK1998_GENERATE:
+            return run->BINK1998Generate();
 
-        case MODE_BINK2002:
-            return run->BINK2002();
+        case MODE_BINK2002_GENERATE:
+            return run->BINK2002Generate();
+
+        case MODE_BINK1998_VALIDATE:
+            return run->BINK1998Validate();
+
+        case MODE_BINK2002_VALIDATE:
+            return run->BINK2002Validate();
 
         case MODE_CONFIRMATION_ID:
             return run->ConfirmationID();

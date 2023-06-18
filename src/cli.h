@@ -44,9 +44,12 @@ public:
     static int validateCommandLine(Options* options, char *argv[], json *keys);
     static void printID(DWORD *pid);
     static void printKey(char *pk);
+    static int stripKey(const char *in_key, char *out_key);
 
-    int BINK1998();
-    int BINK2002();
+    int BINK1998Generate();
+    int BINK2002Generate();
+    int BINK1998Validate();
+    int BINK2002Validate();
     int ConfirmationID();
 };
 

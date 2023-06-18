@@ -94,6 +94,15 @@ bool BINK1998::Verify(
     // Extract RPK, hash and signature from bytecode.
     Unpack(pRaw, pUpgrade, pSerial, pHash, pSignature);
 
+    if (options.verbose) {
+        fmt::print("Validation results:\n");
+        fmt::print("   Upgrade: 0x{:08x}\n", pUpgrade);
+        fmt::print("    Serial: 0x{:08x}\n", pSerial);
+        fmt::print("      Hash: 0x{:08x}\n", pHash);
+        fmt::print(" Signature: 0x{:08x}\n", pSignature);
+        fmt::print("\n");
+    }
+
     pData = pSerial << 1 | pUpgrade;
 
     /*

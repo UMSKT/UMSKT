@@ -76,15 +76,18 @@ using json = nlohmann::json;
 namespace fs = std::filesystem;
 
 enum MODE {
-    MODE_BINK1998 = 0,
-    MODE_BINK2002 = 1,
+    MODE_BINK1998_GENERATE = 0,
+    MODE_BINK2002_GENERATE = 1,
     MODE_CONFIRMATION_ID = 2,
+    MODE_BINK1998_VALIDATE = 3,
+    MODE_BINK2002_VALIDATE = 4,
 };
 
 struct Options {
     std::string binkid;
     std::string keysFilename;
     std::string instid;
+    std::string keyToCheck;
     int channelID;
     int numKeys;
     bool verbose;
@@ -126,6 +129,7 @@ EC_GROUP *initializeEllipticCurve(
 );
 
 // key.cpp
+extern char pKeyCharset[25];
 void unbase24(BYTE *byteSeq, const char *cdKey);
 void base24(char *cdKey, BYTE *byteSeq);
 
