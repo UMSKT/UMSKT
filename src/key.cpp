@@ -22,7 +22,8 @@
 
 #include "header.h"
 
-char pCharset[] = "BCDFGHJKMPQRTVWXY2346789";
+/* The allowed character set in a product key. */
+char pKeyCharset[] = "BCDFGHJKMPQRTVWXY2346789";
 
 /* Converts from CD-key to a byte sequence. */
 void unbase24(BYTE *byteSeq, const char *cdKey) {
@@ -34,7 +35,7 @@ void unbase24(BYTE *byteSeq, const char *cdKey) {
     // Remove dashes from the CD-key and put it into a Base24 byte array.
     for (int i = 0, k = 0; i < strlen(cdKey) && k < PK_LENGTH; i++) {
         for (int j = 0; j < 24; j++) {
-            if (cdKey[i] != '-' && cdKey[i] == pCharset[j]) {
+            if (cdKey[i] != '-' && cdKey[i] == pKeyCharset[j]) {
                 pDecodedKey[k++] = j;
                 break;
             }
@@ -82,7 +83,7 @@ void base24(char *cdKey, BYTE *byteSeq) {
     cdKey[25] = 0;
 
     for (int i = 24; i >= 0; i--)
-        cdKey[i] = pCharset[BN_div_word(z, 24)];
+        cdKey[i] = pKeyCharset[BN_div_word(z, 24)];
 
     BN_free(z);
 }

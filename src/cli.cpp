@@ -53,6 +53,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
+    fmt::print("\t-V --validate\tproduct key to validate signature\n");
     fmt::print("\n\n");
 }
 
@@ -61,13 +62,14 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             "2E",
             "keys.json",
             "",
+            "",
             640,
             1,
             false,
             false,
             false,
             false,
-            MODE_BINK1998
+            MODE_BINK1998_GENERATE
     };
     // set default options
 
@@ -131,6 +133,15 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             options->instid = argv[i+1];
             options->applicationMode = MODE_CONFIRMATION_ID;
             i++;
+        } else if (arg == "-V" || arg == "--validate") {
+            if (i == argc - 1) {
+                options->error = true;
+                break;
+            }
+
+            options->keyToCheck = argv[i+1];
+            options->applicationMode = MODE_BINK1998_VALIDATE;
+            i++;
         } else {
             options->error = true;
         }
@@ -177,7 +188,8 @@ int CLI::validateCommandLine(Options* options, char *argv[], json *keys) {
     sscanf(options->binkid.c_str(), "%x", &intBinkID);
 
     if (intBinkID >= 0x40) {
-        options->applicationMode = MODE_BINK2002;
+        // set bink2002 validate mode if in bink1998 validate mode, else set bink2002 generate mode
+        options->applicationMode = (options->applicationMode == MODE_BINK1998_VALIDATE) ? MODE_BINK2002_VALIDATE : MODE_BINK2002_GENERATE;
     }
 
     if (options->channelID > 999) {
@@ -219,7 +231,7 @@ void CLI::printID(DWORD *pid)
 }
 
 void CLI::printKey(char *pk) {
-    assert(strlen(pk) == 25);
+    assert(strlen(pk) >= PK_LENGTH);
 
     std::string spk = pk;
     fmt::print("{}-{}-{}-{}-{}",
@@ -228,6 +240,29 @@ void CLI::printKey(char *pk) {
                spk.substr(10,5),
                spk.substr(15,5),
                spk.substr(20,5));
+}
+
+bool CLI::stripKey(const char *in_key, char out_key[PK_LENGTH]) {
+    // copy out the product key stripping out extraneous characters
+    const char *p = in_key;
+    size_t i = 0;
+    for (; *p; p++) {
+        // strip out space or dash
+		if (*p == ' ' || *p == '-')
+			continue;
+        // check if we've passed the product key length to avoid overflow
+        if (i >= PK_LENGTH)
+            return false;
+        // convert to uppercase - if character allowed, copy into array
+        for (int j = 0; j < strlen(pKeyCharset); j++) {
+            if (toupper(*p) == pKeyCharset[j]) {
+                out_key[i++] = toupper(*p);
+                continue;
+            }
+        }
+    }
+    // only return true if we've handled exactly PK_LENGTH chars
+    return (i == PK_LENGTH);
 }
 
 CLI::CLI(Options options, json keys) {
@@ -280,7 +315,7 @@ CLI::CLI(Options options, json keys) {
     this->total = this->options.numKeys;
 }
 
-int CLI::BINK1998() {
+int CLI::BINK1998Generate() {
     DWORD nRaw = this->options.channelID * 1'000'000 ; /* <- change */
 
     BIGNUM *bnrand = BN_new();
@@ -335,7 +370,7 @@ int CLI::BINK1998() {
     return 0;
 }
 
-int CLI::BINK2002() {
+int CLI::BINK2002Generate() {
     DWORD pChannelID = this->options.channelID;
 
     if (this->options.verbose) {
@@ -353,6 +388,8 @@ int CLI::BINK2002() {
         }
 
         BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, false, this->pKey);
+        CLI::printKey(this->pKey);
+        fmt::print("\n");
 
         bool isValid = BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
         if (isValid) {
@@ -381,6 +418,44 @@ int CLI::BINK2002() {
     fmt::print("\n");
 #endif
 
+    return 0;
+}
+
+int CLI::BINK1998Validate() {
+    char product_key[PK_LENGTH]{};
+
+    if (!CLI::stripKey(this->options.keyToCheck.c_str(), product_key)) {
+        fmt::print("ERROR: Product key is in an incorrect format!\n");
+        return 1;
+    }
+
+    CLI::printKey(product_key);
+    fmt::print("\n");
+    if (!BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, product_key)) {
+        fmt::print("ERROR: Product key is invalid! Wrong BINK ID?\n");
+        return 1;
+    }
+
+    fmt::print("Key validated successfully!\n");
+    return 0;
+}
+
+int CLI::BINK2002Validate() {
+    char product_key[PK_LENGTH]{};
+
+    if (!CLI::stripKey(this->options.keyToCheck.c_str(), product_key)) {
+        fmt::print("ERROR: Product key is in an incorrect format!\n");
+        return 1;
+    }
+
+    CLI::printKey(product_key);
+    fmt::print("\n");
+    if (!BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, product_key)) {
+        fmt::print("ERROR: Product key is invalid! Wrong BINK ID?\n");
+        return 1;
+    }
+
+    fmt::print("Key validated successfully!\n");
     return 0;
 }
 
