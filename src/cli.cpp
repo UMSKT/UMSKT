@@ -234,7 +234,7 @@ void CLI::printKey(char *pk) {
     assert(strlen(pk) >= PK_LENGTH);
 
     std::string spk = pk;
-    fmt::print("{}-{}-{}-{}-{}\n",
+    fmt::print("{}-{}-{}-{}-{}",
                spk.substr(0,5),
                spk.substr(5,5),
                spk.substr(10,5),
@@ -339,14 +339,34 @@ int CLI::BINK1998Generate() {
 
     for (int i = 0; i < this->total; i++) {
         BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw, bUpgrade, this->pKey);
-        CLI::printKey(this->pKey);
-        fmt::print("\n");
 
-        // verify the key
-        this->count += BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
+        bool isValid = BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
+        if (isValid) {
+            CLI::printKey(this->pKey);
+            if (i < this->total - 1 || this->options.verbose) {
+                fmt::print("\n");
+            }
+            this->count += isValid;
+        }
+        else {
+            if (this->options.verbose) {
+                CLI::printKey(this->pKey);
+                fmt::print(" [Invalid]");
+                if (i < this->total - 1) {
+                    fmt::print("\n");
+                }
+            }
+            this->total++; // queue a redo, basically
+        }
     }
 
-    fmt::print("Success count: {}/{}\n", this->count, this->total);
+    if (this->options.verbose) {
+        fmt::print("\nSuccess count: {}/{}", this->count, this->total);
+    }
+#ifndef _WIN32
+    fmt::print("\n");
+#endif
+
     return 0;
 }
 
@@ -371,11 +391,33 @@ int CLI::BINK2002Generate() {
         CLI::printKey(this->pKey);
         fmt::print("\n");
 
-        // verify a key
-        this->count += BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
+        bool isValid = BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
+        if (isValid) {
+            CLI::printKey(this->pKey);
+            if (i < this->total - 1 || this->options.verbose) {
+                fmt::print("\n");
+            }
+            this->count += isValid;
+        }
+        else {
+            if (this->options.verbose) {
+                CLI::printKey(this->pKey);
+                fmt::print(" [Invalid]");
+                if (i < this->total - 1) {
+                    fmt::print("\n");
+                }
+            }
+            this->total++; // queue a redo, basically
+        }
     }
 
-    fmt::print("Success count: {}/{}\n", this->count, this->total);
+    if (this->options.verbose) {
+        fmt::print("\nSuccess count: {}/{}", this->count, this->total);
+    }
+#ifndef _WIN32
+    fmt::print("\n");
+#endif
+
     return 0;
 }
 
@@ -447,7 +489,10 @@ int CLI::ConfirmationID() {
             return 1;
 
         case SUCCESS:
-            fmt::print("Confirmation ID: {}\n", confirmation_id);
+            fmt::print(confirmation_id);
+#ifndef _WIN32
+            fmt::print("\n");
+#endif
             return 0;
 
         default:
