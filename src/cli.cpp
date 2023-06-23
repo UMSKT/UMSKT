@@ -53,6 +53,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
+    fmt::print("\t-s --serial\tspecifies a serial to use in the product ID (defaults to random, BINK1998 only)\n");
     fmt::print("\t-V --validate\tproduct key to validate signature\n");
     fmt::print("\n\n");
 }
@@ -64,6 +65,8 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             "",
             "",
             640,
+            false,
+            0,
             1,
             false,
             false,
@@ -114,6 +117,20 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
                 options->error = true;
             } else {
                 options->channelID = siteID;
+            }
+            i++;
+        } else if (arg == "-s" || arg == "--serial") {
+            if (i == argc - 1) {
+                options->error = true;
+                break;
+            }
+
+            int serial_val;
+            if (!sscanf(argv[i+1], "%d", &serial_val)) {
+                options->error = true;
+            } else {
+                options->serialSet = true;
+                options->serial = serial_val;
             }
             i++;
         } else if (arg == "-f" || arg == "--file") {
@@ -197,6 +214,12 @@ int CLI::validateCommandLine(Options* options, char *argv[], json *keys) {
         return 1;
     }
 
+    // don't allow any serial not between 0 and 999999
+    if (options->serial > 999999 || options->serial < 0) {
+        fmt::print("ERROR: refusing to create a key with a Serial not between 000000 and 999999\n");
+        return 1;
+    }
+
     return 0;
 }
 
@@ -206,8 +229,8 @@ void CLI::printID(DWORD *pid)
     char b[6], c[8];
     int i, digit = 0;
 
-    //	Cut away last bit of pid and convert it to an accii-number (=raw)
-    sprintf(raw, "%iu", pid[0] >> 1);
+    // Convert PID to ascii-number (=raw)
+    sprintf(raw, "%u", pid[0]);
 
     // Make b-part {640-....}
     strncpy(b, raw, 3);
@@ -215,7 +238,6 @@ void CLI::printID(DWORD *pid)
 
     // Make c-part {...-123456X...}
     strcpy(c, raw + 3);
-    fmt::print("> {}\n", c);
 
     // Make checksum digit-part {...56X-}
     assert(strlen(c) == 6);
@@ -227,7 +249,7 @@ void CLI::printID(DWORD *pid)
     c[6] = digit + '0';
     c[7] = 0;
 
-    fmt::print("Product ID: PPPPP-{}-{}-23xxx\n", b, c);
+    fmt::print("> Product ID: PPPPP-{}-{}-23xxx\n", b, c);
 }
 
 void CLI::printKey(char *pk) {
@@ -316,19 +338,30 @@ CLI::CLI(Options options, json keys) {
 }
 
 int CLI::BINK1998Generate() {
+    // raw PID/serial value
     DWORD nRaw = this->options.channelID * 1'000'000 ; /* <- change */
 
-    BIGNUM *bnrand = BN_new();
-    BN_rand(bnrand, 19, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
+    // using user-provided serial
+    if (this->options.serialSet) {
+        // just in case, make sure it's less than 999999
+        int serialRnd = (this->options.serial % 999999);
+        nRaw += serialRnd;
+    } else {
+        // generate a random number to use as a serial
+        BIGNUM *bnrand = BN_new();
+        BN_rand(bnrand, 19, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
 
-    int oRaw;
-    char *cRaw = BN_bn2dec(bnrand);
+        int oRaw;
+        char *cRaw = BN_bn2dec(bnrand);
 
-    sscanf(cRaw, "%d", &oRaw);
-    nRaw += (oRaw % 999999); // ensure our serial is less than 999999
+        sscanf(cRaw, "%d", &oRaw);
+        nRaw += (oRaw % 999999); // ensure our serial is less than 999999
+    }
 
     if (this->options.verbose) {
-        fmt::print("> PID: {:09d}\n", nRaw);
+        // print the resulting Product ID
+        // PID value is printed in BINK1998::Generate
+        printID(&nRaw);
     }
 
     // generate a key
