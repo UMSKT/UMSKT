@@ -230,7 +230,7 @@ void CLI::printID(DWORD *pid)
     int i, digit = 0;
 
     // Convert PID to ascii-number (=raw)
-    sprintf(raw, "%u", pid[0]);
+    sprintf(raw, "%09u", pid[0]);
 
     // Make b-part {640-....}
     strncpy(b, raw, 3);
