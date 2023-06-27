@@ -62,7 +62,7 @@ inline QWORD ConfirmationID::__umul128(QWORD a, QWORD b, QWORD* hi)
 #else
 #define __umul128 _umul128
 #endif
-#elif defined(__i386__) || defined(_M_IX86) || defined(__arm__)
+#elif defined(__i386__) || defined(_M_IX86) || defined(__arm__) || defined(__EMSCRIPTEN__)
 inline QWORD ConfirmationID::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi) {
     // multiplier   = ab = a * 2^32 + b
     // multiplicand = cd = c * 2^32 + d
@@ -87,6 +87,8 @@ inline QWORD ConfirmationID::__umul128(QWORD multiplier, QWORD multiplicand, QWO
 
     return product_lo;
 }
+#else
+#error Unknown architecture detected - please edit confid.cpp to tailor __umul128() your architecture
 #endif
 
 QWORD ConfirmationID::ui128_quotient_mod(QWORD lo, QWORD hi)

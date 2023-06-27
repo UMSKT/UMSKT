@@ -27,15 +27,15 @@
 
 EXPORT class PIDGEN2 {
 public:
-    bool isNumericString(std::string input);
-    bool isValidChannelID(std::string channelID);
-    bool isValidOEMID(std::string OEMID);
-    bool isValidYear(std::string year);
-    bool isValidDay(std::string day);
-    bool isValidRetailProductID(std::string productID);
-    int addDigits(std::string input);
-    int GenerateRetail(std::string channelID, std::string *keyout);
-    int GenerateOEM(std::string year, std::string day, std::string oem, std::string *keyout);
+    static bool isNumericString(char* input);
+    static bool isValidChannelID(char* channelID);
+    static bool isValidOEMID(char* OEMID);
+    static bool isValidYear(char* year);
+    static bool isValidDay(char* day);
+    static bool isValidRetailProductID(char* productID);
+    static int addDigits(char* input);
+    static int GenerateRetail(char* channelID, char* &keyout);
+    static int GenerateOEM(char* year, char* day, char* oem, char* &keyout);
 };
 
 #endif //UMSKT_PIDGEN2_H

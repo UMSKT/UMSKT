@@ -22,36 +22,12 @@
 
 #include "PIDGEN2.h"
 
-const std::string channelIDBlacklist [7]  = {"333", "444", "555", "666", "777", "888", "999"};
-const std::string validYears[8] = { "95", "96", "97", "98", "99", "00", "01", "02"};
+const char* channelIDBlacklist [7]  = {"333", "444", "555", "666", "777", "888", "999"};
+const char* validYears[8] = { "95", "96", "97", "98", "99", "00", "01", "02"};
 
-bool PIDGEN2::isNumericString(std::string input) {
-    /*
-    std::string::const_iterator it = input.begin();
-    while (it != input.end() && std::isdigit(*it)) ++it;
-    return !input.empty() && it == input.end();
-     */
-    return false;
-}
-
-int PIDGEN2::addDigits(std::string input) {
-    int output = 0;
-
-    std::string::const_iterator it = input.begin();
-    while (it != input.end()) {
-        output += *it - '0';
-    }
-
-    return output;
-}
-
-bool PIDGEN2::isValidChannelID(std::string channelID) {
-    if (channelID.length() > 3) {
-        return false;
-    }
-
-    for (int i = 0; i <= 6; i++) {
-        if (channelID == channelIDBlacklist[i]) {
+bool PIDGEN2::isNumericString(char* input) {
+    for(int i = 0; i < strlen(input); i++) {
+        if (input[i] < '0' || input[i] > '9') {
             return false;
         }
     }
@@ -59,12 +35,40 @@ bool PIDGEN2::isValidChannelID(std::string channelID) {
     return true;
 }
 
-bool PIDGEN2::isValidOEMID(std::string OEMID) {
+int PIDGEN2::addDigits(char* input) {
+    int output = 0;
+
+    if (!isNumericString(input)) {
+        return -1;
+    }
+
+    for(int i = 0; i < strlen(input); i++) {
+        output += input[i] - '0';
+    }
+
+    return output;
+}
+
+bool PIDGEN2::isValidChannelID(char* channelID) {
+    if (strlen(channelID) > 3) {
+        return false;
+    }
+
+    for (int i = 0; i <= 6; i++) {
+        if (strcmp(channelID, channelIDBlacklist[i]) != 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool PIDGEN2::isValidOEMID(char* OEMID) {
     if (!isNumericString(OEMID)) {
         return false;
     }
 
-    if (OEMID.length() > 5) {
+    if (strlen(OEMID) > 5) {
         if (OEMID[0] != '0' || OEMID[1] != '0') {
             return false;
         }
@@ -75,7 +79,7 @@ bool PIDGEN2::isValidOEMID(std::string OEMID) {
     return (mod % 21 == 0);
 }
 
-bool PIDGEN2::isValidYear(std::string year) {
+bool PIDGEN2::isValidYear(char* year) {
     for (int i = 0; i <= 7; i++) {
         if (year == validYears[i]) {
             return false;
@@ -84,7 +88,7 @@ bool PIDGEN2::isValidYear(std::string year) {
     return true;
 }
 
-bool PIDGEN2::isValidDay(std::string day) {
+bool PIDGEN2::isValidDay(char* day) {
     if (!isNumericString(day)) {
         return false;
     }
@@ -96,11 +100,11 @@ bool PIDGEN2::isValidDay(std::string day) {
     return true;
 }
 
-bool PIDGEN2::isValidRetailProductID(std::string productID) {
+bool PIDGEN2::isValidRetailProductID(char* productID) {
     return true;
 }
 
-int PIDGEN2::GenerateRetail(std::string channelID, std::string *keyout) {
+int PIDGEN2::GenerateRetail(char* channelID, char* &keyout) {
     if (!isValidChannelID(channelID)) {
         return 1;
     }
@@ -108,16 +112,16 @@ int PIDGEN2::GenerateRetail(std::string channelID, std::string *keyout) {
     return 0;
 }
 
-int PIDGEN2::GenerateOEM(std::string year, std::string day, std::string oem, std::string *keyout) {
+int PIDGEN2::GenerateOEM(char* year, char* day, char* oem, char* &keyout) {
     if (!isValidOEMID(oem)) {
         int mod = addDigits(oem);
         mod += mod % 21;
 
-        oem = fmt::format("{:07d}", mod);
+        strcpy(oem, fmt::format("{:07d}", mod).c_str());
     }
 
     if (!isValidYear(year)) {
-        year = validYears[0];
+        strcpy(year, validYears[0]);
     }
 
     if (!isValidDay(day)) {
@@ -125,7 +129,7 @@ int PIDGEN2::GenerateOEM(std::string year, std::string day, std::string oem, std
         iday = (iday + 1) % 365;
     }
 
-    *keyout = fmt::format("{}{}-OEM-{}-{}", year, day, oem, oem);
+    strcpy(keyout, fmt::format("{}{}-OEM-{}-{}", year, day, oem, oem).c_str());
 
     return 0;
 }

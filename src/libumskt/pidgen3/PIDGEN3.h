@@ -25,10 +25,10 @@
 
 #include "../libumskt.h"
 
-EXPORT class PIDGEN3 {
+class PIDGEN3 {
 public:
-    EXPORT class BINK1998;
-    EXPORT class BINK2002;
+    class BINK1998;
+    class BINK2002;
 
     // util.cpp
     static int BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen); // Hello OpenSSL developers, please tell me, where is this function at?

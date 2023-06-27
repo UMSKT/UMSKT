@@ -33,9 +33,16 @@
 #endif
 
 #ifdef _MSC_VER
-#define EXPORT __declspec(dllexport)
+#define EXPORT extern "C" __declspec(dllexport)
 #else
-#define EXPORT
+#define EXPORT extern "C"
+#endif
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#define FNEXPORT EMSCRIPTEN_KEEPALIVE EXPORT
+#else
+#define FNEXPORT EXPORT
 #endif
 
 // Type definitions

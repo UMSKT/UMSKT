@@ -59,12 +59,12 @@
 #define BYDWORD(n)                     (DWORD)(*((n) + 0) | *((n) + 1) << 8 | *((n) + 2) << 16 | *((n) + 3) << 24)
 #define BITMASK(n)                     ((1ULL << (n)) - 1)
 
-EXPORT class UMSKT {
+class UMSKT {
 public:
     static std::FILE* debug;
-    EXPORT class PIDGEN2;
-    EXPORT class PIDGEN3;
-    EXPORT class ConfigurationID;
+    class PIDGEN2;
+    class PIDGEN3;
+    class ConfigurationID;
 
     static void setDebugOutput(std::FILE* input);
 };

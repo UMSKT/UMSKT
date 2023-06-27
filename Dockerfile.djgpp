@@ -70,8 +70,7 @@ RUN git clone https://github.com/andrewwutw/build-djgpp.git djgpp \
 # Stage 3: compile watt32 for djgpp-i386
 FROM djgpp as watt32
 WORKDIR /djgpp
-ENV WATT_ROOT=/djgpp/watt32
-ENV DJGPP_PREFIX=i386-pc-msdosdjgpp
+ENV WATT_ROOT=/djgpp/watt32 DJGPP_PREFIX=i386-pc-msdosdjgpp
 SHELL ["/bin/bash", "-c"]
 RUN git clone https://github.com/gvanem/Watt-32.git watt32 \
     && cd watt32/util \
@@ -98,17 +97,13 @@ RUN git clone https://github.com/openssl/openssl.git openssl \
     && ./Configure no-threads -DOPENSSL_DEV_NO_ATOMICS --prefix=/djgpp DJGPP \
     && make && make install
 
-# Staage 5: compile UMSKT
+# Stage 5: compile UMSKT
 FROM openssl as build
 
 WORKDIR /src
 COPY . /src
 
-ENV CC=/djgpp/bin/i386-pc-msdosdjgpp-gcc
-ENV CXX=/djgpp/bin/i386-pc-msdosdjgpp-g++
-ENV WATT_ROOT=/djgpp/watt32
-ENV PKG_CONFIG_PATH=/djgpp/lib/pkgconfig
-ENV VERBOSE=1
+ENV CC=/djgpp/bin/i386-pc-msdosdjgpp-gcc CXX=/djgpp/bin/i386-pc-msdosdjgpp-g++ PKG_CONFIG_PATH=/djgpp/lib/pkgconfig VERBOSE=1
 SHELL ["/bin/bash", "-c"]
 # Build UMSKT from the local directory
 RUN mkdir /src/build \

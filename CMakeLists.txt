@@ -127,31 +127,43 @@ CPMAddPackage(
 ### Resource compilation
 CMRC_ADD_RESOURCE_LIBRARY(umskt-rc ALIAS umskt::rc NAMESPACE umskt keys.json)
 
-IF(NOT UMSKT_USE_SHARED_OPENSSL)
-### Static library compilation
-ADD_LIBRARY(_umskt STATIC src/libumskt/pidgen3/BINK1998.cpp src/libumskt/pidgen3/BINK2002.cpp src/libumskt/pidgen3/key.cpp src/libumskt/pidgen3/util.cpp src/libumskt/confid/confid.cpp src/libumskt/pidgen2/PIDGEN2.cpp src/libumskt/debugoutput.cpp)
-TARGET_INCLUDE_DIRECTORIES(_umskt PUBLIC crypto)
-TARGET_LINK_LIBRARIES(_umskt -static OpenSSL::Crypto umskt::rc fmt ${UMSKT_LINK_LIBS})
+SET(LIBUMSKT_SRC src/libumskt/libumskt.cpp src/libumskt/pidgen3/BINK1998.cpp src/libumskt/pidgen3/BINK2002.cpp src/libumskt/pidgen3/key.cpp src/libumskt/pidgen3/util.cpp src/libumskt/confid/confid.cpp src/libumskt/pidgen2/PIDGEN2.cpp src/libumskt/debugoutput.cpp)
+
+#### Separate Build Path for emscripten
+IF (EMSCRIPTEN)
+    ADD_EXECUTABLE(umskt ${LIBUMSKT_SRC})
+    TARGET_INCLUDE_DIRECTORIES(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
+    TARGET_LINK_LIBRARIES(umskt -static OpenSSL::Crypto fmt)
+    SET(CMAKE_EXECUTABLE_SUFFIX ".html")
+
+    SET_TARGET_PROPERTIES(umskt PROPERTIES COMPILE_FLAGS "-Os -sEXPORTED_RUNTIME_METHODS=ccall,cwrap")
+    SET_TARGET_PROPERTIES(umskt PROPERTIES LINK_FLAGS    "-Os -sWASM=1 -sEXPORT_ALL=1 -sEXPORTED_RUNTIME_METHODS=ccall,cwrap --no-entry")
 ELSE()
-### Shared library compilation
-ADD_LIBRARY(_umskt SHARED src/libumskt/pidgen3/BINK1998.cpp src/libumskt/pidgen3/BINK2002.cpp src/libumskt/pidgen3/key.cpp src/libumskt/pidgen3/util.cpp src/libumskt/confid/confid.cpp src/libumskt/pidgen2/PIDGEN2.cpp src/libumskt/debugoutput.cpp ${UMSKT_EXE_WINDOWS_EXTRA} ${UMSKT_EXE_WINDOWS_DLL})
-TARGET_INCLUDE_DIRECTORIES(_umskt PUBLIC crypto)
-TARGET_LINK_LIBRARIES(_umskt OpenSSL::Crypto umskt::rc fmt ${UMSKT_LINK_LIBS})
-TARGET_LINK_DIRECTORIES(_umskt PUBLIC ${UMSKT_LINK_DIRS})
+    IF(NOT UMSKT_USE_SHARED_OPENSSL)
+        ### Static library compilation
+        ADD_LIBRARY(_umskt STATIC ${LIBUMSKT_SRC})
+        TARGET_INCLUDE_DIRECTORIES(_umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
+        TARGET_LINK_LIBRARIES(_umskt -static OpenSSL::Crypto fmt ${UMSKT_LINK_LIBS})
+    ELSE()
+        ### Shared library compilation
+        ADD_LIBRARY(_umskt SHARED ${LIBUMSKT_SRC} ${UMSKT_EXE_WINDOWS_EXTRA} ${UMSKT_EXE_WINDOWS_DLL})
+        TARGET_INCLUDE_DIRECTORIES(_umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
+        TARGET_LINK_LIBRARIES(_umskt OpenSSL::Crypto fmt ${UMSKT_LINK_LIBS})
+        TARGET_LINK_DIRECTORIES(_umskt PUBLIC ${UMSKT_LINK_DIRS})
+    ENDIF()
+
+    ### UMSKT executable compilation
+    ADD_EXECUTABLE(umskt src/main.cpp src/cli.cpp ${UMSKT_EXE_WINDOWS_EXTRA})
+    TARGET_INCLUDE_DIRECTORIES(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
+    TARGET_LINK_LIBRARIES(umskt _umskt nlohmann_json::nlohmann_json fmt umskt::rc OpenSSL::Crypto ${UMSKT_LINK_LIBS})
+    TARGET_LINK_DIRECTORIES(umskt PUBLIC ${UMSKT_LINK_DIRS})
+    IF(MSVC AND MSVC_MSDOS_STUB)
+        SET_PROPERTY(TARGET umskt APPEND PROPERTY LINK_FLAGS /STUB:${MSVC_MSDOS_STUB})
+    ENDIF()
+
+    ### Copy Shared Libraries and dependency files
+    IF (OPENSSL_CRYPTO_SHARED)
+        GET_FILENAME_COMPONENT(OPENSSL_CRYPTO_LIBRARY_FILENAME ${OPENSSL_CRYPTO_LIBRARY} NAME)
+        CONFIGURE_FILE(${OPENSSL_CRYPTO_LIBRARY} "${CMAKE_CURRENT_BINARY_DIR}/${OPENSSL_CRYPTO_LIBRARY_FILENAME}" COPYONLY)
+    ENDIF()
 ENDIF()
-
-### UMSKT executable compilation
-ADD_EXECUTABLE(umskt src/main.cpp src/cli.cpp ${UMSKT_EXE_WINDOWS_EXTRA})
-TARGET_INCLUDE_DIRECTORIES(umskt PUBLIC crypto)
-TARGET_LINK_LIBRARIES(umskt _umskt nlohmann_json::nlohmann_json fmt umskt::rc OpenSSL::Crypto ${UMSKT_LINK_LIBS})
-TARGET_LINK_DIRECTORIES(umskt PUBLIC ${UMSKT_LINK_DIRS})
-IF(MSVC AND MSVC_MSDOS_STUB)
-    SET_PROPERTY(TARGET umskt APPEND PROPERTY LINK_FLAGS /STUB:${MSVC_MSDOS_STUB})
-ENDIF ()
-
-### Copy Shared Libraries and dependency files
-IF (OPENSSL_CRYPTO_SHARED)
-    GET_FILENAME_COMPONENT(OPENSSL_CRYPTO_LIBRARY_FILENAME ${OPENSSL_CRYPTO_LIBRARY} NAME)
-    CONFIGURE_FILE(${OPENSSL_CRYPTO_LIBRARY} "${CMAKE_CURRENT_BINARY_DIR}/${OPENSSL_CRYPTO_LIBRARY_FILENAME}" COPYONLY)
-ENDIF()
-
