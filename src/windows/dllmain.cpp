@@ -22,7 +22,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include "../windows/resource.h"
+#include "resource.h"
 
 BOOLEAN WINAPI DllMain( IN HINSTANCE hDllHandle,
         IN DWORD     nReason,
