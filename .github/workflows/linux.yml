@@ -18,8 +18,10 @@ jobs:
           sudo apt -y update
           sudo apt -y install build-essential cmake libssl-dev
 
-    - name: Build WindowsXPKg
-      uses: threeal/cmake-action@latest
+    - name: Configure and build WindowsXPKg
+      uses: threeal/cmake-action@v1.2.0
+      with:
+        run-build: true
 
     - name: Move files to correct directory
       run: |
