@@ -18,11 +18,12 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
 
+      - name: Configure WindowsXPKg
+        uses: threeal/cmake-action@v1.2.0
+
       - name: Build WindowsXPKg
-        run: |
-          cd build
-          cmake ../
-          msbuild ALL_BUILD.vcxproj /P:Configuration=Release
+        working-directory: build
+        run: msbuild ALL_BUILD.vcxproj /P:Configuration=Release
 
       - name: Copy files and clean up output directory
         run: |
