@@ -19,8 +19,7 @@ In light of the recent exponential interest in this project I've decided to put 
 
 #### **What does it do?**
 
-* This program allows you to generate endless Windows XP / Windows Server 2003 keys.
-  You also can use it to check your already existing keys.
+* This program is a tool for researching and experimenting with retro Microsoft product licensing, for products released before 2012.
 
 #### **How does it work?**
 
