@@ -50,7 +50,9 @@ struct Options {
     std::string instid;
     std::string keyToCheck;
     int channelID;
+    int serial;
     int numKeys;
+    bool serialSet;
     bool verbose;
     bool help;
     bool error;

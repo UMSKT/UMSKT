@@ -62,22 +62,22 @@ void CLI::showHelp(char *argv[]) {
 }
 
 int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
+    // set default options
     *options = Options {
             "2E",
             "",
             "",
             "",
             640,
-            false,
             0,
             1,
             false,
             false,
             false,
             false,
+            false,
             MODE_BINK1998_GENERATE
     };
-    // set default options
 
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
@@ -235,8 +235,7 @@ int CLI::validateCommandLine(Options* options, char *argv[], json *keys) {
     return 0;
 }
 
-void CLI::printID(DWORD *pid)
-{
+void CLI::printID(DWORD *pid) {
     char raw[12];
     char b[6], c[8];
     int i, digit = 0;
