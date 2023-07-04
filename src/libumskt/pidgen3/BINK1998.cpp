@@ -30,7 +30,7 @@
 #include "BINK1998.h"
 
 /* Unpacks a Windows XP-like Product Key. */
-void BINK1998::Unpack(
+void PIDGEN3::BINK1998::Unpack(
         QWORD (&pRaw)[2],
          BOOL &pUpgrade,
         DWORD &pSerial,
@@ -54,7 +54,7 @@ void BINK1998::Unpack(
 }
 
 /* Packs a Windows XP-like Product Key. */
-void BINK1998::Pack(
+void PIDGEN3::BINK1998::Pack(
         QWORD (&pRaw)[2],
          BOOL pUpgrade,
         DWORD pSerial,
@@ -71,7 +71,7 @@ void BINK1998::Pack(
 }
 
 /* Verifies a Windows XP-like Product Key. */
-bool BINK1998::Verify(
+bool PIDGEN3::BINK1998::Verify(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
@@ -89,19 +89,17 @@ bool BINK1998::Verify(
     BOOL  pUpgrade;
 
     // Convert Base24 CD-key to bytecode.
-    unbase24((BYTE *)pRaw, pKey);
+    PIDGEN3::unbase24((BYTE *)pRaw, pKey);
 
     // Extract RPK, hash and signature from bytecode.
     Unpack(pRaw, pUpgrade, pSerial, pHash, pSignature);
 
-    if (options.verbose) {
-        fmt::print("Validation results:\n");
-        fmt::print("   Upgrade: 0x{:08x}\n", pUpgrade);
-        fmt::print("    Serial: 0x{:08x}\n", pSerial);
-        fmt::print("      Hash: 0x{:08x}\n", pHash);
-        fmt::print(" Signature: 0x{:08x}\n", pSignature);
-        fmt::print("\n");
-    }
+    fmt::print(UMSKT::debug, "Validation results:\n");
+    fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", pUpgrade);
+    fmt::print(UMSKT::debug, "    Serial: 0x{:08x}\n", pSerial);
+    fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
+    fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
+    fmt::print(UMSKT::debug, "\n");
 
     pData = pSerial << 1 | pUpgrade;
 
@@ -177,7 +175,7 @@ bool BINK1998::Verify(
 }
 
 /* Generates a Windows XP-like Product Key. */
-void BINK1998::Generate(
+void PIDGEN3::BINK1998::Generate(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
           BIGNUM *genOrder,
@@ -266,14 +264,12 @@ void BINK1998::Generate(
         // Pack product key.
         Pack(pRaw, pUpgrade, pSerial, pHash, pSignature);
 
-        if (options.verbose) {
-            fmt::print("Generation results:\n");
-            fmt::print("   Upgrade: 0x{:08x}\n", pUpgrade);
-            fmt::print("    Serial: 0x{:08x}\n", pSerial);
-            fmt::print("      Hash: 0x{:08x}\n", pHash);
-            fmt::print(" Signature: 0x{:08x}\n", pSignature);
-            fmt::print("\n");
-        }
+        fmt::print(UMSKT::debug, "Generation results:\n");
+        fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", pUpgrade);
+        fmt::print(UMSKT::debug, "    Serial: 0x{:08x}\n", pSerial);
+        fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
+        fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
+        fmt::print(UMSKT::debug, "\n");
 
         EC_POINT_free(r);
     } while (pSignature > BITMASK(55));

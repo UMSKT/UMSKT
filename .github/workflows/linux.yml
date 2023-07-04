@@ -9,27 +9,44 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x86
+          - arch: x86_64
+          - arch: aarch64
     steps:
     - name: Checkout Source Tree
       uses: actions/checkout@v3
 
-    - name: Setup build environment
-      run: |
-          sudo apt -y update
-          sudo apt -y install build-essential cmake libssl-dev
+    - name: Setup latest Alpine Linux for ${{ matrix.arch }}
+      uses: jirutka/setup-alpine@v1
+      with:
+        packages: >
+          bash
+          build-base
+          cmake
+          git
+          musl-dev
+          openssl-dev
+          openssl-libs-static
+        volumes: ${{ steps.alpine-target.outputs.root-path }}:${{ github.workspace }}
+        shell-name: alpine-target.sh
 
-    - name: Configure and build WindowsXPKg
+    - name: Configure and build UMSKT
       uses: threeal/cmake-action@v1.2.0
       with:
+        options: MUSL_STATIC=ON
         run-build: true
+        shell: alpine-target.sh
 
     - name: Move files to correct directory
       run: |
           mkdir -p build/actions_upload
-          mv build/xpkey build/keys.json build/actions_upload/
+          mv build/umskt build/actions_upload/umskt
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v3.1.2
       with:
-        name: WindowsXPKg-linux-x86_64-static
+        name: UMSKT-linux-${{ matrix.arch }}-static
         path: build/actions_upload

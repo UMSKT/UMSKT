@@ -21,18 +21,21 @@
  */
 
 #include "cli.h"
-#include "confid.h"
-#include "BINK1998.h"
-#include "BINK2002.h"
 
 bool CLI::loadJSON(const fs::path& filename, json *output) {
-    if (!fs::exists(filename)) {
+    if (!filename.empty() && !fs::exists(filename)) {
         fmt::print("ERROR: File {} does not exist\n", filename.string());
         return false;
     }
-
-    std::ifstream f(filename);
-    *output = json::parse(f, nullptr, false, false);
+    else if (fs::exists(filename)) {
+        std::ifstream f(filename);
+        *output = json::parse(f, nullptr, false, false);
+    }
+    else if (filename.empty()) {
+        cmrc::embedded_filesystem fs = cmrc::umskt::get_filesystem();
+        cmrc::file keys = fs.open("keys.json");
+        *output = json::parse(keys, nullptr, false, false);
+    }
 
     if (output->is_discarded()) {
         fmt::print("ERROR: Unable to parse keys from {}\n", filename.string());
@@ -48,20 +51,20 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-h --help\tshow this message\n");
     fmt::print("\t-v --verbose\tenable verbose output\n");
     fmt::print("\t-n --number\tnumber of keys to generate (defaults to 1)\n");
-    fmt::print("\t-f --file\tspecify which keys file to load (defaults to keys.json)\n");
+    fmt::print("\t-f --file\tspecify which keys file to load\n");
     fmt::print("\t-i --instid\tinstallation ID used to generate confirmation ID\n");
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
     fmt::print("\t-s --serial\tspecifies a serial to use in the product ID (defaults to random, BINK1998 only)\n");
     fmt::print("\t-V --validate\tproduct key to validate signature\n");
-    fmt::print("\n\n");
+    fmt::print("\n");
 }
 
 int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
     *options = Options {
             "2E",
-            "keys.json",
+            "",
             "",
             "",
             640,
@@ -81,6 +84,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
 
         if (arg == "-v" || arg == "--verbose") {
             options->verbose = true;
+            UMSKT::setDebugOutput(stderr);
         } else if (arg == "-h" || arg == "--help") {
             options->help = true;
         } else if (arg == "-n" || arg == "--number") {
@@ -168,8 +172,20 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
 }
 
 int CLI::validateCommandLine(Options* options, char *argv[], json *keys) {
+    if (options->help || options->error) {
+        if (options->error) {
+            fmt::print("error parsing command line options\n");
+        }
+        showHelp(argv);
+        return 1;
+    }
+
     if (options->verbose) {
-        fmt::print("Loading keys file {}\n", options->keysFilename);
+        if(options->keysFilename.empty()) {
+            fmt::print("Loading internal keys file\n");
+        } else {
+            fmt::print("Loading keys file {}\n", options->keysFilename);
+        }
     }
 
     if (!loadJSON(options->keysFilename, keys)) {
@@ -177,15 +193,11 @@ int CLI::validateCommandLine(Options* options, char *argv[], json *keys) {
     }
 
     if (options->verbose) {
-        fmt::print("Loaded keys from {} successfully\n",options->keysFilename);
-    }
-
-    if (options->help || options->error) {
-        if (options->error) {
-            fmt::print("error parsing command line options\n");
+        if(options->keysFilename.empty()) {
+            fmt::print("Loaded internal keys file successfully\n");
+        } else {
+            fmt::print("Loaded keys from {} successfully\n",options->keysFilename);
         }
-        showHelp(argv);
-        return 1;
     }
 
     if (options->list) {
@@ -276,8 +288,8 @@ bool CLI::stripKey(const char *in_key, char out_key[PK_LENGTH]) {
         if (i >= PK_LENGTH)
             return false;
         // convert to uppercase - if character allowed, copy into array
-        for (int j = 0; j < strlen(pKeyCharset); j++) {
-            if (toupper(*p) == pKeyCharset[j]) {
+        for (int j = 0; j < strlen(PIDGEN3::pKeyCharset); j++) {
+            if (toupper(*p) == PIDGEN3::pKeyCharset[j]) {
                 out_key[i++] = toupper(*p);
                 continue;
             }
@@ -321,7 +333,8 @@ CLI::CLI(Options options, json keys) {
         fmt::print("\n");
     }
 
-    eCurve = initializeEllipticCurve(
+
+    eCurve = PIDGEN3::initializeEllipticCurve(
             this->keys["BINK"][this->BINKID]["p"].get<std::string>(),
             this->keys["BINK"][this->BINKID]["a"].get<std::string>(),
             this->keys["BINK"][this->BINKID]["b"].get<std::string>(),
@@ -371,9 +384,9 @@ int CLI::BINK1998Generate() {
     bool bUpgrade = false;
 
     for (int i = 0; i < this->total; i++) {
-        BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw, bUpgrade, this->pKey);
+        PIDGEN3::BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw, bUpgrade, this->pKey);
 
-        bool isValid = BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
+        bool isValid = PIDGEN3::BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
         if (isValid) {
             CLI::printKey(this->pKey);
             if (i < this->total - 1 || this->options.verbose) {
@@ -420,11 +433,11 @@ int CLI::BINK2002Generate() {
             fmt::print("> AuthInfo: {}\n", pAuthInfo);
         }
 
-        BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, false, this->pKey);
+        PIDGEN3::BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, false, this->pKey);
         CLI::printKey(this->pKey);
         fmt::print("\n");
 
-        bool isValid = BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
+        bool isValid = PIDGEN3::BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
         if (isValid) {
             CLI::printKey(this->pKey);
             if (i < this->total - 1 || this->options.verbose) {
@@ -464,7 +477,7 @@ int CLI::BINK1998Validate() {
 
     CLI::printKey(product_key);
     fmt::print("\n");
-    if (!BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, product_key)) {
+    if (!PIDGEN3::BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, product_key)) {
         fmt::print("ERROR: Product key is invalid! Wrong BINK ID?\n");
         return 1;
     }
@@ -483,7 +496,7 @@ int CLI::BINK2002Validate() {
 
     CLI::printKey(product_key);
     fmt::print("\n");
-    if (!BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, product_key)) {
+    if (!PIDGEN3::BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, product_key)) {
         fmt::print("ERROR: Product key is invalid! Wrong BINK ID?\n");
         return 1;
     }

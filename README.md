@@ -68,6 +68,8 @@ The list of people who have helped to bring the XP generation to where it is now
 * Neo-Desktop
 * WitherOrNot
 * TheTank20
+* InvoxiPlayGames
+* brakmic
 
 (the list will be updated to add more collaborators)
 

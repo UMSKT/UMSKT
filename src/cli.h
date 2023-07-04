@@ -25,6 +25,40 @@
 
 #include "header.h"
 
+#include <cmrc/cmrc.hpp>
+
+#include "libumskt/libumskt.h"
+#include "libumskt/pidgen2/PIDGEN2.h"
+#include "libumskt/pidgen3/PIDGEN3.h"
+#include "libumskt/pidgen3/BINK1998.h"
+#include "libumskt/pidgen3/BINK2002.h"
+#include "libumskt/confid/confid.h"
+
+CMRC_DECLARE(umskt);
+
+enum MODE {
+    MODE_BINK1998_GENERATE = 0,
+    MODE_BINK2002_GENERATE = 1,
+    MODE_CONFIRMATION_ID = 2,
+    MODE_BINK1998_VALIDATE = 3,
+    MODE_BINK2002_VALIDATE = 4,
+};
+
+struct Options {
+    std::string binkid;
+    std::string keysFilename;
+    std::string instid;
+    std::string keyToCheck;
+    int channelID;
+    int numKeys;
+    bool verbose;
+    bool help;
+    bool error;
+    bool list;
+
+    MODE applicationMode;
+};
+
 class CLI {
     Options options;
     json keys;

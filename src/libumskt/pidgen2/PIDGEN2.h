@@ -16,26 +16,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 5/26/2023
+ * @FileCreated by Neo on 06/17/2023
  * @Maintainer Neo
  */
 
-#ifndef UMSKT_HEADER_H
-#define UMSKT_HEADER_H
+#ifndef UMSKT_PIDGEN2_H
+#define UMSKT_PIDGEN2_H
 
-#include "typedefs.h"
+#include "../libumskt.h"
 
-#include <iostream>
-#include <fstream>
-#include <filesystem>
-#include <string>
-#include <vector>
-#include <unordered_map>
+EXPORT class PIDGEN2 {
+public:
+    bool isNumericString(std::string input);
+    bool isValidChannelID(std::string channelID);
+    bool isValidOEMID(std::string OEMID);
+    bool isValidYear(std::string year);
+    bool isValidDay(std::string day);
+    bool isValidRetailProductID(std::string productID);
+    int addDigits(std::string input);
+    int GenerateRetail(std::string channelID, std::string *keyout);
+    int GenerateOEM(std::string year, std::string day, std::string oem, std::string *keyout);
+};
 
-#include <fmt/core.h>
-#include <nlohmann/json.hpp>
-
-using json = nlohmann::json;
-namespace fs = std::filesystem;
-
-#endif //UMSKT_HEADER_H
+#endif //UMSKT_PIDGEN2_H

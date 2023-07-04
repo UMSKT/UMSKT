@@ -16,26 +16,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 5/26/2023
+ * @FileCreated by Neo on 6/25/2023
  * @Maintainer Neo
  */
 
-#ifndef UMSKT_HEADER_H
-#define UMSKT_HEADER_H
+#include "libumskt.h"
 
-#include "typedefs.h"
 
-#include <iostream>
-#include <fstream>
-#include <filesystem>
-#include <string>
-#include <vector>
-#include <unordered_map>
+#ifdef _WIN32
+std::FILE* UMSKT::debug = std::fopen("NUL:", "w");
+#else
+std::FILE* UMSKT::debug = std::fopen("/dev/null", "w");
+#endif
 
-#include <fmt/core.h>
-#include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-namespace fs = std::filesystem;
-
-#endif //UMSKT_HEADER_H
+void UMSKT::setDebugOutput(std::FILE* input) {
+    debug = input;
+}

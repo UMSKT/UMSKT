@@ -7,10 +7,56 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
-
+  build-32bit:
     runs-on: windows-latest
+    steps:
+      # https://github.com/actions/runner-images/issues/6067#issuecomment-1213069040
+      - name: Install Windows XP Support for Visual Studio
+        run: |
+          Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
+          $InstallPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+          $componentsToAdd = @(
+            "Microsoft.VisualStudio.Component.WinXP"
+          )
+          [string]$workloadArgs = $componentsToAdd | ForEach-Object {" --add " +  $_}
+          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"",$workloadArgs, '--quiet', '--norestart', '--nocache')
+          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
+          if ($process.ExitCode -eq 0)
+          {
+              Write-Host "components have been successfully added"
+              Get-ChildItem C:\ProgramData\Microsoft\VisualStudio\Packages\Microsoft.Windows.XPSupport.*
+          }
+          else
+          {
+              Write-Host "components were not installed"
+              exit 1
+          }
 
+      - name: Checkout Source Tree
+        uses: actions/checkout@v3
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Configure UMSKT
+        uses: threeal/cmake-action@v1.2.0
+        with:
+          working-directory: build
+          generator: "Visual Studio 17 2022"
+          args: -A "Win32" -T v141_xp
+
+      - name: Build UMSKT
+        working-directory: build
+        run: msbuild ALL_BUILD.vcxproj /P:Configuration=Release
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: UMSKT-Win32
+          path: build/Release
+
+  build-64bit:
+    runs-on: windows-latest
     steps:
       - name: Checkout Source Tree
         uses: actions/checkout@v3
@@ -18,20 +64,18 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
 
-      - name: Configure WindowsXPKg
+      - name: Configure UMSKT
         uses: threeal/cmake-action@v1.2.0
+        with:
+          generator: "Visual Studio 17 2022"
+          args: -A "x64"
 
-      - name: Build WindowsXPKg
+      - name: Build UMSKT
         working-directory: build
         run: msbuild ALL_BUILD.vcxproj /P:Configuration=Release
-
-      - name: Copy files and clean up output directory
-        run: |
-          del "build/Release/*.lib"
-          copy "keys.json" "build/Release/keys.json"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v3.1.2
         with:
-          name: WindowsXPKg-Win64
+          name: UMSKT-Win64
           path: build/Release

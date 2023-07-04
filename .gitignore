@@ -1,4 +1,7 @@
 build/*
+*.tar
+*.exe
+umskt
 
 ### NotepadPP template
 # Notepad++ backups #
