@@ -43,6 +43,7 @@ jobs:
         with:
           working-directory: build
           generator: "Visual Studio 17 2022"
+          options: CMAKE_SYSTEM_VERSION="5.1.2600"
           args: -A "Win32" -T v141_xp
 
       - name: Build UMSKT
