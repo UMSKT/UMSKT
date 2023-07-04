@@ -89,6 +89,8 @@ struct Options {
     std::string instid;
     std::string keyToCheck;
     int channelID;
+    bool serialSet;
+    int serial;
     int numKeys;
     bool verbose;
     bool help;
