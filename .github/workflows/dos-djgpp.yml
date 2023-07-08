@@ -46,12 +46,10 @@ jobs:
           wget https://github.com/andrewwutw/build-djgpp/releases/download/v3.4/djgpp-linux64-gcc1220.tar.bz2
           tar xjf djgpp-linux64-gcc1220.tar.bz2
           cd ${{ github.workspace }}/djgpp
-          git clone https://github.com/gvanem/Watt-32.git watt32
+          git clone https://github.com/UMSKT/Watt-32.git watt32
           cd watt32/util
           make clean && make linux
           cd ../src
-          wget https://gist.github.com/Neo-Desktop/ad26e888d64b22a59c743ab4e21ac186/raw/c9a73e1eb75ba8857883ac5c08691d2fe5b82594/djgpp.err -O ../../inc/sys/djgpp.err
-          wget https://gist.github.com/Neo-Desktop/ad26e888d64b22a59c743ab4e21ac186/raw/c9a73e1eb75ba8857883ac5c08691d2fe5b82594/syserr.c -O build/djgpp/syserr.c
           source ${{ github.workspace }}/djgpp/setenv.sh
           ./configur.sh djgpp
           make -f djgpp.mak
@@ -59,12 +57,10 @@ jobs:
 
       - name: Checkout and Cross Compile OpenSSL 3.1
         run: |
-          git clone https://github.com/openssl/openssl.git openssl
+          git clone https://github.com/UMSKT/openssl.git openssl
           pushd openssl
           git checkout openssl-3.1.1
           source ${{ github.workspace }}/djgpp/setenv
-          wget https://gist.github.com/Neo-Desktop/ad26e888d64b22a59c743ab4e21ac186/raw/c9a73e1eb75ba8857883ac5c08691d2fe5b82594/50-djgpp.conf.patch -O Configurations/50-djgpp.conf.patch
-          git apply Configurations/50-djgpp.conf.patch
           ./Configure no-threads -DOPENSSL_DEV_NO_ATOMICS --prefix=${{ github.workspace }}/djgpp DJGPP
           make && make install
           popd
