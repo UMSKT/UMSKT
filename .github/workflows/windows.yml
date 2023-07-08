@@ -52,6 +52,19 @@ jobs:
               exit 1
           }
 
+      - name: Download And Install 32-bit OpenSSL 3.1.1
+        run: |
+          $installDir = "$Env:ProgramFiles\OpenSSL"
+          $installerURL = "https://slproweb.com/download/Win32OpenSSL-3_1_1.exe"
+          $installerName = "Win32OpenSSL-3_1_1.exe"
+          $installerPath = Join-Path -Path "${env:Temp}" -ChildPath "$installerName"
+
+          (New-Object System.Net.WebClient).DownloadFile($installerURL, $installerPath)
+          
+          Remove-Item "$installDir" -Force -Recurse
+          $installerArgs = '/silent', '/sp-', '/suppressmsgboxes', "/DIR=`"$installDir`""
+          Start-Process -FilePath $installerPath -ArgumentList $installerArgs -Wait -PassThru
+
       - name: Checkout Source Tree
         uses: actions/checkout@v3
 
@@ -79,6 +92,19 @@ jobs:
   build-64bit:
     runs-on: windows-latest
     steps:
+      - name: Download And Install 64-bit OpenSSL 3.1.1
+        run: |
+          $installDir = "$Env:ProgramFiles\OpenSSL"
+          $installerURL = "https://slproweb.com/download/Win64OpenSSL-3_1_1.exe"
+          $installerName = "Win64OpenSSL-3_1_1.exe"
+          $installerPath = Join-Path -Path "${env:Temp}" -ChildPath "$installerName"
+
+          (New-Object System.Net.WebClient).DownloadFile($installerURL, $installerPath)
+          
+          Remove-Item "$installDir" -Force -Recurse
+          $installerArgs = '/silent', '/sp-', '/suppressmsgboxes', "/DIR=`"$installDir`""
+          Start-Process -FilePath $installerPath -ArgumentList $installerArgs -Wait -PassThru
+
       - name: Checkout Source Tree
         uses: actions/checkout@v3
 
