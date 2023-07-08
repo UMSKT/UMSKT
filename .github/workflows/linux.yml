@@ -53,7 +53,7 @@ jobs:
         shell-name: alpine-target.sh
 
     - name: Configure and build UMSKT
-      uses: threeal/cmake-action@7ef2eb8
+      uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
       with:
         options: MUSL_STATIC=ON
         run-build: true
