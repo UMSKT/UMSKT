@@ -57,7 +57,7 @@ jobs:
       with:
         options: MUSL_STATIC=ON
         run-build: true
-        shell: alpine-target.sh
+        shell: alpine-target.sh {0}
 
     - name: Move files to correct directory
       run: |
