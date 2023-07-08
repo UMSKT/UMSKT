@@ -50,6 +50,7 @@ jobs:
           musl-dev
           openssl-dev
           openssl-libs-static
+        arch: ${{ matrix.arch }}
         shell-name: alpine-target.sh
 
     - name: Configure and build UMSKT
