@@ -116,13 +116,13 @@ CPMAddPackage(
 )
 
 # Include Crypto++ development library
-CPMAddPackage(
-        NAME cryptopp-cmake
-        GITHUB_REPOSITORY abdes/cryptopp-cmake
-        GIT_TAG CRYPTOPP_8_8_0
-        VERSION 8.8.0
-        OPTIONS "CRYPTOPP_BUILD_TESTING OFF"
-)
+#CPMAddPackage(
+#        NAME cryptopp-cmake
+#        GITHUB_REPOSITORY abdes/cryptopp-cmake
+#        GIT_TAG CRYPTOPP_8_8_0
+#        VERSION 8.8.0
+#        OPTIONS "CRYPTOPP_BUILD_TESTING OFF"
+#)
 
 #include googletest unit testing library
 #CPMAddPackage(
@@ -151,19 +151,19 @@ ELSE()
         ### Static library compilation
         ADD_LIBRARY(_umskt STATIC ${LIBUMSKT_SRC})
         TARGET_INCLUDE_DIRECTORIES(_umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
-        TARGET_LINK_LIBRARIES(_umskt -static OpenSSL::Crypto cryptopp::cryptopp fmt ${UMSKT_LINK_LIBS})
+        TARGET_LINK_LIBRARIES(_umskt -static OpenSSL::Crypto fmt ${UMSKT_LINK_LIBS})
     ELSE()
         ### Shared library compilation
         ADD_LIBRARY(_umskt SHARED ${LIBUMSKT_SRC} ${UMSKT_EXE_WINDOWS_EXTRA} ${UMSKT_EXE_WINDOWS_DLL})
         TARGET_INCLUDE_DIRECTORIES(_umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
-        TARGET_LINK_LIBRARIES(_umskt OpenSSL::Crypto fmt cryptopp::cryptopp ${UMSKT_LINK_LIBS})
+        TARGET_LINK_LIBRARIES(_umskt OpenSSL::Crypto fmt ${UMSKT_LINK_LIBS})
         TARGET_LINK_DIRECTORIES(_umskt PUBLIC ${UMSKT_LINK_DIRS})
     ENDIF()
 
     ### UMSKT executable compilation
     ADD_EXECUTABLE(umskt src/main.cpp src/cli.cpp ${UMSKT_EXE_WINDOWS_EXTRA})
     TARGET_INCLUDE_DIRECTORIES(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
-    TARGET_LINK_LIBRARIES(umskt _umskt nlohmann_json::nlohmann_json fmt umskt::rc OpenSSL::Crypto cryptopp::cryptopp ${UMSKT_LINK_LIBS})
+    TARGET_LINK_LIBRARIES(umskt _umskt OpenSSL::Crypto fmt nlohmann_json::nlohmann_json umskt::rc ${UMSKT_LINK_LIBS})
     TARGET_LINK_DIRECTORIES(umskt PUBLIC ${UMSKT_LINK_DIRS})
     IF(MSVC AND MSVC_MSDOS_STUB)
         SET_PROPERTY(TARGET umskt APPEND PROPERTY LINK_FLAGS /STUB:${MSVC_MSDOS_STUB})
