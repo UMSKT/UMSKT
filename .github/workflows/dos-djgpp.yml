@@ -76,7 +76,7 @@ jobs:
           options: OPENSSL_ROOT_DIR:string=${{ github.workspace }}/djgpp DJGPP_WATT32=ON
           run-build: true
 
-      - name: Move files to correct directory
+      - name: Move executable to upload directory
         run: |
           mkdir build/actions_upload
           tar -czf WindowsXPKg_linux_x86_64.tar.gz -C build xpkey keys.json

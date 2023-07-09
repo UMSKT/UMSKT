@@ -60,7 +60,7 @@ jobs:
         run-build: true
         shell: alpine-target.sh {0}
 
-    - name: Move files to correct directory
+    - name: Move executable to upload directory
       run: |
           mkdir -p build/actions_upload
           mv build/umskt build/actions_upload/umskt
