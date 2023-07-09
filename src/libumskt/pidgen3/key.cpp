@@ -20,13 +20,10 @@
  * @Maintainer Andrew
  */
 
-#include "header.h"
-
-/* The allowed character set in a product key. */
-char pKeyCharset[] = "BCDFGHJKMPQRTVWXY2346789";
+#include "PIDGEN3.h"
 
 /* Converts from CD-key to a byte sequence. */
-void unbase24(BYTE *byteSeq, const char *cdKey) {
+void PIDGEN3::unbase24(BYTE *byteSeq, const char *cdKey) {
     BYTE pDecodedKey[PK_LENGTH + NULL_TERMINATOR]{};
     BIGNUM *y = BN_new();
 
@@ -63,7 +60,7 @@ void unbase24(BYTE *byteSeq, const char *cdKey) {
 }
 
 /* Converts from byte sequence to the CD-key. */
-void base24(char *cdKey, BYTE *byteSeq) {
+void PIDGEN3::base24(char *cdKey, BYTE *byteSeq) {
     BYTE rbyteSeq[16];
     BIGNUM *z;
 

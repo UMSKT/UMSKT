@@ -20,7 +20,7 @@
  * @Maintainer Andrew
  */
 
-#include "header.h"
+#include "PIDGEN3.h"
 
 int randomRange() {
     return 4;  // chosen by fair dice roll
@@ -28,7 +28,7 @@ int randomRange() {
 }
 
 /* Convert data between endianness types. */
-void endian(BYTE *data, int length) {
+void PIDGEN3::endian(BYTE *data, int length) {
     for (int i = 0; i < length / 2; i++) {
         BYTE temp = data[i];
         data[i] = data[length - i - 1];
@@ -37,7 +37,7 @@ void endian(BYTE *data, int length) {
 }
 
 /* Initializes the elliptic curve. */
-EC_GROUP *initializeEllipticCurve(
+EC_GROUP* PIDGEN3::initializeEllipticCurve(
         const std::string pSel,
         const std::string aSel,
         const std::string bSel,
@@ -104,7 +104,7 @@ EC_GROUP *initializeEllipticCurve(
     return eCurve;
 }
 
-int BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen) {
+int PIDGEN3::BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen) {
     if (a == nullptr || to == nullptr)
         return 0;
 

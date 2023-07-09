@@ -1,0 +1,86 @@
+# escape=`
+
+# This file is a part of the UMSKT Project
+#
+# Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# @FileCreated by Neo on 06/19/2023
+# @Maintainer Neo
+
+# Stage 1: Install Visual Studio
+FROM mcr.microsoft.com/dotnet/framework/runtime:4.8.1 as visualstudio
+# Download and install Build Tools for Visual Studio 2022 for native desktop workload.
+#ADD https://aka.ms/vs/17/release/vs_buildtools.exe C:\TEMP\vs_buildtools.exe
+ADD vs_buildtools.exe C:\TEMP\vs_buildtools.exe
+RUN C:\TEMP\vs_buildtools.exe --quiet --wait --norestart --nocache `
+    --add Microsoft.VisualStudio.Workload.VCTools `
+    --add Microsoft.VisualStudio.Workload.MSBuildTools `
+    --add Microsoft.VisualStudio.Component.WinXP `
+    --includeRecommended `
+    --installPath C:\BuildTools \
+
+# Stage 2: Install Chocolatey and Prereqisites
+FROM visualstudio as prereqisites
+WORKDIR C:\TEMP\
+
+RUN ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass", "[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"]
+RUN ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass", "choco feature enable -n allowGlobalConfirmation"]
+RUN ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass", "choco install git --params \"'/GitAndUnixToolsOnPath /WindowsTerminal /NoShellIntegration /NoGuiHereIntegration /NoShellHereIntegration /NoCredentialManager /SChannel'\""]
+
+#Install OpenSSL 32bit 3.1.1
+#ADD https://slproweb.com/download/Win32OpenSSL-3_1_1.msi C:\TEMP\Win32OpenSSL-3_1_1.msi
+ADD Win32OpenSSL-3_1_1.msi C:\TEMP\Win32OpenSSL-3_1_1.msi
+RUN msiexec /i C:\TEMP\Win32OpenSSL-3_1_1.msi /quiet /qn /norestart
+
+#Install OpenSSL 64bit 3.1.1
+#ADD https://slproweb.com/download/Win64OpenSSL-3_1_1.msi C:\TEMP\Win64OpenSSL-3_1_1.msi
+ADD Win64OpenSSL-3_1_1.msi C:\TEMP\Win64OpenSSL-3_1_1.msi
+RUN msiexec /i C:\TEMP\Win64OpenSSL-3_1_1.msi /quiet /qn /norestart
+
+# Stage 3: Build the 32-bit version of UMSKT
+FROM prereqisites as Build32
+WORKDIR C:\umskt\
+COPY . C:\umskt\
+
+RUN C:\BuildTools\Common7\Tools\VsDevCmd.bat && `
+   mkdir C:\umskt\build && `
+   cd C:\umskt\build && `
+   cmake -DMSVC_MSDOS_STUB:string=..\umskt.exe .. -G "Visual Studio 17 2022" -A "Win32" -T v141_xp && `
+   msbuild ALL_BUILD.vcxproj /P:Configuration=Release
+
+# Stage 4: Build the 64-bit version of UMSKT
+FROM prereqisites as Build64
+
+WORKDIR C:\umskt\
+COPY . C:\umskt\
+
+ENV OPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64"
+RUN C:\BuildTools\Common7\Tools\VsDevCmd.bat && `
+   mkdir C:\umskt\build && `
+   cd C:\umskt\build && `
+   cmake .. && `
+   msbuild ALL_BUILD.vcxproj /P:Configuration=Release
+
+# Stage 5: Copy binaries to an output/runtime image
+FROM mcr.microsoft.com/dotnet/framework/runtime:4.8.1 as output
+
+COPY --from=Build32 C:\umskt\build\Release\umskt.exe C:\umskt\umskt.exe
+COPY --from=Build64 C:\umskt\build\Release\umskt.exe C:\umskt\umskt64.exe
+
+#invoke via
+# docker build -f Dockerfile.windows .
+# docker run <hash>
+# docker cp <plug>:C:\umskt umskt-win

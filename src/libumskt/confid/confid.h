@@ -23,7 +23,7 @@
 #ifndef UMSKT_CONFID_H
 #define UMSKT_CONFID_H
 
-#include "header.h"
+#include "../libumskt.h"
 
 // Confirmation ID generator constants
 #define SUCCESS 0
@@ -40,7 +40,7 @@ typedef struct {
     QWORD v[2];
 } TDivisor;
 
-class ConfirmationID {
+EXPORT class ConfirmationID {
     static QWORD residue_add(QWORD x, QWORD y);
     static QWORD residue_sub(QWORD x, QWORD y);
     static QWORD __umul128(QWORD a, QWORD b, QWORD* hi);
@@ -65,7 +65,7 @@ class ConfirmationID {
 
 public:
     static int Generate(const char* installation_id_str, char confirmation_id[49]);
-    static int CLIRun();
+    //EXPORT static int CLIRun();
 };
 
 #endif //UMSKT_CONFID_H

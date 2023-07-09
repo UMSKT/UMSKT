@@ -16,26 +16,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 5/26/2023
+ * @FileCreated by Neo on 06/17/2023
  * @Maintainer Neo
  */
 
-#ifndef UMSKT_HEADER_H
-#define UMSKT_HEADER_H
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include "resource.h"
 
-#include "typedefs.h"
+BOOLEAN WINAPI DllMain( IN HINSTANCE hDllHandle,
+        IN DWORD     nReason,
+        IN LPVOID    Reserved ) {
 
-#include <iostream>
-#include <fstream>
-#include <filesystem>
-#include <string>
-#include <vector>
-#include <unordered_map>
+    BOOLEAN bSuccess = TRUE;
+    //  Perform global initialization.
+    switch (nReason) {
+        case DLL_PROCESS_ATTACH:
+            //  For optimization.
+            DisableThreadLibraryCalls(hDllHandle);
+            break;
 
-#include <fmt/core.h>
-#include <nlohmann/json.hpp>
+        case DLL_PROCESS_DETACH:
+            break;
+    }
 
-using json = nlohmann::json;
-namespace fs = std::filesystem;
+    return bSuccess;
+}
 
-#endif //UMSKT_HEADER_H
+//  end DllMain

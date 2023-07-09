@@ -16,26 +16,44 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 5/26/2023
+ * @FileCreated by Neo on 6/24/2023
  * @Maintainer Neo
  */
 
-#ifndef UMSKT_HEADER_H
-#define UMSKT_HEADER_H
+#ifndef UMSKT_TYPEDEFS_H
+#define UMSKT_TYPEDEFS_H
 
-#include "typedefs.h"
+#include <cstdint>
+#include <cstdbool>
 
-#include <iostream>
-#include <fstream>
-#include <filesystem>
-#include <string>
-#include <vector>
-#include <unordered_map>
+#ifdef DEBUG
+#include <cassert>
+#else
+#define assert(x) /* nothing */
+#endif
 
-#include <fmt/core.h>
-#include <nlohmann/json.hpp>
+#ifdef _MSC_VER
+#define EXPORT extern "C" __declspec(dllexport)
+#else
+#define EXPORT extern "C"
+#endif
 
-using json = nlohmann::json;
-namespace fs = std::filesystem;
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#define FNEXPORT EMSCRIPTEN_KEEPALIVE EXPORT
+#else
+#define FNEXPORT EXPORT
+#endif
 
-#endif //UMSKT_HEADER_H
+// Type definitions
+typedef bool     BOOL;
+typedef uint8_t  BYTE;
+typedef uint16_t WORD;
+typedef uint32_t DWORD;
+typedef uint64_t QWORD;
+
+#ifdef __SIZEOF_INT128__
+typedef unsigned __int128 OWORD;
+#endif
+
+#endif //UMSKT_TYPEDEFS_H

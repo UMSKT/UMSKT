@@ -30,7 +30,7 @@
 #include "BINK2002.h"
 
 /* Unpacks a Windows Server 2003-like Product Key. */
-void BINK2002::Unpack(
+void PIDGEN3::BINK2002::Unpack(
         QWORD (&pRaw)[2],
          BOOL &pUpgrade,
         DWORD &pChannelID,
@@ -60,7 +60,7 @@ void BINK2002::Unpack(
 }
 
 /* Packs a Windows Server 2003-like Product Key. */
-void BINK2002::Pack(
+void PIDGEN3::BINK2002::Pack(
         QWORD (&pRaw)[2],
          BOOL pUpgrade,
         DWORD pChannelID,
@@ -74,7 +74,7 @@ void BINK2002::Pack(
 }
 
 /* Verifies a Windows Server 2003-like Product Key. */
-bool BINK2002::Verify(
+bool PIDGEN3::BINK2002::Verify(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
@@ -100,15 +100,13 @@ bool BINK2002::Verify(
 
     pData = pChannelID << 1 | pUpgrade;
 
-    if (options.verbose) {
-        fmt::print("Validation results:\n");
-        fmt::print("   Upgrade: 0x{:08x}\n", pUpgrade);
-        fmt::print("Channel ID: 0x{:08x}\n", pChannelID);
-        fmt::print("      Hash: 0x{:08x}\n", pHash);
-        fmt::print(" Signature: 0x{:08x}\n", pSignature);
-        fmt::print("  AuthInfo: 0x{:08x}\n", pAuthInfo);
-        fmt::print("\n");
-    }
+    fmt::print(UMSKT::debug, "Validation results:\n");
+    fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", pUpgrade);
+    fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", pChannelID);
+    fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
+    fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
+    fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", pAuthInfo);
+    fmt::print(UMSKT::debug, "\n");
 
     BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
             msgBuffer[SHA_MSG_LENGTH_2003]{},
@@ -208,7 +206,7 @@ bool BINK2002::Verify(
 }
 
 /* Generates a Windows Server 2003-like Product Key. */
-void BINK2002::Generate(
+void PIDGEN3::BINK2002::Generate(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
           BIGNUM *genOrder,
@@ -361,15 +359,13 @@ void BINK2002::Generate(
         // Pack product key.
         Pack(pRaw, pUpgrade, pChannelID, pHash, pSignature, pAuthInfo);
 
-        if (options.verbose) {
-            fmt::print("Generation results:\n");
-            fmt::print("   Upgrade: 0x{:08x}\n", pUpgrade);
-            fmt::print("Channel ID: 0x{:08x}\n", pChannelID);
-            fmt::print("      Hash: 0x{:08x}\n", pHash);
-            fmt::print(" Signature: 0x{:08x}\n", pSignature);
-            fmt::print("  AuthInfo: 0x{:08x}\n", pAuthInfo);
-            fmt::print("\n");
-        }
+        fmt::print(UMSKT::debug, "Generation results:\n");
+        fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", pUpgrade);
+        fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", pChannelID);
+        fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
+        fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
+        fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", pAuthInfo);
+        fmt::print(UMSKT::debug, "\n");
 
         EC_POINT_free(r);
     } while (pSignature > BITMASK(62) || noSquare);

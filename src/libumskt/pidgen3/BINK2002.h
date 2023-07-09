@@ -20,43 +20,48 @@
  * @Maintainer Neo
  */
 
-#ifndef UMSKT_BINK1998_H
-#define UMSKT_BINK1998_H
+#ifndef UMSKT_BINK2002_H
+#define UMSKT_BINK2002_H
 
-#include "header.h"
+#include "PIDGEN3.h"
 
-class BINK1998 {
+EXPORT class PIDGEN3::BINK2002 {
+public:
     static void Unpack(
             QWORD (&pRaw)[2],
              BOOL &pUpgrade,
-            DWORD &pSerial,
+            DWORD &pChannelID,
             DWORD &pHash,
-            QWORD &pSignature
+            QWORD &pSignature,
+            DWORD &pAuthInfo
     );
+
     static void Pack(
             QWORD (&pRaw)[2],
              BOOL pUpgrade,
-            DWORD pSerial,
+            DWORD pChannelID,
             DWORD pHash,
-            QWORD pSignature
+            QWORD pSignature,
+            DWORD pAuthInfo
     );
 
-public:
     static bool Verify(
             EC_GROUP *eCurve,
             EC_POINT *basePoint,
             EC_POINT *publicKey,
-                char (&pKey)[25]
+                char (&cdKey)[25]
     );
+
     static void Generate(
             EC_GROUP *eCurve,
             EC_POINT *basePoint,
               BIGNUM *genOrder,
               BIGNUM *privateKey,
-               DWORD pSerial,
+               DWORD pChannelID,
+               DWORD pAuthInfo,
                 BOOL pUpgrade,
                 char (&pKey)[25]
     );
 };
 
-#endif //UMSKT_BINK1998_H
+#endif //UMSKT_BINK2002_H

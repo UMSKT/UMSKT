@@ -1,0 +1,64 @@
+# This file is a part of the UMSKT Project
+#
+# Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# @FileCreated by Neo on 06/25/2023
+# @Maintainer Neo
+
+# Stage 1: Install Prerequisites
+FROM emscripten/emsdk:latest as prerequisites
+RUN apt update \
+    && apt -y install pkg-config \
+    && apt -y clean autoclean autoremove
+
+# Stage 2: compile OpenSSL for emscripten
+FROM prerequisites as openssl
+WORKDIR /tmp
+ENV EMSCRIPTEN=/emsdk/upstream/emscripten VERBOSE=1
+RUN git clone https://github.com/openssl/openssl.git openssl \
+    && cd openssl \
+    && git checkout openssl-3.1.1 \
+    && emconfigure ./Configure gcc -no-tests -no-asm -static -fPIC -no-sock -no-afalgeng -DOPENSSL_SYS_NETWARE -DSIG_DFL=0 -DSIG_IGN=0 -DHAVE_FORK=0 -DOPENSSL_NO_AFALGENG=1 --with-rand-seed=getrandom --prefix=$EMSCRIPTEN/cache/sysroot|| exit $? \
+    && sed -i 's|^CROSS_COMPILE.*$|CROSS_COMPILE=|g' Makefile \
+    && emmake make -j 12 build_generated libssl.a libcrypto.a build_libs_nodep \
+    && rm -rf $EMSCRIPTEN/cache/sysroot/include/openssl \
+    && cp -R include/openssl $EMSCRIPTEN/cache/sysroot/include \
+    && cp libcrypto.a libssl.a $EMSCRIPTEN/cache/sysroot/lib \
+    && cp libcrypto.pc libssl.pc openssl.pc $EMSCRIPTEN/cache/sysroot/lib/pkgconfig/ \
+    && cd .. \
+    && rm -rf openssl
+
+# Stage 3: compile UMSKT
+FROM openssl as build
+
+WORKDIR /src
+COPY . /src
+
+# Build UMSKT from the local directory
+RUN mkdir /src/build \
+  && cd /src/build \
+  && emcmake cmake .. \
+  && emmake make
+
+CMD ["bash"]
+
+# Stage 4: Output
+FROM scratch as output
+
+COPY --from=build /src/build/umskt.html /src/build/umskt.wasm /src/build/umskt.js /
+
+# invoke via
+# docker build -f Dockerfile.emscripten -o type=tar,dest=umskt-wasm.tar .

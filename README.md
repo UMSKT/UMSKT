@@ -68,6 +68,8 @@ The list of people who have helped to bring the XP generation to where it is now
 * Neo-Desktop
 * WitherOrNot
 * TheTank20
+* InvoxiPlayGames
+* brakmic
 
 (the list will be updated to add more collaborators)
 
@@ -76,10 +78,19 @@ The list of people who have helped to bring the XP generation to where it is now
 ### **Development Requirements:**
 
 * `CMake, make, gcc` (`build-essential`)
-* `OpenSSL 1.1.1+` (`libssl-dev`)
 * `git`
 
 #### Build Steps:
 
 1. `git clone`
 2. `cd build/ && cmake ../ && make`
+
+
+-----
+
+### **Known Ports**
+
+| Language | Author    | Repo URL                                              |
+|----------|-----------|-------------------------------------------------------|
+| Rust     | Alex Page | [anpage/umskt-rs](https://github.com/anpage/umskt-rs) |
+
