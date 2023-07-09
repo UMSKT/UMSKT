@@ -69,8 +69,8 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
 
-      - if: ${{ matrix.arch }} == "Win32"
-        name: Download UMSKT-DJGPP compiled artifact
+      - name: Download UMSKT-DJGPP compiled artifact
+        if: ${{ matrix.arch == "Win32" }}
         uses: actions/download-artifact@v3
         with:
           name: UMSKT-DOS
@@ -97,15 +97,15 @@ jobs:
           name: UMSKT-${{ matrix.arch }}
           path: build/actions_upload
 
-      - if: ${{ matrix.arch }} == "Win32"
-        name: Move Win32+DOS executable to upload directory
+      - name: Move Win32+DOS executable to upload directory
+        if: ${{ matrix.arch == "Win32" }}
         run: |
           Remove-Item "build/actions_upload" -Force -Recurse
           mkdir build/actions_upload
           Move-Item build/Release/umskt_win32_dos.exe build/actions_upload/umskt.exe
 
-      - if: ${{ matrix.arch }} == "Win32"
-        name: Upload build artifact
+      - name: Upload build artifact
+        if: ${{ matrix.arch == "Win32" }}
         uses: actions/upload-artifact@v3.1.2
         with:
           name: UMSKT-Win32+DOS
