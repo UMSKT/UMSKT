@@ -27,8 +27,12 @@ on:
     branches: [ "master" ]
 
 jobs:
+  build-djgpp:
+    uses: ./.github/workflows/dos-djgpp.yml
+
   build:
     runs-on: windows-latest
+    needs: build-djgpp
     strategy:
       matrix:
         include:
@@ -64,10 +68,6 @@ jobs:
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
-
-      - name: Run DJGPP Compilation
-        if: ${{ matrix.arch }} == "Win32"
-        uses: ./.github/workflows/dos-djgpp.yml
 
       - name: Download UMSKT-DJGPP compiled artifact
         if: ${{ matrix.arch }} == "Win32"
