@@ -141,7 +141,7 @@ SET(LIBUMSKT_SRC src/libumskt/libumskt.cpp src/libumskt/pidgen3/BINK1998.cpp src
 IF (EMSCRIPTEN)
     ADD_EXECUTABLE(umskt ${LIBUMSKT_SRC})
     TARGET_INCLUDE_DIRECTORIES(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
-    TARGET_LINK_LIBRARIES(umskt -static OpenSSL::Crypto cryptopp::cryptopp fmt)
+    TARGET_LINK_LIBRARIES(umskt -static OpenSSL::Crypto fmt)
     SET(CMAKE_EXECUTABLE_SUFFIX ".html")
 
     SET_TARGET_PROPERTIES(umskt PROPERTIES COMPILE_FLAGS "-Os -sEXPORTED_RUNTIME_METHODS=ccall,cwrap")
@@ -165,8 +165,14 @@ ELSE()
     TARGET_INCLUDE_DIRECTORIES(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
     TARGET_LINK_LIBRARIES(umskt _umskt OpenSSL::Crypto fmt nlohmann_json::nlohmann_json umskt::rc ${UMSKT_LINK_LIBS})
     TARGET_LINK_DIRECTORIES(umskt PUBLIC ${UMSKT_LINK_DIRS})
+
+    ### UMSKT with specified DOS Stub compilation
     IF(MSVC AND MSVC_MSDOS_STUB)
-        SET_PROPERTY(TARGET umskt APPEND PROPERTY LINK_FLAGS /STUB:${MSVC_MSDOS_STUB})
+        ADD_EXECUTABLE(umskt_win32_dos src/main.cpp src/cli.cpp ${UMSKT_EXE_WINDOWS_EXTRA})
+        TARGET_INCLUDE_DIRECTORIES(umskt_win32_dos PUBLIC ${OPENSSL_INCLUDE_DIR})
+        TARGET_LINK_LIBRARIES(umskt_win32_dos _umskt OpenSSL::Crypto fmt nlohmann_json::nlohmann_json umskt::rc ${UMSKT_LINK_LIBS})
+        TARGET_LINK_DIRECTORIES(umskt_win32_dos PUBLIC ${UMSKT_LINK_DIRS})
+        SET_PROPERTY(TARGET umskt_win32_dos APPEND PROPERTY LINK_FLAGS /STUB:${MSVC_MSDOS_STUB})
     ENDIF()
 
     ### Copy Shared Libraries and dependency files

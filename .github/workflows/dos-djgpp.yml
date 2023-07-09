@@ -20,7 +20,8 @@
 
 name: C/C++ CI (DOS DJGPP)
 
-on: workflow_dispatch
+on:
+  workflow_call:
 
 env:
   CMAKE_C_COMPILER: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-gcc
@@ -43,6 +44,7 @@ jobs:
 
       - name: Download and Setup DJGPP Toolchain
         run: |
+          pushd ${{ github.workspace }}
           wget https://github.com/andrewwutw/build-djgpp/releases/download/v3.4/djgpp-linux64-gcc1220.tar.bz2
           tar xjf djgpp-linux64-gcc1220.tar.bz2
           cd ${{ github.workspace }}/djgpp
@@ -50,16 +52,15 @@ jobs:
           cd watt32/util
           make clean && make linux
           cd ../src
-          source ${{ github.workspace }}/djgpp/setenv.sh
+          source ${{ github.workspace }}/djgpp/setenv
           ./configur.sh djgpp
           make -f djgpp.mak
           ln -s ${{ github.workspace }}/djgpp/watt32/lib/libwatt.a ${{ github.workspace }}/djgpp/lib
 
-      - name: Checkout and Cross Compile OpenSSL 3.1
+      - name: Checkout and Cross Compile OpenSSL 3.1.2
         run: |
           git clone https://github.com/UMSKT/openssl.git openssl
           pushd openssl
-          git checkout openssl-3.1.1
           source ${{ github.workspace }}/djgpp/setenv
           ./Configure no-threads -DOPENSSL_DEV_NO_ATOMICS --prefix=${{ github.workspace }}/djgpp DJGPP
           make && make install
@@ -71,19 +72,18 @@ jobs:
       - name: Build
         uses: threeal/cmake-action@v1.2.0
         with:
-          c-compiler: ${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin/gcc
-          cxx-compiler: ${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin/g++
-          options: OPENSSL_ROOT_DIR:string=${{ github.workspace }}/djgpp DJGPP_WATT32=ON
+          c-compiler: ${CMAKE_C_COMPILER}
+          cxx-compiler: ${CMAKE_CXX_COMPILER}
+          options: DJGPP_WATT32=ON CMAKE_FIND_ROOT_PATH=${CMAKE_FIND_ROOT_PATH} CMAKE_FIND_ROOT_PATH_MODE_PROGRAM=${CMAKE_FIND_ROOT_PATH_MODE_PROGRAM} CMAKE_FIND_ROOT_PATH_MODE_LIBRARY=${CMAKE_FIND_ROOT_PATH_MODE_LIBRARY} CMAKE_FIND_ROOT_PATH_MODE_INCLUDE=${CMAKE_FIND_ROOT_PATH_MODE_INCLUDE} CMAKE_FIND_ROOT_PATH_MODE_PACKAGE=${CMAKE_FIND_ROOT_PATH_MODE_PACKAGE} WATT_ROOT=${WATT_ROOT}
           run-build: true
 
       - name: Move executable to upload directory
         run: |
           mkdir build/actions_upload
-          tar -czf WindowsXPKg_linux_x86_64.tar.gz -C build xpkey keys.json
-          mv WindowsXPKg_linux_x86_64.tgz build/actions_upload/
+          mv build/umskt.exe build/actions_upload/
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v3.1.2
         with:
-          name: Build
+          name: UMSKT-DOS
           path: build/actions_upload
