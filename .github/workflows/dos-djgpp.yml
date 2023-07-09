@@ -24,13 +24,9 @@ on:
   workflow_call:
 
 env:
-  CMAKE_C_COMPILER: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-gcc
-  CMAKE_CXX_COMPILER: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-g++
+  CC: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-gcc
+  CXX: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-g++
   CMAKE_FIND_ROOT_PATH: ${{ github.workspace }}/djgpp
-  CMAKE_FIND_ROOT_PATH_MODE_PROGRAM: NEVER
-  CMAKE_FIND_ROOT_PATH_MODE_LIBRARY: ONLY
-  CMAKE_FIND_ROOT_PATH_MODE_INCLUDE: ONLY
-  CMAKE_FIND_ROOT_PATH_MODE_PACKAGE: ONLY
   WATT_ROOT: ${{ github.workspace }}/djgpp/watt32
 
 jobs:
@@ -55,7 +51,7 @@ jobs:
           source ${{ github.workspace }}/djgpp/setenv
           ./configur.sh djgpp
           make -f djgpp.mak
-          ln -s ${{ github.workspace }}/djgpp/watt32/lib/libwatt.a ${{ github.workspace }}/djgpp/lib
+          ln -s ${WATT_ROOT}/lib/libwatt.a ${{ github.workspace }}/djgpp/lib
 
       - name: Checkout and Cross Compile OpenSSL 3.1.2
         run: |
@@ -70,12 +66,11 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Build
-        uses: threeal/cmake-action@v1.2.0
-        with:
-          c-compiler: ${CMAKE_C_COMPILER}
-          cxx-compiler: ${CMAKE_CXX_COMPILER}
-          options: DJGPP_WATT32=ON CMAKE_FIND_ROOT_PATH=${CMAKE_FIND_ROOT_PATH} CMAKE_FIND_ROOT_PATH_MODE_PROGRAM=${CMAKE_FIND_ROOT_PATH_MODE_PROGRAM} CMAKE_FIND_ROOT_PATH_MODE_LIBRARY=${CMAKE_FIND_ROOT_PATH_MODE_LIBRARY} CMAKE_FIND_ROOT_PATH_MODE_INCLUDE=${CMAKE_FIND_ROOT_PATH_MODE_INCLUDE} CMAKE_FIND_ROOT_PATH_MODE_PACKAGE=${CMAKE_FIND_ROOT_PATH_MODE_PACKAGE} WATT_ROOT=${WATT_ROOT}
-          run-build: true
+        run: |
+          source ${{ github.workspace }}/djgpp/setenv
+          pushd build
+          cmake ../ -D DJGPP_WATT32=${WATT_ROOT}/lib/libwatt.a -D CMAKE_FIND_ROOT_PATH=${CMAKE_FIND_ROOT_PATH}
+          make
 
       - name: Move executable to upload directory
         run: |
