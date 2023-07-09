@@ -67,7 +67,7 @@ jobs:
 
       - name: Run DJGPP Compilation
         if: ${{ matrix.arch }} == "Win32"
-        uses: ./.github/workflows/dos-djgpp.yaml
+        uses: ./.github/workflows/dos-djgpp.yml
 
       - name: Download UMSKT-DJGPP compiled artifact
         if: ${{ matrix.arch }} == "Win32"
