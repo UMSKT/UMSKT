@@ -39,7 +39,7 @@ jobs:
           - arch: Win32
             OpenSSL-File: Win32OpenSSL-3_1_1.exe
             msbuild-arch: Win32
-            cmake-args: -D MSVC_MSDOS_STUB=umskt.exe
+            cmake-args: -D MSVC_MSDOS_STUB=..\umskt.exe
           - arch: Win64
             OpenSSL-File: Win64OpenSSL-3_1_1.exe
             msbuild-arch: x64
@@ -74,6 +74,11 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: UMSKT-DOS
+
+      - name: List build directory contents
+        if: matrix.arch == 'Win32'
+        run: |
+          Get-ChildItem
 
       - name: Configure UMSKT
         uses: threeal/cmake-action@v1.2.0
