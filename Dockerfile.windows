@@ -78,6 +78,7 @@ RUN C:\BuildTools\Common7\Tools\VsDevCmd.bat && `
 FROM mcr.microsoft.com/dotnet/framework/runtime:4.8.1 as output
 
 COPY --from=Build32 C:\umskt\build\Release\umskt.exe C:\umskt\umskt.exe
+COPY --from=Build32 C:\umskt\build\Release\umskt_win32_dos.exe C:\umskt\umskt_win32_dos.exe
 COPY --from=Build64 C:\umskt\build\Release\umskt.exe C:\umskt\umskt64.exe
 
 #invoke via
