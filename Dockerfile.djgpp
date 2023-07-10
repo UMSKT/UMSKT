@@ -54,16 +54,9 @@ WORKDIR /tmp
 
 # Stage 2: compile djgpp for muslc
 ENV DJGPP_PREFIX=/djgpp BUILD_VER=12.2.0-i386
-RUN git clone https://github.com/andrewwutw/build-djgpp.git djgpp \
+RUN git clone https://github.com/UMSKT/build-djgpp.git djgpp \
     && cd djgpp \
-    && cd script \
-    && wget https://gist.github.com/Neo-Desktop/4cfd708f61f5847a7bf457d38db3b59f/raw/25d24cf509b0fc486d5d18ecb6656f120c3d0e51/12.2.0-i386 -O 12.2.0-i386 \
-    && chmod +x 12.2.0-i386 \
-    && cd ../patch \
-    && wget https://gist.github.com/Neo-Desktop/4cfd708f61f5847a7bf457d38db3b59f/raw/25d24cf509b0fc486d5d18ecb6656f120c3d0e51/patch-alpine-Fix-attempt-to-use-poisoned-calloc-error-in-libgccji.patch -O patch-alpine-Fix-attempt-to-use-poisoned-calloc-error-in-libgccji.patch  \
-    && cd .. \
-    && sed -i 's/i586/i386/g' setenv/setenv \
-    && sed -i 's/i586/i386/g' setenv/setenv.bat \
+    && chmod +x script/$BUILD_VER \
     && ./build-djgpp.sh $BUILD_VER \
     && rm -rf /tmp/djgpp
 
@@ -72,15 +65,12 @@ FROM djgpp as watt32
 WORKDIR /djgpp
 ENV WATT_ROOT=/djgpp/watt32 DJGPP_PREFIX=i386-pc-msdosdjgpp
 SHELL ["/bin/bash", "-c"]
-RUN git clone https://github.com/gvanem/Watt-32.git watt32 \
+RUN git clone https://github.com/UMSKT/Watt-32.git watt32 \
     && cd watt32/util \
     && make clean && make linux \
     && cd ../src \
     && source /djgpp/setenv \
     && ./configur.sh djgpp \
-    && sed -i 's/i586/i386/g' djgpp.mak \
-    && wget https://gist.github.com/Neo-Desktop/ad26e888d64b22a59c743ab4e21ac186/raw/c9a73e1eb75ba8857883ac5c08691d2fe5b82594/djgpp.err -O ../inc/sys/djgpp.err \
-    && wget https://gist.github.com/Neo-Desktop/ad26e888d64b22a59c743ab4e21ac186/raw/c9a73e1eb75ba8857883ac5c08691d2fe5b82594/syserr.c -O build/djgpp/syserr.c \
     && make -f djgpp.mak \
     && ln -s /djgpp/watt32/lib/libwatt.a /djgpp/lib
 
@@ -88,12 +78,9 @@ RUN git clone https://github.com/gvanem/Watt-32.git watt32 \
 FROM watt32 as openssl
 WORKDIR /tmp
 SHELL ["/bin/bash", "-c"]
-RUN git clone https://github.com/openssl/openssl.git openssl \
+RUN git clone https://github.com/umskt/openssl.git openssl \
     && cd openssl \
-    && git checkout openssl-3.1.1 \
     && source /djgpp/setenv \
-    && wget https://gist.github.com/Neo-Desktop/ad26e888d64b22a59c743ab4e21ac186/raw/c9a73e1eb75ba8857883ac5c08691d2fe5b82594/50-djgpp.conf.patch -O Configurations/50-djgpp.conf.patch \
-    && git apply Configurations/50-djgpp.conf.patch \
     && ./Configure no-threads -DOPENSSL_DEV_NO_ATOMICS --prefix=/djgpp DJGPP \
     && make && make install
 
