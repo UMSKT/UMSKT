@@ -61,7 +61,6 @@ In light of the recent exponential interest in this project I've decided to put 
 The list of people who have helped to bring the XP generation to where it is now:
 * z22
 * MSKey
-* sk00ter
 * diamondggg
 * pottzman
 * Endermanch
