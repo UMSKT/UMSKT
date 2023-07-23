@@ -36,7 +36,6 @@ jobs:
 
     - name: Configure and build UMSKT
       run: |
-        mkdir build
         cd build
         cmake -DCMAKE_BUILD_TYPE=Release ..
         make
