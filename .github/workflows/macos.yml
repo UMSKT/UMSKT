@@ -50,30 +50,3 @@ jobs:
       with:
         name: UMSKT-macOS-${{ matrix.arch }}-static
         path: build/actions_upload
-
-  build-arm:
-    runs-on: macos-latest-arm64
-    strategy:
-      matrix:
-        include:
-          - arch: arm64
-    steps:
-    - name: Checkout Source Tree
-      uses: actions/checkout@v3
-
-    - name: Configure and build UMSKT for M1
-      run: |
-        cd build
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="$(ARCHS_STANDARD)" ..
-        make
-
-    - name: Move files to correct directory
-      run: |
-        mkdir -p build/actions_upload
-        mv build/umskt build/actions_upload/umskt-m1
-
-    - name: Upload build artifact for M1
-      uses: actions/upload-artifact@v3.1.2
-      with:
-        name: UMSKT-macOS-${{ matrix.arch }}-static
-        path: build/actions_upload
