@@ -1,7 +1,11 @@
 #UMSKT Ports Hub**
 
+** Connect with main UMSKT team **
+
 [![Zulip chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://umskt.zulipchat.com)
 [![libera.chat - #mspid](https://img.shields.io/badge/libera.chat-%23mspid-brightgreen)](https://web.libera.chat/gamja/?nick=Guest?#mspid)
+
+** Build status **
 [![C/C++ CI (Linux)](https://github.com/techguy16/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml)
 [![C/C++ CI (Windows)](https://github.com/techguy16/UMSKT/actions/workflows/windows.yml/badge.svg)](../../actions/workflows/windows.yml)
 [![C/C++ CI (macOS)](https://github.com/techguy16/UMSKT/actions/workflows/macos.yml/badge.svg)](../../actions/workflows/macos.yml)
