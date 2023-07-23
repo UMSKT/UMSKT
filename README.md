@@ -1,16 +1,13 @@
-# **Universal MS Key Toolkit (UMSKT)**
+#UMSKT Ports Hub**
 
 [![Zulip chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://umskt.zulipchat.com)
 [![libera.chat - #mspid](https://img.shields.io/badge/libera.chat-%23mspid-brightgreen)](https://web.libera.chat/gamja/?nick=Guest?#mspid)
-[![C/C++ CI (Linux)](https://github.com/UMSKT/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml)
-[![C/C++ CI (Windows)](https://github.com/UMSKT/UMSKT/actions/workflows/windows.yml/badge.svg)](../../actions/workflows/windows.yml)
+[![C/C++ CI (Linux)](https://github.com/techguy16/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml)
+[![C/C++ CI (Windows)](https://github.com/techguy16/UMSKT/actions/workflows/windows.yml/badge.svg)](../../actions/workflows/windows.yml)
+[![C/C++ CI (macOS)](https://github.com/techguy16/UMSKT/actions/workflows/macos.yml/badge.svg)](../../actions/workflows/macos.yml)
+[![C/C++ CI (FreeBSD)](https://github.com/techguy16/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/freebsd.yml)
 
 
-### **Plan of Action / ToDo List**
-
-In light of the recent exponential interest in this project I've decided to put updates of this project here:
-
-* [Please see ticket #8 for more information](../../issues/8)
 
 
 ------
@@ -34,7 +31,7 @@ In light of the recent exponential interest in this project I've decided to put 
 #### 1. Download the latest version of WindowsXPKg
 
 * *(GitHub account required)*
-    * Download the latest experimental version using the Actions tab ([Windows](../../actions/workflows/windows.yml?query=branch%3Amaster), [Linux](../../actions/workflows/linux.yml?query=branch%3Amaster)).
+    * Download the latest experimental version using the Actions tab ([Windows](../../actions/workflows/windows.yml?query=branch%3Amaster), [Linux](../../actions/workflows/linux.yml?query=branch%3Amaster)), [macOS](../../actions/workflows/macos.yml?query=branch%3Amaster)), [FreeBSD](../../actions/workflows/freebsd.yml?query=branch%3Amaster))
 
 
 * *(GitHub account \*not\* required)*
@@ -70,6 +67,9 @@ The list of people who have helped to bring the XP generation to where it is now
 * InvoxiPlayGames
 * brakmic
 
+### UMSKT Ports Team
+* techguy16
+
 (the list will be updated to add more collaborators)
 
 ------
@@ -92,4 +92,4 @@ The list of people who have helped to bring the XP generation to where it is now
 | Language | Author    | Repo URL                                              |
 |----------|-----------|-------------------------------------------------------|
 | Rust     | Alex Page | [anpage/umskt-rs](https://github.com/anpage/umskt-rs) |
-
+| Python | techguy16 | No URL yet |
