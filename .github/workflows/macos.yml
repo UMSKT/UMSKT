@@ -34,10 +34,6 @@ jobs:
     - name: Checkout Source Tree
       uses: actions/checkout@v3
 
-    - name: Setup latest macOS
-      run: |
-        xcode-select --install
-
     - name: Configure and build UMSKT
       run: |
         mkdir build
