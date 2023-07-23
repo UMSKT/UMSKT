@@ -9,11 +9,11 @@ on:
 jobs:
   build:
     runs-on: macos-12
-    name: A job to build and test UMSKT in FreeBSD
+    name: build-x86_64
     steps:
     - uses: actions/checkout@v3
 
-    - name: Test in FreeBSD
+    - name: Build & Test in FreeBSD
       id: test
       uses: vmactions/freebsd-vm@v0
       with:
