@@ -8,14 +8,10 @@ on:
 
 jobs:
   build:
-    runs-on: freebsd-latest
-    strategy:
-      matrix:
-        include:
-          - arch: x86_64
+    runs-on: macos-12
+    name: A job to build and test UMSKT in FreeBSD
     steps:
-    - name: Checkout Source Tree
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
     - name: Install Dependencies
       run: |
@@ -32,9 +28,3 @@ jobs:
       run: |
           cd build
           ./umskt
-
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v3.1.2
-      with:
-        name: UMSKT-freebsd-x64
-        path: build/umskt
