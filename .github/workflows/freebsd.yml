@@ -1,0 +1,40 @@
+name: C/C++ CI (FreeBSD)
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: freebsd-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+    steps:
+    - name: Checkout Source Tree
+      uses: actions/checkout@v3
+
+    - name: Install Dependencies
+      run: |
+          pkg install -y cmake openssl
+
+    - name: Configure and build UMSKT
+      run: |
+          mkdir build
+          cd build
+          cmake ..
+          make
+
+    - name: Test UMSKT
+      run: |
+          cd build
+          ./umskt
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v3.1.2
+      with:
+        name: UMSKT-freebsd-x64
+        path: build/umskt
