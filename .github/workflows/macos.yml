@@ -43,7 +43,7 @@ jobs:
     - name: Extract artifact
       run: |
         cd build/actions_download
-        unzip UMSKT-macOS-${{ matrix.arch }}-static.zip
+        unzip UMSKT-macOS-${{ matrix.arch }}-static
 
     - name: Run tests
       run: |
