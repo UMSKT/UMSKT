@@ -50,20 +50,16 @@ jobs:
           cd watt32/util
           make clean && make linux
           cd ../src
-          source ${{ github.workspace }}/djgpp/setenv
-          ls ${{ github.workspace }}/djgpp
-          ls ${{ github.workspace }}/djgpp/watt32 # Corrected path to setenv.sh
-          ./configur.sh djgpp
-          make -f djgpp.mak
-          ln -s ${{ github.workspace }}/djgpp/watt32/lib/libwatt.a ${{ github.workspace }}/djgpp/lib
+          echo 'export PATH="${PATH}:${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin"' >> $GITHUB_ENV  # Add the DJGPP bin directory to the PATH
+          echo 'export DJDIR="${{ github.workspace }}/djgpp"' >> $GITHUB_ENV  # Set the DJDIR environment variable
 
       - name: Checkout and Cross Compile OpenSSL 3.1
         run: |
           git clone https://github.com/UMSKT/openssl.git openssl
           pushd openssl
           git checkout openssl-3.1.1
-          source ${{ github.workspace }}/djgpp/watt32/setenv.sh  # Corrected path to setenv.sh
-          ./Configure -DOPENSSL_NO_THREADS --prefix=${{ github.workspace }}/djgpp no-threads DJGPP
+          source ${{ github.workspace }}/djgpp/watt32/setenv  # Use the environment variable instead of the full path
+          ./Configure --cross-compile-prefix=i586-pc-msdosdjgpp- -DOPENSSL_NO_THREADS --prefix=$DJDIR no-threads DJGPP
           make && make install
           popd
 
@@ -73,8 +69,8 @@ jobs:
       - name: Build
         uses: threeal/cmake-action@v1.2.0
         with:
-          c-compiler: ${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin/gcc
-          cxx-compiler: ${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin/g++
+          c-compiler: $CMAKE_C_COMPILER
+          cxx-compiler: $CMAKE_CXX_COMPILER
           options: OPENSSL_ROOT_DIR:string=${{ github.workspace }}/djgpp DJGPP_WATT32=ON
           run-build: true
 
