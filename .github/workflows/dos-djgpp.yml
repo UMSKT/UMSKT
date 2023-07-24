@@ -50,7 +50,9 @@ jobs:
           cd watt32/util
           make clean && make linux
           cd ../src
-          source ${{ github.workspace }}/djgpp/watt32/setenv.sh  # Corrected path to setenv.sh
+          source ${{ github.workspace }}/djgpp/setenv
+          ls ${{ github.workspace }}/djgpp
+          ls ${{ github.workspace }}/djgpp/Watt-32 # Corrected path to setenv.sh
           ./configur.sh djgpp
           make -f djgpp.mak
           ln -s ${{ github.workspace }}/djgpp/watt32/lib/libwatt.a ${{ github.workspace }}/djgpp/lib
