@@ -19,7 +19,7 @@ jobs:
       - name: Setup build environment
         run: |
           sudo apt -y update
-          sudo apt -y install build-essential cmake wget 7zip git flex nasm libslang2-dev pkg-config libslang2-modules gcc-multilib
+          sudo apt -y install build-essential cmake wget 7zip git flex nasm libslang2-dev pkg-config libslang2-modules gcc-multilib g++
 
       - name: Download and Setup DJGPP Toolchain
         run: |
@@ -51,8 +51,8 @@ jobs:
       - name: Build
         uses: threeal/cmake-action@v1.2.0
         with:
-          c-compiler: ${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin/gcc
-          cxx-compiler: ${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin/g++
+          c-compiler: gcc
+          cxx-compiler: g++
           options: OPENSSL_ROOT_DIR:string=${{ github.workspace }}/djgpp DJGPP_WATT32=ON
           run-build: true
 
@@ -60,7 +60,7 @@ jobs:
         run: |
           mkdir build/actions_upload
           tar -czf WindowsXPKg_linux_x86_64.tar.gz -C build xpkey keys.json
-          mv WindowsXPKg_linux_x86_64.tgz build/actions_upload/
+          mv WindowsXPKg_linux_x86_64.tar.gz build/actions_upload/
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v3.1.2
