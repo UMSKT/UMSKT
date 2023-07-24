@@ -58,7 +58,6 @@ jobs:
           git clone https://github.com/UMSKT/openssl.git openssl
           pushd openssl
           git checkout openssl-3.1.1
-          source ${{ github.workspace }}/djgpp/watt32/src/setenv  # Corrected path to setenv
           ./Configure --cross-compile-prefix=i586-pc-msdosdjgpp- -DOPENSSL_NO_THREADS --prefix=$DJDIR no-threads DJGPP
           make && make install
           popd
