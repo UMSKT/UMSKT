@@ -58,8 +58,8 @@ jobs:
 
       - name: Test & Move files to correct directory
         run: |
-          ./umskt
-          ./umskt -l
+          ./build/umskt
+          ./build/umskt -l
           mkdir -p build/actions_upload
           mv build/umskt build/actions_upload/umskt
 
