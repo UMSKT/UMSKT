@@ -56,6 +56,11 @@ jobs:
           options: OPENSSL_ROOT_DIR:string=${{ github.workspace }}/djgpp DJGPP_WATT32=ON
           run-build: true
 
+      - name: Test
+      - run: |
+          ./umskt
+          ./umskt -l
+
       - name: Move files to correct directory
         run: |
           mkdir -p build/actions_upload
