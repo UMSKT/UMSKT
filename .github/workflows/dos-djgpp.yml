@@ -43,6 +43,7 @@ jobs:
           ./Configure no-threads -DOPENSSL_DEV_NO_ATOMICS --prefix=${{ github.workspace }}/djgpp DJGPP
           make && make install
           popd
+          ls ${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin/
 
       - name: Checkout Source Tree
         uses: actions/checkout@v3
