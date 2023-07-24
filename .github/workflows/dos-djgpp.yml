@@ -58,12 +58,12 @@ jobs:
 
       - name: Move files to correct directory
         run: |
-          mkdir build/actions_upload
-          tar -czf WindowsXPKg_linux_x86_64.tar.gz -C build xpkey keys.json
-          mv WindowsXPKg_linux_x86_64.tar.gz build/actions_upload/
+          mkdir -p build/actions_upload
+          mv build/umskt build/actions_upload/umskt
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v3.1.2
         with:
-          name: Build
+          name: UMSKT-DOS-DJGPP
           path: build/actions_upload
+
