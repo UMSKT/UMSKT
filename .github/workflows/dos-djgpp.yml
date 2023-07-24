@@ -60,8 +60,6 @@ jobs:
         run: |
           mkdir -p build/actions_upload
           mv build/umskt build/actions_upload/umskt
-          ./build/actions_upload/umskt 
-          ./build/actions_upload/umskt -l
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v3.1.2
