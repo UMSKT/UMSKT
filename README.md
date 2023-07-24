@@ -1,16 +1,16 @@
-#UMSKT Ports Hub**
+# UMSKT Ports Hub
 
-** Connect with main UMSKT team **
+**Connect with main UMSKT team**
 
 [![Zulip chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://umskt.zulipchat.com)
 [![libera.chat - #mspid](https://img.shields.io/badge/libera.chat-%23mspid-brightgreen)](https://web.libera.chat/gamja/?nick=Guest?#mspid)
 
-** Build status **
+**Build status**
 [![C/C++ CI (Linux)](https://github.com/techguy16/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml)
 [![C/C++ CI (Windows)](https://github.com/techguy16/UMSKT/actions/workflows/windows.yml/badge.svg)](../../actions/workflows/windows.yml)
 [![C/C++ CI (macOS)](https://github.com/techguy16/UMSKT/actions/workflows/macos.yml/badge.svg)](../../actions/workflows/macos.yml)
-[![C/C++ CI (FreeBSD)](https://github.com/techguy16/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/freebsd.yml)
-
+[![C/C++ CI (DOS DJGPP)](https://github.com/techguy16/UMSKT/actions/workflows/dos-djgpp.yml/badge.svg)](../../actions/workflows/freebsd.yml)
+[![C/C++ CI (FreeBSD)](https://github.com/techguy16/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/dos-djgpp.yml)
 
 
 
@@ -35,7 +35,7 @@
 #### 1. Download the latest version of WindowsXPKg
 
 * *(GitHub account required)*
-    * Download the latest experimental version using the Actions tab ([Windows](../../actions/workflows/windows.yml?query=branch%3Amaster), [Linux](../../actions/workflows/linux.yml?query=branch%3Amaster)), [macOS](../../actions/workflows/macos.yml?query=branch%3Amaster)), [FreeBSD](../../actions/workflows/freebsd.yml?query=branch%3Amaster))
+    * Download the latest experimental version using the Actions tab ([Windows](../../actions/workflows/windows.yml?query=branch%3Amaster), [Linux](../../actions/workflows/linux.yml?query=branch%3Amaster)), [macOS](../../actions/workflows/macos.yml?query=branch%3Amaster)), [FreeBSD](../../actions/workflows/freebsd.yml?query=branch%3Amaster)), [DOS DJGPP](../../actions/workflows/.yml?qudos-djgppery=branch%3Amaster))
 
 
 * *(GitHub account \*not\* required)*
