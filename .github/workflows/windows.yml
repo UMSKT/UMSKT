@@ -35,7 +35,7 @@ jobs:
         run: |
           mkdir D:\_temp
           cd D:\_temp
-          Invoke-WebRequest -URI https://7-zip.org/a/7z2301-x64.exe -Output 7zip.exe
+          Invoke-WebRequest -URI https://7-zip.org/a/7z2301-x64.exe -OutFile 7zip.exe
           ./7zip.exe /S
           git clone https://github.com/thepwrtank18/msvc2005.git --mirror
           7z x vs2005_installer.zip.* -ovs2005_installer
