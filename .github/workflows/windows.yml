@@ -43,6 +43,8 @@ jobs:
           dir D:\_temp
           7z x D:\_temp\vs2005_installer.7z.* -oD:\_temp\vs2005_installer
           dir D:\_temp
+          Install-WindowsFeature NET-HTTP-Activation
+          Install-WindowsFeature NET-Non-HTTP-Activ
           Start-Process -Wait D:\_temp\vs2005_installer\Setup\setup.exe -PassThru -NoNewWindow -ArgumentList /UnattendFile,D:\_temp\vs2005_pro_unattend.ini,/qb,/norestart; Write-Host Return Code: $?;
           
       - name: Install v141_xp
