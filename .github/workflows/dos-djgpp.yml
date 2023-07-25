@@ -43,7 +43,7 @@ jobs:
       - name: Setup build environment
         run: |
           sudo apt -y update
-          sudo apt -y install build-essential cmake wget 7zip git flex nasm libslang2-dev pkg-config libslang2-modules gcc-multilib g++
+          sudo apt -y install build-essential cmake wget 7zip git flex nasm libslang2-dev pkg-config libslang2-modules gcc-multilib
 
       - name: Download and Setup DJGPP Toolchain
         run: |
