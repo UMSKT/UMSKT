@@ -38,7 +38,9 @@ jobs:
           Invoke-WebRequest -URI https://7-zip.org/a/7z2301-x64.exe -OutFile 7zip.exe
           ./7zip.exe /S
           git clone https://github.com/thepwrtank18/msvc2005.git --mirror
+          dir D:\_temp
           7z x D:\_temp\vs2005_installer.zip.* -oD:\_temp\vs2005_installer
+          dir D:\_temp
           D:\_temp\vs2005_installer\setup.exe /UnattendFile D:\_temp\vs2005_std_unattend.ini
           
       - name: Install v141_xp
