@@ -43,7 +43,7 @@ jobs:
           dir D:\_temp
           7z x D:\_temp\vs2005_installer.zip.* -oD:\_temp\vs2005_installer
           dir D:\_temp
-          Start-Process -Wait -PassThru D:\_temp\vs2005_installer\setup.exe -NoNewWindow -ArgumentList "/UnattendFile D:\_temp\vs2005_std_unattend.ini"
+          Start-Process -Wait D:\_temp\vs2005_installer\setup.exe -PassThru -NoNewWindow -ArgumentList /UnattendFile,D:\_temp\vs2005_std_unattend.ini,/qb,/norestart; Write-Host Return Code: $?;
           
       - name: Install v141_xp
         uses: thepwrtank18/install-vs-components@v1.0.0
