@@ -1,0 +1,65 @@
+# This file is a part of the UMSKT Project
+#
+# Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# @FileCreated by techguy16 on 07/23/2023
+# @Maintainer techguy16
+
+name: C/C++ CI (macOS)
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build-x86:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+    steps:
+      - name: Checkout Source Tree
+        uses: actions/checkout@v3
+
+      - name: Configure and build UMSKT
+        run: |
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          make
+
+      - name: Move files to correct directory
+        run: |
+          mkdir -p build/actions_upload
+          mv build/umskt build/actions_upload/umskt
+
+      - name: Run tests
+        run: |
+          cd build/actions_upload
+          ./umskt
+
+      - name: Zip artifact
+        run: |
+          cd build/actions_upload
+          zip -r UMSKT-macOS-${{ matrix.arch }}-static.zip umskt
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: UMSKT-macOS-${{ matrix.arch }}-static
+          path: build/actions_upload

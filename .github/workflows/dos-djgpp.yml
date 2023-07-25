@@ -20,7 +20,11 @@
 
 name: C/C++ CI (DOS DJGPP)
 
-on: workflow_dispatch
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 env:
   CMAKE_C_COMPILER: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-gcc
@@ -50,7 +54,6 @@ jobs:
           cd watt32/util
           make clean && make linux
           cd ../src
-          source ${{ github.workspace }}/djgpp/setenv.sh
           ./configur.sh djgpp
           make -f djgpp.mak
           ln -s ${{ github.workspace }}/djgpp/watt32/lib/libwatt.a ${{ github.workspace }}/djgpp/lib
@@ -64,6 +67,7 @@ jobs:
           ./Configure no-threads -DOPENSSL_DEV_NO_ATOMICS --prefix=${{ github.workspace }}/djgpp DJGPP
           make && make install
           popd
+          ls ${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin/
 
       - name: Checkout Source Tree
         uses: actions/checkout@v3
@@ -71,19 +75,19 @@ jobs:
       - name: Build
         uses: threeal/cmake-action@v1.2.0
         with:
-          c-compiler: ${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin/gcc
-          cxx-compiler: ${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin/g++
+          c-compiler: gcc
+          cxx-compiler: g++
           options: OPENSSL_ROOT_DIR:string=${{ github.workspace }}/djgpp DJGPP_WATT32=ON
           run-build: true
 
-      - name: Move files to correct directory
+      - name: Test & Move files to correct directory
         run: |
-          mkdir build/actions_upload
-          tar -czf WindowsXPKg_linux_x86_64.tar.gz -C build xpkey keys.json
-          mv WindowsXPKg_linux_x86_64.tgz build/actions_upload/
+          mkdir -p build/actions_upload
+          mv build/umskt build/actions_upload/umskt
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v3.1.2
         with:
-          name: Build
+          name: UMSKT-DOS-DJGPP
           path: build/actions_upload
+
