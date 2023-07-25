@@ -45,8 +45,8 @@ jobs:
           dir D:\_temp
           Install-WindowsFeature NET-HTTP-Activation
           Install-WindowsFeature NET-Non-HTTP-Activ
-          Get-Item -Path D:\_temp\vs2005_express | Copy-Item -Destination D:\_temp\bug_workaround
-          cmd /c D:\_temp\vs2005_express\ixpvc.exe /q:a /c:"msiexec /i vcsetup.msi VSEXTUI=1 ADDLOCAL=ALL REBOOT=ReallySuppress /qb" /t:"D:\_temp\bug_workaround"
+          Get-Item -Path D:\_temp\vs2005_express | Copy-Item -Destination D:\_temp\bug_workaround -Recurse
+          cmd /c D:\_temp\vs2005_express\ixpvc.exe /q:a /c:"msiexec /i vcsetup.msi VSEXTUI=1 ADDLOCAL=ALL REBOOT=ReallySuppress /qb" /t:"D:\_temp\bug_workaround\vs2005_express"
           
       - name: Install v141_xp
         uses: thepwrtank18/install-vs-components@v1.0.0
