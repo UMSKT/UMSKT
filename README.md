@@ -12,7 +12,11 @@
 [![C/C++ CI (DOS DJGPP)](https://github.com/UMSKT/UMSKT/actions/workflows/dos-djgpp.yml/badge.svg)](../../actions/workflows/freebsd.yml)
 [![C/C++ CI (FreeBSD)](https://github.com/UMSKT/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/dos-djgpp.yml)
 
+Plan of Action / ToDo List
 
+In light of the recent exponential interest in this project I've decided to put updates of this project here:
+
+    Please see ticket #8 for more information
 
 ------
 
@@ -42,7 +46,7 @@
     * Download the latest release for your operating system and architecture from [the releases page](../../releases)
 
 
-* **Note:** Before continuing, please ensure you have the `umskt` executablw extracted.
+* **Note:** Before continuing, please ensure you have the `umskt` executable extracted.
 
 #### 2. Run `umskt` to generate a key, or add `--help` to see more options.
 
@@ -69,7 +73,7 @@ The list of people who have helped to bring the XP generation to where it is now
 * WitherOrNot
 * TheTank20
 * InvoxiPlayGames
-* bra
+* brakmic
 
 (the list will be updated to add more collaborators)
 
