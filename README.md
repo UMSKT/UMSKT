@@ -1,16 +1,16 @@
-# UMSKT Ports Hub
+# Universal MS Key Toolkit (UMSKT)
 
-**Connect with main UMSKT team**
+**Connect with us**
 
 [![Zulip chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://umskt.zulipchat.com)
 [![libera.chat - #mspid](https://img.shields.io/badge/libera.chat-%23mspid-brightgreen)](https://web.libera.chat/gamja/?nick=Guest?#mspid)
 
 **Build status**
-[![C/C++ CI (Linux)](https://github.com/techguy16/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml)
-[![C/C++ CI (Windows)](https://github.com/techguy16/UMSKT/actions/workflows/windows.yml/badge.svg)](../../actions/workflows/windows.yml)
-[![C/C++ CI (macOS)](https://github.com/techguy16/UMSKT/actions/workflows/macos.yml/badge.svg)](../../actions/workflows/macos.yml)
-[![C/C++ CI (DOS DJGPP)](https://github.com/techguy16/UMSKT/actions/workflows/dos-djgpp.yml/badge.svg)](../../actions/workflows/freebsd.yml)
-[![C/C++ CI (FreeBSD)](https://github.com/techguy16/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/dos-djgpp.yml)
+[![C/C++ CI (Linux)](https://github.com/UMSKT/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml)
+[![C/C++ CI (Windows)](https://github.com/UMSKT/UMSKT/actions/workflows/windows.yml/badge.svg)](../../actions/workflows/windows.yml)
+[![C/C++ CI (macOS)](https://github.com/UMSKT/UMSKT/actions/workflows/macos.yml/badge.svg)](../../actions/workflows/macos.yml)
+[![C/C++ CI (DOS DJGPP)](https://github.com/UMSKT/UMSKT/actions/workflows/dos-djgpp.yml/badge.svg)](../../actions/workflows/freebsd.yml)
+[![C/C++ CI (FreeBSD)](https://github.com/UMSKT/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/dos-djgpp.yml)
 
 
 
@@ -32,7 +32,7 @@
 
 
 ### **Usage**
-#### 1. Download the latest version of WindowsXPKg
+#### 1. Download the latest version of UMSKT
 
 * *(GitHub account required)*
     * Download the latest experimental version using the Actions tab ([Windows](../../actions/workflows/windows.yml?query=branch%3Amaster), [Linux](../../actions/workflows/linux.yml?query=branch%3Amaster)), [macOS](../../actions/workflows/macos.yml?query=branch%3Amaster), [FreeBSD](../../actions/workflows/freebsd.yml?query=branch%3Amaster), [DOS DJGPP](../../actions/workflows/.yml?qudos-djgppery=branch%3Amaster))
@@ -42,15 +42,15 @@
     * Download the latest release for your operating system and architecture from [the releases page](../../releases)
 
 
-* **Note:** Before continuing, please ensure you have both the `xpkey` program and the `keys.json` datum extracted and in the same directory
+* **Note:** Before continuing, please ensure you have the `umskt` executablw extracted.
 
-#### 2. Run `xpkey` to generate a key, or add `--help` to see more options.
+#### 2. Run `umskt` to generate a key, or add `--help` to see more options.
 
 #### 3. *(Activation step for `Retail` and `OEM` only)*
 * After installation, you will be prompted to activate Windows.
 
 
-* Select the **telephone activation** method, then, run `xpkey -i <Installation ID>` using the `Installation ID` the activation Wizard provides for you
+* Select the **telephone activation** method, then, run `umskt -i <Installation ID>` using the `Installation ID` the activation Wizard provides for you
 
 #### 4. Profit!
 
@@ -69,10 +69,7 @@ The list of people who have helped to bring the XP generation to where it is now
 * WitherOrNot
 * TheTank20
 * InvoxiPlayGames
-* brakmic
-
-### UMSKT Ports Team
-* techguy16
+* bra
 
 (the list will be updated to add more collaborators)
 
