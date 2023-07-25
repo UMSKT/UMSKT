@@ -30,6 +30,16 @@ jobs:
   build-32bit:
     runs-on: windows-latest
     steps:
+    
+      - name: Install MSVC 2005
+        run: |
+          cd D:\_temp
+          Invoke-WebRequest -URI https://7-zip.org/a/7z2301-x64.exe -Output 7zip.exe
+          ./7zip.exe /S
+          git clone https://github.com/thepwrtank18/msvc2005.git --mirror
+          7z x vs2005_installer.zip.* -ovs2005_installer
+          ./vs2005_installer/setup.exe /UnattendFile ./vs2005_std_unattend.ini
+          
       - name: Install v141_xp
         uses: thepwrtank18/install-vs-components@v1.0.0
         with:
