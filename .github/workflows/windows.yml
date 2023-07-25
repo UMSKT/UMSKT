@@ -41,11 +41,11 @@ jobs:
           Get-Item -Path D:\_temp\msvc2005\*.* | Move-Item -Destination D:\_temp
           Remove-Item D:\_temp\msvc2005 -Force -Recurse
           dir D:\_temp
-          7z x D:\_temp\vs2005_installer.7z.* -oD:\_temp\vs2005_installer
+          7z x D:\_temp\vs2005_express.7z.* -oD:\_temp\vs2005_express
           dir D:\_temp
           Install-WindowsFeature NET-HTTP-Activation
           Install-WindowsFeature NET-Non-HTTP-Activ
-          Start-Process -Wait D:\_temp\vs2005_installer\ixpvc.exe -PassThru -NoNewWindow -ArgumentList /q:a,/c:"msiexec /i vcssetup.msi VSEXTUI=1 ADDLOCAL=ALL REBOOT=ReallySuppress /qn"; Write-Host Return Code: $?;
+          Start-Process -Wait D:\_temp\vs2005_express\ixpvc.exe -PassThru -NoNewWindow -ArgumentList /q:a,/c:"msiexec /i vcssetup.msi VSEXTUI=1 ADDLOCAL=ALL REBOOT=ReallySuppress /qn"; Write-Host Return Code: $?;
           
       - name: Install v141_xp
         uses: thepwrtank18/install-vs-components@v1.0.0
