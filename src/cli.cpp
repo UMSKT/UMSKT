@@ -217,8 +217,10 @@ int CLI::validateCommandLine(Options* options, char *argv[], json *keys) {
     sscanf(options->binkid.c_str(), "%x", &intBinkID);
 
     if (intBinkID >= 0x40) {
-        // set bink2002 validate mode if in bink1998 validate mode, else set bink2002 generate mode
-        options->applicationMode = (options->applicationMode == MODE_BINK1998_VALIDATE) ? MODE_BINK2002_VALIDATE : MODE_BINK2002_GENERATE;
+        if (intBinkID != 0xFE && intBinkID != 0xFF) { // FE and FF are oddballs that are bink1998, this excludes them from being set to bink2002
+	    // set bink2002 validate mode if in bink1998 validate mode, else set bink2002 generate mode
+            options->applicationMode = (options->applicationMode == MODE_BINK1998_VALIDATE) ? MODE_BINK2002_VALIDATE : MODE_BINK2002_GENERATE;
+	}
     }
 
     if (options->channelID > 999) {
