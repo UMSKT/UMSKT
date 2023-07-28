@@ -39,12 +39,12 @@ In light of the recent exponential interest in this project I've decided to put 
 #### 1. Download the latest version of UMSKT
 
 * *(GitHub account required)*
-    * Download the latest experimental version using the Actions tab ([Windows](../../actions/workflows/windows.yml?query=branch%3Amaster), [Linux](../../actions/workflows/linux.yml?query=branch%3Amaster)), [macOS](../../actions/workflows/macos.yml?query=branch%3Amaster), [FreeBSD](../../actions/workflows/freebsd.yml?query=branch%3Amaster), [DOS DJGPP](../../actions/workflows/.yml?qudos-djgppery=branch%3Amaster))
+    * Download the latest experimental version using the Actions tab ([Windows](../../actions/workflows/windows.yml?query=branch%3Amaster), [Linux](../../actions/workflows/linux.yml?query=branch%3Amaster), [macOS](../../actions/workflows/macos.yml?query=branch%3Amaster), [FreeBSD](../../actions/workflows/freebsd.yml?query=branch%3Amaster), [DOS DJGPP](../../actions/workflows/.yml?qudos-djgppery=branch%3Amaster))
 
 
-* *(GitHub account \*not\* required)*
-    * Download the latest release for your operating system and architecture from [the releases page](../../releases)
-
+* ~~*(GitHub account \*not\* required)*~~
+    * ~~Download the latest release for your operating system and architecture from [the releases page](../../releases)~~
+    * No official releases right now, use the other method to get the latest version.
 
 * **Note:** Before continuing, please ensure you have the `umskt` executable extracted.
 
