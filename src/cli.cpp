@@ -433,7 +433,6 @@ int CLI::BINK2002Generate() {
         }
 
         PIDGEN3::BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, false, this->pKey);
-        CLI::printKey(this->pKey);
         fmt::print("\n");
 
         bool isValid = PIDGEN3::BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
