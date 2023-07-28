@@ -433,21 +433,20 @@ int CLI::BINK2002Generate() {
         }
 
         PIDGEN3::BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, false, this->pKey);
-        fmt::print("\n");
 
         bool isValid = PIDGEN3::BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
         if (isValid) {
             CLI::printKey(this->pKey);
-            if (i < this->total - 1 || this->options.verbose) {
+            if (i < this->total - 1 || this->options.verbose) { // check if end of list or verbose
                 fmt::print("\n");
             }
-            this->count += isValid;
+            this->count += isValid; // add to count
         }
         else {
             if (this->options.verbose) {
-                CLI::printKey(this->pKey);
-                fmt::print(" [Invalid]");
-                if (i < this->total - 1) {
+                CLI::printKey(this->pKey); // print the key
+                fmt::print(" [Invalid]"); // and add " [Invalid]" to the key
+                if (i < this->total - 1) { // check if end of list
                     fmt::print("\n");
                 }
             }
