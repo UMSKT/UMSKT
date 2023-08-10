@@ -52,6 +52,7 @@ struct Options {
     int channelID;
     int serial;
     int numKeys;
+    bool upgrade;
     bool serialSet;
     bool verbose;
     bool help;
