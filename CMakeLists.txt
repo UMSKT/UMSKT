@@ -119,12 +119,6 @@ set(LIBUMSKT_SRC
     src/libumskt/debugoutput.cpp
 )
 
-if(UMSKT_USE_SHARED_OPENSSL)
-    add_library(_umskt SHARED ${LIBUMSKT_SRC})
-else()
-    add_library(_umskt STATIC ${LIBUMSKT_SRC})
-endif()
-
 #### Separate Build Path for emscripten
 if (EMSCRIPTEN)
     add_executable(umskt ${LIBUMSKT_SRC})
