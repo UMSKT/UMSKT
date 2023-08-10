@@ -39,9 +39,10 @@ CMRC_DECLARE(umskt);
 enum MODE {
     MODE_BINK1998_GENERATE = 0,
     MODE_BINK2002_GENERATE = 1,
-    MODE_CONFIRMATION_ID = 2,
-    MODE_BINK1998_VALIDATE = 3,
-    MODE_BINK2002_VALIDATE = 4,
+    MODE_BINK1998_VALIDATE = 2,
+    MODE_BINK2002_VALIDATE = 3,
+    MODE_CONFIRM_ID_LEGACY = 4,
+    MODE_CONFIRM_ID_NEWGEN = 5,
 };
 
 struct Options {
@@ -49,6 +50,7 @@ struct Options {
     std::string keysFilename;
     std::string instid;
     std::string keyToCheck;
+    std::string productid;
     int channelID;
     int serial;
     int numKeys;
