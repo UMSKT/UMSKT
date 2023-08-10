@@ -54,7 +54,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-f --file\tspecify which keys file to load\n");
     fmt::print("\t-i --instid\tinstallation ID used to generate confirmation ID\n");
     fmt::print("\t-m --mode\tproduct family to activate. valid options are \"Windows\", \"OfficeXP\", \"Office2K3+\", \"PlusDME\"\n");
-    fmt::print("\t-p --productid\tthe product ID of the Program to activate. only required for Office 2K3 or Office 2K7 programs\n");
+    fmt::print("\t-p --productid\tthe product ID of the Program to activate. only required for Office 2K3+ programs\n");
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
