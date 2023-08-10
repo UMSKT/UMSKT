@@ -53,6 +53,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-n --number\tnumber of keys to generate (defaults to 1)\n");
     fmt::print("\t-f --file\tspecify which keys file to load\n");
     fmt::print("\t-i --instid\tinstallation ID used to generate confirmation ID\n");
+    fmt::print("\t-p --productid\tthe product ID of the Program to activate. only required for Office 2003 or Office 2007 programs\n");
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
@@ -66,6 +67,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
     // set default options
     *options = Options {
             "2E",
+            "",
             "",
             "",
             "",
@@ -156,8 +158,12 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             }
 
             options->instid = argv[i+1];
-            options->applicationMode = MODE_CONFIRMATION_ID;
+            options->applicationMode = MODE_CONFIRM_ID_LEGACY;
             i++;
+            if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--productid") == 0) {
+                options->productid = argv[i+1];
+                options->applicationMode = MODE_CONFIRM_ID_NEWGEN;
+	    }
         } else if (arg == "-V" || arg == "--validate") {
             if (i == argc - 1) {
                 options->error = true;
