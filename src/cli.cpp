@@ -71,6 +71,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             640,
             0,
             1,
+	    false,
             false,
             false,
             false,
@@ -100,6 +101,8 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
                 options->numKeys = nKeys;
             }
             i++;
+	} else if (arg == "-u" || arg == "--upgrade") {
+	    options->upgrade = true;
         } else if (arg == "-b" || arg == "--bink") {
             if (i == argc - 1) {
                 options->error = true;
