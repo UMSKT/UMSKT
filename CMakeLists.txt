@@ -18,142 +18,160 @@
 # @FileCreated by Andrew on 05/30/2023
 # @Maintainer Neo
 
-cmake_minimum_required(VERSION 3.12)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.12)
+PROJECT(UMSKT)
+SET(CMAKE_CXX_STANDARD 17)
+SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
+OPTION(UMSKT_USE_SHARED_OPENSSL "Force linking against the system-wide OpenSSL library" OFF)
+OPTION(MUSL_STATIC "Enable fully static builds in a muslc environment (i.e. Alpine Linux)" OFF)
+OPTION(DJGPP_WATT32 "Enable compilation and linking with DJGPP/WATT32/OpenSSL" OFF)
+OPTION(MSVC_MSDOS_STUB "Specify a custom MS-DOS stub for a 32-bit MSVC compilation" OFF)
 
-project(UMSKT)
-set(CMAKE_OSX_SYSROOT "macosx" CACHE PATH "macOS SDK path")
+SET(UMSKT_LINK_LIBS ${UMSKT_LINK_LIBS})
+SET(UMSKT_LINK_DIRS ${UMSKT_LINK_DIRS})
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+IF(UMSKT_USE_SHARED_OPENSSL)
+    SET(OPENSSL_USE_STATIC_LIBS FALSE)
+    SET(OPENSSL_MSVC_STATIC_RT FALSE)
+    MESSAGE(WARNING "[UMSKT] Forcing shared OpenSSL runtime")
+ELSE()
+    SET(OPENSSL_USE_STATIC_LIBS TRUE)
+    SET(OPENSSL_MSVC_STATIC_RT TRUE)
+ENDIF()
 
-option(UMSKT_USE_SHARED_OPENSSL "Force linking against the system-wide OpenSSL library" OFF)
-option(MUSL_STATIC "Enable fully static builds in a muslc environment (i.e. Alpine Linux)" OFF)
-option(DJGPP_WATT32 "Enable compilation and linking with DJGPP/WATT32/OpenSSL" OFF)
-option(MSVC_MSDOS_STUB "Specify a custom MS-DOS stub for a 32-bit MSVC compilation" OFF)
+IF(DJGPP_WATT32)
+    SET(CMAKE_SYSTEM_NAME MSDOS)
+    SET(UMSKT_LINK_LIBS ${UMSKT_LINK_LIBS} ${DJGPP_WATT32})
+    SET(UMSKT_LINK_DIRS ${UMSKT_LINK_DIRS} ${WATT_ROOT}/lib)
+ENDIF()
 
-find_package(OpenSSL REQUIRED)
-
-if(NOT OpenSSL_FOUND)
-    message(FATAL_ERROR "OpenSSL Development Libraries Not Found. Please install the required OpenSSL development package.")
-endif()
-
-if(UMSKT_USE_SHARED_OPENSSL)
-    set(OPENSSL_USE_STATIC_LIBS FALSE)
-    set(OPENSSL_MSVC_STATIC_RT FALSE)
-else()
-    set(OPENSSL_USE_STATIC_LIBS TRUE)
-    set(OPENSSL_MSVC_STATIC_RT TRUE)
-endif()
+# find the system installed OpenSSL development library
+FIND_PACKAGE(OpenSSL REQUIRED)
+IF(NOT OPENSSL_FOUND)
+    MESSAGE(SEND_ERROR "OpenSSL Development Libraries Not Found")
+    MESSAGE(SEND_ERROR "Please consult your package manager of choice to install the prerequisite")
+    MESSAGE(SEND_ERROR "The package name is commonly called libssl-dev or openssl-dev depending on distribution")
+    MESSAGE(FATAL_ERROR "Can not continue without OpenSSL")
+ENDIF()
 
 # if we found shared libraries - do the following:
-string(REGEX MATCH "(\\.so|\\.dll|\\.dylib)$" OPENSSL_CRYPTO_SHARED "${OPENSSL_CRYPTO_LIBRARY}")
-if(OPENSSL_CRYPTO_SHARED)
-    message(STATUS "[UMSKT] Detected Shared library version of OpenSSL")
-    set(BUILD_SHARED_LIBS ON)
-else()
-    message(STATUS "[UMSKT] Detected Static Library version of OpenSSL")
-endif()
+STRING(REGEX MATCH "(\\.so|\\.dll|\\.dylib)$" OPENSSL_CRYPTO_SHARED "${OPENSSL_CRYPTO_LIBRARY}")
+IF(OPENSSL_CRYPTO_SHARED)
+    MESSAGE(STATUS "[UMSKT] Detected Shared library version of OpenSSL")
+    SET(BUILD_SHARED_LIBS ON)
+ELSE()
+    MESSAGE(STATUS "[UMSKT] Detected Static Library version of OpenSSL")
+ENDIF()
 
 # if we're compiling with MSVC, respect the DEBUG compile option
-if(MSVC)
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    if(NOT BUILD_SHARED_LIBS)
-        set(CMAKE_CXX_FLAGS_RELEASE "/MT")
-        set(CMAKE_CXX_FLAGS_DEBUG "/MTd")
-    else()
-        set(CMAKE_CXX_FLAGS_RELEASE "/MD")
-        set(CMAKE_CXX_FLAGS_DEBUG "/MDd")
-    endif()
-    set(CMAKE_EXE_LINKER_FLAGS "/INCREMENTAL:NO /NODEFAULTLIB:MSVCRT")
-    set(CMAKE_ENABLE_EXPORTS ON)
-    set(UMSKT_EXE_WINDOWS_EXTRA src/windows/umskt.rc)
-    set(UMSKT_EXE_WINDOWS_DLL src/windows/dllmain.cpp)
-endif()
+IF(MSVC)
+    SET(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    IF(NOT BUILD_SHARED_LIBS)
+        SET(CMAKE_CXX_FLAGS_RELEASE "/MT")
+        SET(CMAKE_CXX_FLAGS_DEBUG "/MTd")
+    ELSE()
+        SET(CMAKE_CXX_FLAGS_RELEASE "/MD")
+        SET(CMAKE_CXX_FLAGS_DEBUG "/MDd")
+    ENDIF()
+    SET(CMAKE_EXE_LINKER_FLAGS "/INCREMENTAL:NO /NODEFAULTLIB:MSVCRT")
+    SET(CMAKE_ENABLE_EXPORTS ON)
+    SET(UMSKT_EXE_WINDOWS_EXTRA src/windows/umskt.rc)
+    SET(UMSKT_EXE_WINDOWS_DLL src/windows/dllmain.cpp)
+ENDIF()
 
-if(MUSL_STATIC AND NOT UMSKT_USE_SHARED_OPENSSL)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc -static-libstdc++")
-    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc -static-libstdc++")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
-endif()
+IF(MUSL_STATIC)
+    MESSAGE(STATUS "[UMSKT] Performing a fully static build using muslc")
+    SET(CMAKE_EXE_LINKER_FLAGS "-static -static-libgcc -static-libstdc++")
+    SET(CMAKE_SHARED_LINKER_FLAGS "-static -static-libgcc -static-libstdc++")
+    SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc -static-libstdc++")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+ENDIF()
 
-include(cmake/CPM.cmake)
+# initalize cpm.CMake
+INCLUDE(cmake/CPM.cmake)
 
+# fetch cpm.CMake dependencies
+# Include JSON development library
 CPMAddPackage(
-    NAME nlohmann_json
-    GITHUB_REPOSITORY nlohmann/json
-    VERSION 3.11.2
+        NAME nlohmann_json
+        GITHUB_REPOSITORY nlohmann/json
+        VERSION 3.11.2
 )
 
+# Include fmt development library
 CPMAddPackage(
-    NAME fmt
-    GITHUB_REPOSITORY fmtlib/fmt
-    GIT_TAG 10.0.0
-    VERSION 10.0.0
+        NAME fmt
+        GITHUB_REPOSITORY fmtlib/fmt
+        GIT_TAG 10.0.0
+        VERSION 10.0.0
 )
 
+# Include cmrc resource compiler
 CPMAddPackage(
-    NAME cmrc
-    GITHUB_REPOSITORY vector-of-bool/cmrc
-    GIT_TAG 2.0.1
-    VERSION 2.0.1
+        NAME cmrc
+        GITHUB_REPOSITORY vector-of-bool/cmrc
+        GIT_TAG 2.0.1
+        VERSION 2.0.1
 )
 
-# For Emscripten builds, set CMAKE_TOOLCHAIN_FILE to the appropriate file
-set(EMSCRIPTEN_BUILD OFF CACHE BOOL "Build for Emscripten" FORCE)
-if(EMSCRIPTEN_BUILD)
-    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/cmake/Emscripten.cmake" CACHE string "Emscripten toolchain file")
-endif()
+# Include Crypto++ development library
+#CPMAddPackage(
+#        NAME cryptopp-cmake
+#        GITHUB_REPOSITORY abdes/cryptopp-cmake
+#        GIT_TAG CRYPTOPP_8_8_0
+#        VERSION 8.8.0
+#        OPTIONS "CRYPTOPP_BUILD_TESTING OFF"
+#)
 
-cmrc_add_resource_library(umskt-rc ALIAS umskt::rc NAMESPACE umskt keys.json)
+#include googletest unit testing library
+#CPMAddPackage(
+#        NAME googletest
+#        GITHUB_REPOSITORY google/googletest
+#        VERSION 1.13.0
+#        OPTIONS "INSTALL_GTEST OFF" "gtest_force_shared_crt"
+#)
 
-set(LIBUMSKT_SRC
-    src/libumskt/libumskt.cpp
-    src/libumskt/pidgen3/BINK1998.cpp
-    src/libumskt/pidgen3/BINK2002.cpp
-    src/libumskt/pidgen3/key.cpp
-    src/libumskt/pidgen3/util.cpp
-    src/libumskt/confid/confid.cpp
-    src/libumskt/pidgen2/PIDGEN2.cpp
-    src/libumskt/debugoutput.cpp
-)
+### Resource compilation
+CMRC_ADD_RESOURCE_LIBRARY(umskt-rc ALIAS umskt::rc NAMESPACE umskt keys.json)
+
+SET(LIBUMSKT_SRC src/libumskt/libumskt.cpp src/libumskt/pidgen3/BINK1998.cpp src/libumskt/pidgen3/BINK2002.cpp src/libumskt/pidgen3/key.cpp src/libumskt/pidgen3/util.cpp src/libumskt/confid/confid.cpp src/libumskt/pidgen2/PIDGEN2.cpp src/libumskt/debugoutput.cpp)
 
 #### Separate Build Path for emscripten
-if (EMSCRIPTEN)
-    add_executable(umskt ${LIBUMSKT_SRC})
-    target_include_directories(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
-    target_link_libraries(umskt -static OpenSSL::Crypto cryptopp::cryptopp fmt)
-    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+IF (EMSCRIPTEN)
+    ADD_EXECUTABLE(umskt ${LIBUMSKT_SRC})
+    TARGET_INCLUDE_DIRECTORIES(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
+    TARGET_LINK_LIBRARIES(umskt -static OpenSSL::Crypto cryptopp::cryptopp fmt)
+    SET(CMAKE_EXECUTABLE_SUFFIX ".html")
 
-    set_target_properties(umskt PROPERTIES COMPILE_FLAGS "-Os -sEXPORTED_RUNTIME_METHODS=ccall,cwrap")
-    set_target_properties(umskt PROPERTIES LINK_FLAGS    "-Os -sWASM=1 -sEXPORT_ALL=1 -sEXPORTED_RUNTIME_METHODS=ccall,cwrap --no-entry")
-else()
-    if(NOT UMSKT_USE_SHARED_OPENSSL)
+    SET_TARGET_PROPERTIES(umskt PROPERTIES COMPILE_FLAGS "-Os -sEXPORTED_RUNTIME_METHODS=ccall,cwrap")
+    SET_TARGET_PROPERTIES(umskt PROPERTIES LINK_FLAGS    "-Os -sWASM=1 -sEXPORT_ALL=1 -sEXPORTED_RUNTIME_METHODS=ccall,cwrap --no-entry")
+ELSE()
+    IF(NOT UMSKT_USE_SHARED_OPENSSL)
         ### Static library compilation
-        add_library(_umskt STATIC ${LIBUMSKT_SRC})
-        target_include_directories(_umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
-        target_link_libraries(_umskt -static OpenSSL::Crypto fmt ${UMSKT_LINK_LIBS})
-    else()
+        ADD_LIBRARY(_umskt STATIC ${LIBUMSKT_SRC})
+        TARGET_INCLUDE_DIRECTORIES(_umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
+        TARGET_LINK_LIBRARIES(_umskt -static OpenSSL::Crypto fmt ${UMSKT_LINK_LIBS})
+    ELSE()
         ### Shared library compilation
-        add_library(_umskt SHARED ${LIBUMSKT_SRC} ${UMSKT_EXE_WINDOWS_EXTRA} ${UMSKT_EXE_WINDOWS_DLL})
-        target_include_directories(_umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
-        target_link_libraries(_umskt OpenSSL::Crypto fmt ${UMSKT_LINK_LIBS})
-        target_link_directories(_umskt PUBLIC ${UMSKT_LINK_DIRS})
-    endif()
+        ADD_LIBRARY(_umskt SHARED ${LIBUMSKT_SRC} ${UMSKT_EXE_WINDOWS_EXTRA} ${UMSKT_EXE_WINDOWS_DLL})
+        TARGET_INCLUDE_DIRECTORIES(_umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
+        TARGET_LINK_LIBRARIES(_umskt OpenSSL::Crypto fmt ${UMSKT_LINK_LIBS})
+        TARGET_LINK_DIRECTORIES(_umskt PUBLIC ${UMSKT_LINK_DIRS})
+    ENDIF()
 
     ### UMSKT executable compilation
-    add_executable(umskt src/main.cpp src/cli.cpp ${UMSKT_EXE_WINDOWS_EXTRA})
-    target_include_directories(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
-    target_link_libraries(umskt _umskt OpenSSL::Crypto fmt nlohmann_json::nlohmann_json umskt::rc ${UMSKT_LINK_LIBS})
-    target_link_directories(umskt PUBLIC ${UMSKT_LINK_DIRS})
-    if(MSVC AND MSVC_MSDOS_STUB)
-        set_property(TARGET umskt APPEND PROPERTY LINK_FLAGS /STUB:${MSVC_MSDOS_STUB})
-    endif()
+    ADD_EXECUTABLE(umskt src/main.cpp src/cli.cpp ${UMSKT_EXE_WINDOWS_EXTRA})
+    TARGET_INCLUDE_DIRECTORIES(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
+    TARGET_LINK_LIBRARIES(umskt _umskt OpenSSL::Crypto fmt nlohmann_json::nlohmann_json umskt::rc ${UMSKT_LINK_LIBS})
+    TARGET_LINK_DIRECTORIES(umskt PUBLIC ${UMSKT_LINK_DIRS})
+    IF(MSVC AND MSVC_MSDOS_STUB)
+        SET_PROPERTY(TARGET umskt APPEND PROPERTY LINK_FLAGS /STUB:${MSVC_MSDOS_STUB})
+    ENDIF()
 
     ### Copy Shared Libraries and dependency files
-    if (OPENSSL_CRYPTO_SHARED)
-        get_filename_component(OPENSSL_CRYPTO_LIBRARY_FILENAME ${OPENSSL_CRYPTO_LIBRARY} NAME)
-        configure_file(${OPENSSL_CRYPTO_LIBRARY} "${CMAKE_CURRENT_BINARY_DIR}/${OPENSSL_CRYPTO_LIBRARY_FILENAME}" COPYONLY)
-    endif()
-endif()
+    IF (OPENSSL_CRYPTO_SHARED)
+        GET_FILENAME_COMPONENT(OPENSSL_CRYPTO_LIBRARY_FILENAME ${OPENSSL_CRYPTO_LIBRARY} NAME)
+        CONFIGURE_FILE(${OPENSSL_CRYPTO_LIBRARY} "${CMAKE_CURRENT_BINARY_DIR}/${OPENSSL_CRYPTO_LIBRARY_FILENAME}" COPYONLY)
+    ENDIF()
+ENDIF()
