@@ -37,10 +37,10 @@
 CMRC_DECLARE(umskt);
 
 enum ACTIVATION_ALGORITHM {
-    WINDOWS       = 0,
-    OFFICE_XP     = 1,
-    OFFICE_2K32K7 = 2,
-    PLUS_DME      = 3,
+    WINDOWS     = 0,
+    OFFICE_XP   = 1,
+    OFFICE_2K3+ = 2,
+    PLUS_DME    = 3,
 };
 
 enum MODE {
