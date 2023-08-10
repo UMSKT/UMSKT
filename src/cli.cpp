@@ -385,6 +385,8 @@ int CLI::BINK1998Generate() {
 
     // Specify whether an upgrade version or not
     bool bUpgrade = false;
+    if (options->upgrade == true)
+	    bUpgrade = true;
 
     for (int i = 0; i < this->total; i++) {
         PIDGEN3::BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw, bUpgrade, this->pKey);
@@ -435,6 +437,11 @@ int CLI::BINK2002Generate() {
         if (this->options.verbose) {
             fmt::print("> AuthInfo: {}\n", pAuthInfo);
         }
+
+        // Specify whether an upgrade version or not
+        bool bUpgrade = false;
+        if (options->upgrade == true)
+            bUpgrade = true;
 
         PIDGEN3::BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, false, this->pKey);
 
