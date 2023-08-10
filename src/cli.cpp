@@ -53,7 +53,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-n --number\tnumber of keys to generate (defaults to 1)\n");
     fmt::print("\t-f --file\tspecify which keys file to load\n");
     fmt::print("\t-i --instid\tinstallation ID used to generate confirmation ID\n");
-    fmt::print("\t-m --mode\tproduct family to activate. valid options are \"Windows\", \"OfficeXP\", \"Office2K3+\", \"PlusDME\"\n");
+    fmt::print("\t-m --mode\tproduct family to activate. valid options are \"WINDOWS\", \"OFFICEXP\", \"OFFICE2K3+\", \"PLUSDME\" (defaults to \"WINDOWS\")\n");
     fmt::print("\t-p --productid\tthe product ID of the Program to activate. only required for Office 2K3+ programs\n");
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
@@ -163,20 +163,23 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             options->instid = argv[i+1];
             options->applicationMode = MODE_ACTIVATION;
             i++;
-            if (strcmp(argv[i], "-m") == 0 || strcmp(argv[i], "--mode") == 0) {
-                if (strcmp(argv[i+1], "windows") == 0 || strcmp(argv[i+1], "Windows") == 0 || strcmp(argv[i+1], "WINDOWS") == 0) {
-                    options->activationMode = WINDOWS;
-		} else if (strcmp(argv[i+1], "officexp") == 0 || strcmp(argv[i+1], "OffieXP") == 0 || strcmp(argv[i+1], "OFFICEXP") == 0) {
-                    options->activationMode = OFFICE_XP;
-		} else if (strcmp(argv[i+1], "office2k3+") == 0 || strcmp(argv[i+1], "Offie2K3+") == 0 || strcmp(argv[i+1], "OFFICE2K3+") == 0) {
-                    options->activationMode = OFFICE_2K3+;
-		} else if (strcmp(argv[i+1], "plusdme") == 0 || strcmp(argv[i+1], "PlusDME") == 0 || strcmp(argv[i+1], "PLUSDME") == 0) {
-                    options->activationMode = PLUS_DME;
-		}
-            }
-            if (options.activationMode == OFFICE_2K3+) {
-                options->productid = argv[i+1];
+            break;
+        } else if (arg == "-m" || arg == "--mode") {
+            if (strcmp(argv[i+1], "WINDOWS") == 0) {
+                options->activationMode = WINDOWS;
+	    } else if (strcmp(argv[i+1], "OFFICEXP") == 0) {
+                options->activationMode = OFFICE_XP;
+	    } else if (strcmp(argv[i+1], "OFFICE2K3+") == 0) {
+                options->activationMode = OFFICE_2K3+;
+	    } else if (strcmp(argv[i+1], "PLUSDME") == 0) {
+                options->activationMode = PLUS_DME;
 	    }
+            i++;
+            break;
+        } else if (arg == "-p" || arg == "--productid") {
+            options->productid = argv[i+1];
+	    }
+            i++;
             break;
         } else if (arg == "-V" || arg == "--validate") {
             if (i == argc - 1) {
@@ -190,6 +193,10 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
         } else {
             options->error = true;
         }
+    }
+
+    if (options.activationMode == OFFICE_2K3+ && options.productid == "") {
+        return options->error = true;
     }
 
     return !options->error;
@@ -535,7 +542,7 @@ int CLI::BINK2002Validate() {
 
 int CLI::ConfirmationID() {
     char confirmation_id[49];
-    int err = ConfirmationID::Generate(this->options.instid.c_str(), confirmation_id);
+    int err = ConfirmationID::Generate(this->options.instid.c_str(), confirmation_id, options.activationMode);
 
     switch (err) {
         case ERR_TOO_SHORT:
