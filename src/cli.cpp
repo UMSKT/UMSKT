@@ -57,6 +57,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
     fmt::print("\t-s --serial\tspecifies a serial to use in the product ID (defaults to random, BINK1998 only)\n");
+    fmt::print("\t-u --upgrade\tspecifies the Product Key will be an \"Upgrade\" version\n");
     fmt::print("\t-V --validate\tproduct key to validate signature\n");
     fmt::print("\n");
 }
@@ -71,6 +72,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             640,
             0,
             1,
+	    false,
             false,
             false,
             false,
@@ -137,6 +139,8 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
                 options->serial = serial_val;
             }
             i++;
+	} else if (arg == "-u" || arg == "--upgrade") {
+	    options->upgrade = true;
         } else if (arg == "-f" || arg == "--file") {
             if (i == argc - 1) {
                 options->error = true;
@@ -381,6 +385,8 @@ int CLI::BINK1998Generate() {
 
     // Specify whether an upgrade version or not
     bool bUpgrade = false;
+    if (options.upgrade == true)
+	    bUpgrade = true;
 
     for (int i = 0; i < this->total; i++) {
         PIDGEN3::BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw, bUpgrade, this->pKey);
@@ -432,7 +438,12 @@ int CLI::BINK2002Generate() {
             fmt::print("> AuthInfo: {}\n", pAuthInfo);
         }
 
-        PIDGEN3::BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, false, this->pKey);
+        // Specify whether an upgrade version or not
+        bool bUpgrade = false;
+        if (options.upgrade == true)
+            bUpgrade = true;
+
+        PIDGEN3::BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, bUpgrade, this->pKey);
 
         bool isValid = PIDGEN3::BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
         if (isValid) {
