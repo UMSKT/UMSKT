@@ -443,7 +443,7 @@ int CLI::BINK2002Generate() {
         if (options->upgrade == true)
             bUpgrade = true;
 
-        PIDGEN3::BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, false, this->pKey);
+        PIDGEN3::BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, bUpgrade, this->pKey);
 
         bool isValid = PIDGEN3::BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
         if (isValid) {
