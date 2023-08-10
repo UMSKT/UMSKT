@@ -145,6 +145,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             i++;
 	} else if (arg == "-u" || arg == "--upgrade") {
 	    options->upgrade = true;
+            break;
         } else if (arg == "-f" || arg == "--file") {
             if (i == argc - 1) {
                 options->error = true;
