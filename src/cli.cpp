@@ -57,6 +57,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
     fmt::print("\t-s --serial\tspecifies a serial to use in the product ID (defaults to random, BINK1998 only)\n");
+    fmt::print("\t-u --upgrade\tspecifies the Product Key will be an \"Upgrade\" version\n");
     fmt::print("\t-V --validate\tproduct key to validate signature\n");
     fmt::print("\n");
 }
@@ -71,6 +72,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             640,
             0,
             1,
+	    false,
 	    false,
             false,
             false,
