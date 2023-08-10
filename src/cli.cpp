@@ -53,7 +53,8 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-n --number\tnumber of keys to generate (defaults to 1)\n");
     fmt::print("\t-f --file\tspecify which keys file to load\n");
     fmt::print("\t-i --instid\tinstallation ID used to generate confirmation ID\n");
-    fmt::print("\t-p --productid\tthe product ID of the Program to activate. only required for Office 2003 or Office 2007 programs\n");
+    fmt::print("\t-m --mode\tproduct family to activate. valid options are \"Windows\", \"OfficeXP\", \"Office2K3+\", \"PlusDME\"\n");
+    fmt::print("\t-p --productid\tthe product ID of the Program to activate. only required for Office 2K3 or Office 2K7 programs\n");
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
@@ -80,7 +81,8 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             false,
             false,
             false,
-            MODE_BINK1998_GENERATE
+            MODE_BINK1998_GENERATE,
+	    WINDOWS
     };
 
     for (int i = 1; i < argc; i++) {
@@ -160,6 +162,9 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             options->instid = argv[i+1];
             options->applicationMode = MODE_CONFIRM_ID_LEGACY;
             i++;
+            if (strcmp(argv[i], "-m") == 0 || strcmp(argv[i], "--mode") == 0) {
+                //
+            }
             if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--productid") == 0) {
                 options->productid = argv[i+1];
                 options->applicationMode = MODE_CONFIRM_ID_NEWGEN;
