@@ -102,8 +102,6 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
                 options->numKeys = nKeys;
             }
             i++;
-	} else if (arg == "-u" || arg == "--upgrade") {
-	    options->upgrade = true;
         } else if (arg == "-b" || arg == "--bink") {
             if (i == argc - 1) {
                 options->error = true;
@@ -141,6 +139,8 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
                 options->serial = serial_val;
             }
             i++;
+	} else if (arg == "-u" || arg == "--upgrade") {
+	    options->upgrade = true;
         } else if (arg == "-f" || arg == "--file") {
             if (i == argc - 1) {
                 options->error = true;
