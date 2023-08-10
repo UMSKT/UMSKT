@@ -27,8 +27,8 @@ on:
     branches: [ "master" ]
 
 env:
-  CMAKE_C_COMPILER: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-gcc
-  CMAKE_CXX_COMPILER: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-g++
+  CMAKE_C_COMPILER: ${{ github.workspace }}/djgpp/bin/i386-pc-msdosdjgpp-gcc
+  CMAKE_CXX_COMPILER: ${{ github.workspace }}/djgpp/bin/i386-pc-msdosdjgpp-g++
   CMAKE_FIND_ROOT_PATH: ${{ github.workspace }}/djgpp
   CMAKE_FIND_ROOT_PATH_MODE_PROGRAM: NEVER
   CMAKE_FIND_ROOT_PATH_MODE_LIBRARY: ONLY
@@ -47,9 +47,10 @@ jobs:
 
       - name: Download and Setup DJGPP Toolchain
         run: |
-          wget https://github.com/andrewwutw/build-djgpp/releases/download/v3.4/djgpp-linux64-gcc1220.tar.bz2
-          tar xjf djgpp-linux64-gcc1220.tar.bz2
+          mkdir ${{ github.workspace }}/djgpp
           cd ${{ github.workspace }}/djgpp
+          wget https://github.com/UMSKT/build-djgpp/releases/download/toolchain/toolchain.tar.gz
+          tar xzf toolchain.tar.gz
           git clone https://github.com/UMSKT/Watt-32.git watt32
           cd watt32/util
           make clean && make linux
@@ -67,7 +68,7 @@ jobs:
           ./Configure no-threads -DOPENSSL_DEV_NO_ATOMICS --prefix=${{ github.workspace }}/djgpp DJGPP
           make && make install
           popd
-          ls ${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin/
+          ls ${{ github.workspace }}/djgpp/i386-pc-msdosdjgpp/bin/
 
       - name: Checkout Source Tree
         uses: actions/checkout@v3
