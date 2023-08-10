@@ -73,7 +73,6 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             0,
             1,
 	    false,
-	    false,
             false,
             false,
             false,
