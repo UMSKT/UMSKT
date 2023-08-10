@@ -27,7 +27,7 @@
 #include "pidgen3/BINK2002.h"
 #include "pidgen2/PIDGEN2.h"
 
-FNEXPORT int ConfirmationID_Generate(const char* installation_id_str, char confirmation_id[49]) {
+FNEXPORT int ConfirmationID_Generate(const char* installation_id_str, char confirmation_id[49], int activationMode) {
     return ConfirmationID::Generate(installation_id_str, confirmation_id);
 }
 
