@@ -45,6 +45,31 @@ else()
     set(OPENSSL_MSVC_STATIC_RT TRUE)
 endif()
 
+# if we found shared libraries - do the following:
+string(REGEX MATCH "(\\.so|\\.dll|\\.dylib)$" OPENSSL_CRYPTO_SHARED "${OPENSSL_CRYPTO_LIBRARY}")
+if(OPENSSL_CRYPTO_SHARED)
+    message(STATUS "[UMSKT] Detected Shared library version of OpenSSL")
+    set(BUILD_SHARED_LIBS ON)
+else()
+    message(STATUS "[UMSKT] Detected Static Library version of OpenSSL")
+endif()
+
+# if we're compiling with MSVC, respect the DEBUG compile option
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    if(NOT BUILD_SHARED_LIBS)
+        set(CMAKE_CXX_FLAGS_RELEASE "/MT")
+        set(CMAKE_CXX_FLAGS_DEBUG "/MTd")
+    else()
+        set(CMAKE_CXX_FLAGS_RELEASE "/MD")
+        set(CMAKE_CXX_FLAGS_DEBUG "/MDd")
+    endif()
+    set(CMAKE_EXE_LINKER_FLAGS "/INCREMENTAL:NO /NODEFAULTLIB:MSVCRT")
+    set(CMAKE_ENABLE_EXPORTS ON)
+    set(UMSKT_EXE_WINDOWS_EXTRA src/windows/umskt.rc)
+    set(UMSKT_EXE_WINDOWS_DLL src/windows/dllmain.cpp)
+endif()
+
 if(MUSL_STATIC AND NOT UMSKT_USE_SHARED_OPENSSL)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc -static-libstdc++")
@@ -78,10 +103,10 @@ CPMAddPackage(
 # For Emscripten builds, set CMAKE_TOOLCHAIN_FILE to the appropriate file
 set(EMSCRIPTEN_BUILD OFF CACHE BOOL "Build for Emscripten" FORCE)
 if(EMSCRIPTEN_BUILD)
-    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/cmake/Emscripten.cmake" CACHE STRING "Emscripten toolchain file")
+    set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/cmake/Emscripten.cmake" CACHE string "Emscripten toolchain file")
 endif()
 
-CMRC_ADD_RESOURCE_LIBRARY(umskt-rc ALIAS umskt::rc NAMESPACE umskt keys.json)
+cmrc_add_resource_library(umskt-rc ALIAS umskt::rc NAMESPACE umskt keys.json)
 
 set(LIBUMSKT_SRC
     src/libumskt/libumskt.cpp
@@ -100,10 +125,41 @@ else()
     add_library(_umskt STATIC ${LIBUMSKT_SRC})
 endif()
 
-target_include_directories(_umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
-target_link_libraries(_umskt PRIVATE OpenSSL::Crypto fmt)
+#### Separate Build Path for emscripten
+if (EMSCRIPTEN)
+    add_executable(umskt ${LIBUMSKT_SRC})
+    target_include_directories(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
+    target_link_libraries(umskt -static OpenSSL::Crypto cryptopp::cryptopp fmt)
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
 
-add_executable(umskt src/main.cpp src/cli.cpp ${UMSKT_EXE_WINDOWS_EXTRA})
+    set_target_properties(umskt PROPERTIES COMPILE_FLAGS "-Os -sEXPORTED_RUNTIME_METHODS=ccall,cwrap")
+    set_target_properties(umskt PROPERTIES LINK_FLAGS    "-Os -sWASM=1 -sEXPORT_ALL=1 -sEXPORTED_RUNTIME_METHODS=ccall,cwrap --no-entry")
+else()
+    if(NOT UMSKT_USE_SHARED_OPENSSL)
+        ### Static library compilation
+        add_library(_umskt STATIC ${LIBUMSKT_SRC})
+        target_include_directories(_umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
+        target_link_libraries(_umskt -static OpenSSL::Crypto fmt ${UMSKT_LINK_LIBS})
+    else()
+        ### Shared library compilation
+        add_library(_umskt SHARED ${LIBUMSKT_SRC} ${UMSKT_EXE_WINDOWS_EXTRA} ${UMSKT_EXE_WINDOWS_DLL})
+        target_include_directories(_umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
+        target_link_libraries(_umskt OpenSSL::Crypto fmt ${UMSKT_LINK_LIBS})
+        target_link_directories(_umskt PUBLIC ${UMSKT_LINK_DIRS})
+    endif()
 
-target_include_directories(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
-target_link_libraries(umskt PRIVATE _umskt OpenSSL::Crypto fmt nlohmann_json::nlohmann_json umskt::rc)
+    ### UMSKT executable compilation
+    add_executable(umskt src/main.cpp src/cli.cpp ${UMSKT_EXE_WINDOWS_EXTRA})
+    target_include_directories(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
+    target_link_libraries(umskt _umskt OpenSSL::Crypto fmt nlohmann_json::nlohmann_json umskt::rc ${UMSKT_LINK_LIBS})
+    target_link_directories(umskt PUBLIC ${UMSKT_LINK_DIRS})
+    if(MSVC AND MSVC_MSDOS_STUB)
+        set_property(TARGET umskt APPEND PROPERTY LINK_FLAGS /STUB:${MSVC_MSDOS_STUB})
+    endif()
+
+    ### Copy Shared Libraries and dependency files
+    if (OPENSSL_CRYPTO_SHARED)
+        get_filename_component(OPENSSL_CRYPTO_LIBRARY_FILENAME ${OPENSSL_CRYPTO_LIBRARY} NAME)
+        configure_file(${OPENSSL_CRYPTO_LIBRARY} "${CMAKE_CURRENT_BINARY_DIR}/${OPENSSL_CRYPTO_LIBRARY_FILENAME}" COPYONLY)
+    endif()
+endif()
