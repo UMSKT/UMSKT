@@ -53,7 +53,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-n --number\tnumber of keys to generate (defaults to 1)\n");
     fmt::print("\t-f --file\tspecify which keys file to load\n");
     fmt::print("\t-i --instid\tinstallation ID used to generate confirmation ID\n");
-    fmt::print("\t-m --mode\tproduct family to activate. valid options are \"Windows\", \"OfficeXP\", \"Office2K3+\", \"PlusDME\"\n");
+    fmt::print("\t-m --mode\tproduct family to activate. valid options are \"Windows\", \"OfficeXP\", \"Office2K3+\", \"PlusDME\" (defaults to \"Windows\"\n");
     fmt::print("\t-p --productid\tthe product ID of the Program to activate. only required for Office 2K3 or Office 2K7 programs\n");
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
@@ -164,12 +164,24 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             options->applicationMode = MODE_CONFIRM_ID_LEGACY;
             i++;
             if (strcmp(argv[i], "-m") == 0 || strcmp(argv[i], "--mode") == 0) {
-                //
+                if (strcmp(argv[i+1], "windows") == 0 || strcmp(argv[i+1], "Windows") == 0 || strcmp(argv[i+1], "WINDOWS") == 0) {
+                    activationMode = WINDOWS;
+		} else if (strcmp(argv[i+1], "officexp") == 0 || strcmp(argv[i+1], "OffieXP") == 0 || strcmp(argv[i+1], "OFFICEXP") == 0) {
+                    activationMode = OFFICE_XP;
+		} else if (strcmp(argv[i+1], "office2k3+") == 0 || strcmp(argv[i+1], "Offie2K3+") == 0 || strcmp(argv[i+1], "OFFICE2K3+") == 0) {
+                    activationMode = OFFICE_2K32K7;
+		} else if (strcmp(argv[i+1], "plusdme") == 0 || strcmp(argv[i+1], "PlusDME") == 0 || strcmp(argv[i+1], "PLUSDME") == 0) {
+                    activationMode = PLUS_DME;
+		} else {
+                    activationMode = WINDOWS;
+                }
+                i++;
             }
             if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--productid") == 0) {
                 options->productid = argv[i+1];
                 options->applicationMode = MODE_CONFIRM_ID_NEWGEN;
 	    }
+            break;
         } else if (arg == "-V" || arg == "--validate") {
             if (i == argc - 1) {
                 options->error = true;
