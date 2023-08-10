@@ -37,11 +37,10 @@
 CMRC_DECLARE(umskt);
 
 enum ACTIVATION_ALGORITHM {
-    INVALID       = 0,
-    WINDOWS       = 1,
-    OFFICE_LEGACY = 3,
-    OFFICE_NEWGEN = 4,
-    PLUS_DME      = 5,
+    WINDOWS       = 0,
+    OFFICE_XP     = 1,
+    OFFICE_2K32K7 = 2,
+    PLUS_DME      = 3,
 };
 
 enum MODE {
@@ -49,8 +48,7 @@ enum MODE {
     MODE_BINK2002_GENERATE = 1,
     MODE_BINK1998_VALIDATE = 2,
     MODE_BINK2002_VALIDATE = 3,
-    MODE_CONFIRM_ID_LEGACY = 4,
-    MODE_CONFIRM_ID_NEWGEN = 5,
+    MODE_CONFIRMATION_ID   = 4,
 };
 
 struct Options {
