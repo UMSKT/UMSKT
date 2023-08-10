@@ -36,6 +36,14 @@
 
 CMRC_DECLARE(umskt);
 
+enum ACTIVATION_ALGORITHM {
+    INVALID       = 0,
+    WINDOWS       = 1,
+    OFFICE_LEGACY = 3,
+    OFFICE_NEWGEN = 4,
+    PLUS_DME      = 5,
+};
+
 enum MODE {
     MODE_BINK1998_GENERATE = 0,
     MODE_BINK2002_GENERATE = 1,
@@ -62,6 +70,7 @@ struct Options {
     bool list;
 
     MODE applicationMode;
+    ACTIVATION_ALGORITHM activationMode;
 };
 
 class CLI {
