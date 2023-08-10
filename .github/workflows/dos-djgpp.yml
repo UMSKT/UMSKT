@@ -21,7 +21,10 @@
 name: C/C++ CI (DOS DJGPP)
 
 on:
-  workflow_call:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 env:
   CC: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-gcc
