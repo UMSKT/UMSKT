@@ -910,7 +910,12 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 		case 3:
 			decode_iid_new_version(installation_id, hardwareID, &version);
 			productID1 = atoi(productid.substr(0,5));
-			if (strcmp(toupper(productid.substr(6,3)), "OEM") == 0) {
+			std::string channelid = productid.substr(6,3);
+			char *p = &channelid[0];
+			for (; *p; p++) {
+				*p = toupper((unsigned char)*p);
+			}
+			if (strcmp(channelid, "OEM") == 0) {
 				productID2 = atoi(productID.substr(12,3));
 				productID3 = calculateCheckDigit((atoi(productID.substr(15,1)) * 100000) + (atoi(productid.substr(18,5))));
 				productID4 = atoi((productid.substr(10,2)) / 100000) * 1000;
