@@ -29,14 +29,6 @@
 
 #include "confid.h"
 
-enum ACTIVATION_ALGORITHM {
-    WINDOWS     = 0,
-    OFFICE_XP   = 1,
-    OFFICE_2K3  = 2,
-    OFFICE_2K7  = 3
-    PLUS_DME    = 4,
-};
-
 QWORD MOD = 0;
 QWORD NON_RESIDUE = 0;
 QWORD f[6] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
@@ -46,8 +38,6 @@ unsigned int productID3;
 unsigned int productID4;
 unsigned int version;
 unsigned char hardwareID[8];
-
-ACTIVATION_ALGORITHM activationMode = 0;
 
 QWORD ConfirmationID::residue_add(QWORD x, QWORD y)
 {
@@ -778,7 +768,7 @@ void ConfirmationID::Unmix(unsigned char* buffer, size_t bufSize, const unsigned
 
 int ConfirmationID::Generate(const char* installation_id_str, char confirmation_id[49], int mode, std::string productid)
 {
-	activationMode = mode;
+	int activationMode = mode;
 	switch (activationMode) {
 		case 0:
 			MOD = 0x16A6B036D7F2A79;
