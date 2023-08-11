@@ -165,15 +165,20 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             i++;
             break;
         } else if (arg == "-m" || arg == "--mode") {
-            if (strcmp(argv[i+1], "WINDOWS") == 0) {
+            std::string mode = argv[i+1];
+            char *p = &mode[0];
+            for (; *p; p++) {
+                *p = toupper((unsigned char)*p);
+	    }
+            if (strcmp(mode, "WINDOWS") == 0) {
                 options->activationMode = WINDOWS;
-	    } else if (strcmp(argv[i+1], "OFFICEXP") == 0) {
+	    } else if (mode, "OFFICEXP") == 0) {
                 options->activationMode = OFFICE_XP;
-	    } else if (strcmp(argv[i+1], "OFFICE2K3") == 0) {
+	    } else if (mode, "OFFICE2K3") == 0) {
                 options->activationMode = OFFICE_2K3;
-            } else if (strcmp(argv[i+1], "OFFICE2K7") == 0) {
+            } else if (mode, "OFFICE2K7") == 0) {
                 options->activationMode = OFFICE_2K7;
-	    } else if (strcmp(argv[i+1], "PLUSDME") == 0) {
+	    } else if (mode, "PLUSDME") == 0) {
                 options->activationMode = PLUS_DME;
 	    }
             i++;
@@ -197,7 +202,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
         }
     }
 
-    if (options.activationMode == OFFICE_2K3+ && options.productid == "") {
+    if ((options.activationMode == OFFICE_2K3 || options.activationMode == OFFICE_2K7) && options.productid == "") {
         return options->error = true;
     }
 
