@@ -32,10 +32,10 @@
 QWORD MOD = 0;
 QWORD NON_RESIDUE = 0;
 QWORD f[6] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-unsigned int productID1;
-unsigned int productID2;
-unsigned int productID3;
-unsigned int productID4;
+int productID1;
+int productID2;
+int productID3;
+int productID4;
 
 int ConfirmationID::calculateCheckDigit(int pid)
 {
@@ -681,13 +681,13 @@ void ConfirmationID::sha1_single_block(unsigned char input[64], unsigned char ou
 	output[16] = e >> 24; output[17] = e >> 16; output[18] = e >> 8; output[19] = e;
 }
 
-void ConfirmationID::decode_iid_new_version(unsigned char* iid, unsigned char* hwid, unsigned int* version)
+void ConfirmationID::decode_iid_new_version(unsigned char* iid, unsigned char* hwid, int* version)
 {
     QWORD buffer[5];
     int i;
     for (i = 0; i < 5; i++)
         memcpy(&buffer[i], (iid + (4 * i)), 4);
-    DWORD v1 = (buffer[3] & 0xFFFFFFF8) | 2; // Not really sure but seems to work
+    DWORD v1 = (buffer[3] & 0xFFFFFFF8) | 2;
     DWORD v2 = ((buffer[3] & 7) << 29) | (buffer[2] >> 3);
     QWORD hardwareIDVal = ((QWORD)v1 << 32) | v2;
     for (i = 0; i < 8; ++i)
@@ -777,7 +777,7 @@ void ConfirmationID::Unmix(unsigned char* buffer, size_t bufSize, const unsigned
 
 int ConfirmationID::Generate(const char* installation_id_str, char confirmation_id[49], int mode, std::string productid)
 {
-	unsigned int version;
+	int version;
 	unsigned char hardwareID[8];
 	int activationMode = mode;
 	switch (activationMode) {
