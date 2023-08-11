@@ -36,8 +36,17 @@ unsigned int productID1;
 unsigned int productID2;
 unsigned int productID3;
 unsigned int productID4;
-unsigned int version;
-unsigned char hardwareID[8];
+
+int ConfirmationID::calculateCheckDigit(unsigned int pid)
+{
+	unsigned int i = 0, j = 0, k = 0;
+	for (j = pid; j; i += k)
+	{
+		k = j % 10;
+		j /= 10;
+	}
+	return ((10 * pid) - (i % 7)) + 7;
+}
 
 QWORD ConfirmationID::residue_add(QWORD x, QWORD y)
 {
@@ -768,6 +777,8 @@ void ConfirmationID::Unmix(unsigned char* buffer, size_t bufSize, const unsigned
 
 int ConfirmationID::Generate(const char* installation_id_str, char confirmation_id[49], int mode, std::string productid)
 {
+	unsigned int version;
+	unsigned char hardwareID[8];
 	int activationMode = mode;
 	switch (activationMode) {
 		case 0:
@@ -898,14 +909,16 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 		case 2:
 		case 3:
 			decode_iid_new_version(installation_id, hardwareID, &version);
-			std::string buf1(productid, 5);
-			productID1 = atoi(buf1.c_str());
-			std::string buf2(productid + 6, 3);
-			productID2 = atoi(buf2.c_str());
-			std::string buf3(productid + 10, 7);
-			productID3 = atoi(buf3.c_str());
-			std::string buf4(productid + 18, 5);
-			producID4 = atoi(buf4.c_str());
+			productID1 = atoi(productid.substr(0,5));
+			if (strcmp(toupper(productid.substr(6,3)), "OEM") == 0) {
+				productID2 = atoi(productID.substr(12,3));
+				productID3 = calculateCheckDigit((atoi(productID.substr(15,1)) * 100000) + (atoi(productid.substr(18,5))));
+				productID4 = atoi((productid.substr(10,2)) / 100000) * 1000;
+			} else {
+				productID2 = atoi(productid.substr(6,3));
+				productID3 = atoi(productid.substr(10,7));
+				productID4 = atoi(productid.substr(18,5));
+			}
 			switch (activationMode) {
 				case 2:
 					if (version != 3)
