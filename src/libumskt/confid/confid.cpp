@@ -37,7 +37,7 @@ unsigned int productID2;
 unsigned int productID3;
 unsigned int productID4;
 
-int ConfirmationID::calculateCheckDigit(unsigned int pid)
+int ConfirmationID::calculateCheckDigit(int pid)
 {
 	unsigned int i = 0, j = 0, k = 0;
 	for (j = pid; j; i += k)
