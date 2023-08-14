@@ -22,9 +22,10 @@ name: C/C++ CI (Windows)
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "*" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "*" ]
+  workflow_dispatch:
 
 jobs:
   build-32bit:
