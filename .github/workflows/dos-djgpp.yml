@@ -22,9 +22,10 @@ name: C/C++ CI (DOS DJGPP)
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "*" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "*" ]
+  workflow_dispatch:
 
 env:
   CMAKE_C_COMPILER: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-gcc
