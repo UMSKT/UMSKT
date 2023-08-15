@@ -23,6 +23,7 @@ name: C/C++ CI (Windows)
 on:
   push:
     branches: [ "*" ]
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
   workflow_dispatch:
 
 jobs:
