@@ -414,10 +414,7 @@ int CLI::BINK1998Generate() {
     if (this->options.verbose) {
         fmt::print("\nSuccess count: {}/{}", this->count, this->total);
     }
-#ifndef _WIN32
     fmt::print("\n");
-#endif
-
     return 0;
 }
 
@@ -468,10 +465,7 @@ int CLI::BINK2002Generate() {
     if (this->options.verbose) {
         fmt::print("\nSuccess count: {}/{}", this->count, this->total);
     }
-#ifndef _WIN32
     fmt::print("\n");
-#endif
-
     return 0;
 }
 
@@ -544,9 +538,7 @@ int CLI::ConfirmationID() {
 
         case SUCCESS:
             fmt::print(confirmation_id);
-#ifndef _WIN32
             fmt::print("\n");
-#endif
             return 0;
 
         default:
