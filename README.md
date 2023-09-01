@@ -6,17 +6,24 @@
 [![libera.chat - #mspid](https://img.shields.io/badge/libera.chat-%23mspid-brightgreen)](https://web.libera.chat/gamja/?nick=Guest?#mspid)
 
 **Build status**
-[![C/C++ CI (Linux)](https://github.com/UMSKT/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml)
+
 [![C/C++ CI (Windows)](https://github.com/UMSKT/UMSKT/actions/workflows/windows.yml/badge.svg)](../../actions/workflows/windows.yml)
+
 [![C/C++ CI (macOS)](https://github.com/UMSKT/UMSKT/actions/workflows/macos.yml/badge.svg)](../../actions/workflows/macos.yml)
-[![C/C++ CI (DOS DJGPP)](https://github.com/UMSKT/UMSKT/actions/workflows/dos-djgpp.yml/badge.svg)](../../actions/workflows/freebsd.yml)
+
+[![C/C++ CI (Linux)](https://github.com/UMSKT/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml)
+
 [![C/C++ CI (FreeBSD)](https://github.com/UMSKT/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/dos-djgpp.yml)
 
-Plan of Action / ToDo List
+[![C/C++ CI (DOS DJGPP)](https://github.com/UMSKT/UMSKT/actions/workflows/dos-djgpp.yml/badge.svg)](../../actions/workflows/freebsd.yml)
+
+------
+
+### Plan of Action / ToDo List
 
 In light of the recent exponential interest in this project I've decided to put updates of this project here:
 
-    Please see ticket #8 for more information
+[Please see ticket #8 for more information](https://github.com/UMSKT/UMSKT/issues/8)
 
 ------
 
@@ -34,6 +41,7 @@ In light of the recent exponential interest in this project I've decided to put 
 
 * It all comes down to four simple steps:
 
+------
 
 ### **Usage**
 #### 1. Download the latest version of UMSKT
@@ -46,9 +54,9 @@ In light of the recent exponential interest in this project I've decided to put 
     * ~~Download the latest release for your operating system and architecture from [the releases page](../../releases)~~
     * No official releases right now, use the other method to get the latest version.
 
-* **Note:** Before continuing, please ensure you have the `umskt` executable extracted.
+* **Note:** Before continuing, please ensure you have the `umskt` executable extracted and on UNIX-like systems, have execution permissions (`chmod +x umskt`).
 
-#### 2. Run `umskt` to generate a key, or add `--help` to see more options.
+#### 2. Run `umskt` to generate a key, or add `--help` or `-h` to see more options.
 
 #### 3. *(Activation step for `Retail` and `OEM` only)*
 * After installation, you will be prompted to activate Windows.
@@ -74,6 +82,7 @@ The list of people who have helped to bring the XP generation to where it is now
 * TheTank20
 * InvoxiPlayGames
 * brakmic
+* techguy16
 
 (the list will be updated to add more collaborators)
 
@@ -81,20 +90,26 @@ The list of people who have helped to bring the XP generation to where it is now
 
 ### **Development Requirements:**
 
-* `CMake, make, gcc` (`build-essential`)
+* `build-essential`
+  * `cmake`
+  * `make`
+  * `gcc`
+  * `g++`
 * `git`
 
 #### Build Steps:
 
-1. `git clone`
-2. `cd build/ && cmake ../ && make`
+1. `git clone https://github.com/UMSKT/UMSKT`
+2. `cd UMSKT/build`
+3. `cmake ..`
+4. `make`
 
 
 -----
 
 ### **Known Ports**
 
-| Language | Author    | Repo URL                                              |
-|----------|-----------|-------------------------------------------------------|
-| Rust     | Alex Page | [anpage/umskt-rs](https://github.com/anpage/umskt-rs) |
-| Python | techguy16 | [techguy16/umsktpy](https://github.com/techguy16/umsktpy) |
+| Language | Author    | Repo URL                                                  |
+|----------|-----------|-----------------------------------------------------------|
+| Rust     | Alex Page | [anpage/umskt-rs](https://github.com/anpage/umskt-rs)     |
+| Python   | techguy16 | [techguy16/umsktpy](https://github.com/techguy16/umsktpy) |
