@@ -45,6 +45,9 @@
     "Office XP Applications": {
       "BINK": ["20", "21"]
     },
+    "Works Suite 2003 and 2004": {
+      "BINK": ["20", "21"]
+    },
     "Office XP": {
       "BINK": ["22", "23"]
     },
@@ -115,6 +118,9 @@
       "BINK": ["6E", "6F"]
     },
     "Office 2003 Small Business": {
+      "BINK": ["70", "71"]
+    },
+    "Office 2003 Student and Teacher": {
       "BINK": ["70", "71"]
     },
     "Office 2003 Professional": {

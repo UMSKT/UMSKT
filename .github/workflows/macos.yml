@@ -53,11 +53,6 @@ jobs:
           cd build/actions_upload
           ./umskt
 
-      - name: Zip artifact
-        run: |
-          cd build/actions_upload
-          zip -r UMSKT-macOS-${{ matrix.arch }}-static.zip umskt
-
       - name: Upload build artifact
         uses: actions/upload-artifact@v3.1.2
         with:
