@@ -28,7 +28,7 @@
   
  jobs: 
    build: 
-     runs-on: macos-12 
+     runs-on: macos-latest
      name: build-x86_64 
      steps: 
      - uses: actions/checkout@v3 
