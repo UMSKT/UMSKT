@@ -48,6 +48,7 @@ jobs:
           cmake ..
           make
           ./umskt  # Execute the test here
+          ./umskt -l
 
     - name: Move files to correct directory
       run: |
