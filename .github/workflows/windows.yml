@@ -136,7 +136,7 @@ jobs:
         uses: threeal/cmake-action@v1.2.0
         with:
           generator: "Visual Studio 17 2022"
-          args: -A "x64"
+          args: -A "x64" -T "v141_xp"
 
       - name: Build UMSKT
         working-directory: build
