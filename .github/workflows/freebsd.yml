@@ -1,62 +1,61 @@
-# This file is a part of the UMSKT Project
-#
-# Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# @FileCreated by techguy16 on 07/23/2023
-# @Maintainer techguy16
-
-name: C/C++ CI (FreeBSD)
-
-on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-
-jobs:
-  build:
-    runs-on: macos-12
-    name: build-x86_64
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Build & Test in FreeBSD
-      id: test
-      uses: vmactions/freebsd-vm@v0
-      with:
-        envs: 'MYTOKEN MYTOKEN2'
-        usesh: true
-        prepare: |
-          pkg install -y cmake openssl git bash
-
-        run: |
-          mkdir build
-          cd build
-          cmake ..
-          make
-          ./umskt  # Execute the test here
-          ./umskt -l
-
-    - name: Move files to correct directory
-      run: |
-          mkdir -p build/actions_upload
-          mv build/umskt build/actions_upload/umskt
-
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v3.1.2
-      with:
-        name: UMSKT-FreeBSD
-        path: build/actions_upload
+# This file is a part of the UMSKT Project 
+ # 
+ # Copyleft (C) 2019-2023 UMSKT Contributors (et.al.) 
+ # 
+ # This program is free software: you can redistribute it and/or modify 
+ # it under the terms of the GNU Affero General Public License as published by 
+ # the Free Software Foundation, either version 3 of the License, or 
+ # (at your option) any later version. 
+ # 
+ # This program is distributed in the hope that it will be useful, 
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+ # GNU Affero General Public License for more details. 
+ # 
+ # You should have received a copy of the GNU Affero General Public License 
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+ # 
+ # @FileCreated by techguy16 on 07/23/2023 
+ # @Maintainer techguy16 
+  
+ name: C/C++ CI (FreeBSD) 
+  
+ on: 
+   push: 
+     branches: [ "master" ] 
+   pull_request: 
+     branches: [ "master" ] 
+  
+ jobs: 
+   build: 
+     runs-on: macos-12 
+     name: build-x86_64 
+     steps: 
+     - uses: actions/checkout@v3 
+  
+     - name: Build & Test in FreeBSD 
+       id: test 
+       uses: vmactions/freebsd-vm@v0 
+       with: 
+         envs: 'MYTOKEN MYTOKEN2' 
+         usesh: true 
+         prepare: | 
+           pkg install -y cmake openssl git bash 
+  
+         run: | 
+           mkdir build 
+           cd build 
+           cmake .. 
+           make 
+           ./umskt  # Execute the test here 
+  
+     - name: Move files to correct directory 
+       run: | 
+           mkdir -p build/actions_upload 
+           mv build/umskt build/actions_upload/umskt 
+  
+     - name: Upload build artifact 
+       uses: actions/upload-artifact@v3.1.2 
+       with: 
+         name: UMSKT-FreeBSD 
+         path: build/actions_upload
