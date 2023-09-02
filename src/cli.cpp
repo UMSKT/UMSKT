@@ -165,9 +165,10 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
         } else if (arg == "-m" || arg == "--mode") {
             std::string mode = argv[i+1];
             char *p = &mode[0];
-            for (int i = 0; *p; i++) {
-                *p+i = toupper((unsigned char)*p+i);
+            for (; *p; p++) {
+                *p = toupper((unsigned char)*p);
 	    }
+            p = &mode[0];
             if (strcmp(p, "WINDOWS") == 0) {
                 options->activationMode = WINDOWS;
 	    } else if (strcmp(p, "OFFICEXP") == 0) {
