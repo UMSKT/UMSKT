@@ -45,6 +45,12 @@ else()
     set(OPENSSL_MSVC_STATIC_RT TRUE)
 endif()
 
+# macOS does not support static build
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(OPENSSL_USE_STATIC_LIBS FALSE)
+    set(OPENSSL_MSVC_STATIC_RT FALSE)
+endif()
+
 if(MUSL_STATIC AND NOT UMSKT_USE_SHARED_OPENSSL)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc -static-libstdc++")
