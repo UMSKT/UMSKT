@@ -61,6 +61,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-s --serial\tspecifies a serial to use in the product ID (defaults to random, BINK1998 only)\n");
     fmt::print("\t-u --upgrade\tspecifies the Product Key will be an \"Upgrade\" version\n");
     fmt::print("\t-V --validate\tproduct key to validate signature\n");
+    fmt::print("\t-N --nonewline\tdisables newlines (for easier embedding in other apps)\n");
     fmt::print("\n");
 }
 
