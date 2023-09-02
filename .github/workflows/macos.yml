@@ -40,7 +40,7 @@ jobs:
       - name: Configure and build UMSKT
         run: |
           cd build
-          cmake -v -DCMAKE_BUILD_TYPE=Release ..
+          cmake -DCMAKE_BUILD_TYPE=Release ..
           make
 
       - name: Move files to correct directory
