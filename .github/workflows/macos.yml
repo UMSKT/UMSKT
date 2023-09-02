@@ -56,5 +56,5 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v3.1.2
         with:
-          name: UMSKT-macOS-${{ matrix.arch }}-static
+          name: UMSKT-macOS-${{ matrix.arch }}
           path: build/actions_upload
