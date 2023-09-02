@@ -61,7 +61,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-s --serial\tspecifies a serial to use in the product ID (defaults to random, BINK1998 only)\n");
     fmt::print("\t-u --upgrade\tspecifies the Product Key will be an \"Upgrade\" version\n");
     fmt::print("\t-V --validate\tproduct key to validate signature\n");
-    fmt::print("\t-N --nonewline\tdisables newlines (for easier embedding in other apps)\n");
+    fmt::print("\t-N --nonewlines\tdisables newlines (for easier embedding in other apps)\n");
     fmt::print("\n");
 }
 
@@ -450,7 +450,7 @@ int CLI::BINK1998Generate() {
     if (this->options.verbose) {
         fmt::print("\nSuccess count: {}/{}", this->count, this->total);
     }
-    if (this->options.nonewline == false) {
+    if (this->options.nonewlines == false) {
 	fmt::print("\n"); 
     }
     return 0;
@@ -498,7 +498,7 @@ int CLI::BINK2002Generate() {
     if (this->options.verbose) {
         fmt::print("\nSuccess count: {}/{}", this->count, this->total);
     }
-    if (this->options.nonewline == false) {
+    if (this->options.nonewlines == false) {
 	fmt::print("\n"); 
     }
 
@@ -574,7 +574,7 @@ int CLI::ConfirmationID() {
 
         case SUCCESS:
             fmt::print(confirmation_id);
-    	    if (this->options.nonewline == false) {
+    	    if (this->options.nonewlines == false) {
 	        fmt::print("\n"); 
     	    }
             return 0;
