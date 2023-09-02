@@ -41,6 +41,7 @@ typedef struct {
 } TDivisor;
 
 EXPORT class ConfirmationID {
+    static int calculateCheckDigit(int pid);
     static QWORD residue_add(QWORD x, QWORD y);
     static QWORD residue_sub(QWORD x, QWORD y);
     static QWORD __umul128(QWORD a, QWORD b, QWORD* hi);
@@ -60,11 +61,12 @@ EXPORT class ConfirmationID {
     static void divisor_mul128(const TDivisor* src, QWORD mult_lo, QWORD mult_hi, TDivisor* dst);
     static unsigned rol(unsigned x, int shift);
     static void sha1_single_block(unsigned char input[64], unsigned char output[20]);
+    static void decode_iid_new_version(unsigned char* iid, unsigned char* hwid, int* version);
     static void Mix(unsigned char* buffer, size_t bufSize, const unsigned char* key, size_t keySize);
     static void Unmix(unsigned char* buffer, size_t bufSize, const unsigned char* key, size_t keySize);
 
 public:
-    static int Generate(const char* installation_id_str, char confirmation_id[49]);
+    static int Generate(const char* installation_id_str, char confirmation_id[49], int mode, std::string productid);
     //EXPORT static int CLIRun();
 };
 
