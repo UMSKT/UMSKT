@@ -27,26 +27,26 @@ on:
   workflow_dispatch:
 
 env:
-  CMAKE_C_COMPILER: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-gcc
-  CMAKE_CXX_COMPILER: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-g++
+  CC: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-gcc
+  CXX: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-g++
   CMAKE_FIND_ROOT_PATH: ${{ github.workspace }}/djgpp
-  CMAKE_FIND_ROOT_PATH_MODE_PROGRAM: NEVER
-  CMAKE_FIND_ROOT_PATH_MODE_LIBRARY: ONLY
-  CMAKE_FIND_ROOT_PATH_MODE_INCLUDE: ONLY
-  CMAKE_FIND_ROOT_PATH_MODE_PACKAGE: ONLY
   WATT_ROOT: ${{ github.workspace }}/djgpp/watt32
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Source Tree
+        uses: actions/checkout@v3
+
       - name: Setup build environment
         run: |
           sudo apt -y update
-          sudo apt -y install build-essential cmake wget 7zip git flex nasm libslang2-dev pkg-config libslang2-modules gcc-multilib
+          sudo apt -y install build-essential cmake wget 7zip git flex libfl-dev nasm libslang2-dev pkg-config libslang2-modules gcc-multilib
 
       - name: Download and Setup DJGPP Toolchain
         run: |
+          pushd ${{ github.workspace }}
           wget https://github.com/andrewwutw/build-djgpp/releases/download/v3.4/djgpp-linux64-gcc1220.tar.bz2
           tar xjf djgpp-linux64-gcc1220.tar.bz2
           cd ${{ github.workspace }}/djgpp
@@ -54,40 +54,34 @@ jobs:
           cd watt32/util
           make clean && make linux
           cd ../src
+          source ${{ github.workspace }}/djgpp/setenv
           ./configur.sh djgpp
           make -f djgpp.mak
-          ln -s ${{ github.workspace }}/djgpp/watt32/lib/libwatt.a ${{ github.workspace }}/djgpp/lib
+          ln -s ${WATT_ROOT}/lib/libwatt.a ${{ github.workspace }}/djgpp/lib
 
-      - name: Checkout and Cross Compile OpenSSL 3.1
+      - name: Checkout and Cross Compile OpenSSL 3.1.2
         run: |
           git clone https://github.com/UMSKT/openssl.git openssl
           pushd openssl
-          git checkout openssl-3.1.1
           source ${{ github.workspace }}/djgpp/setenv
           ./Configure no-threads -DOPENSSL_DEV_NO_ATOMICS --prefix=${{ github.workspace }}/djgpp DJGPP
           make && make install
           popd
-          ls ${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin/
-
-      - name: Checkout Source Tree
-        uses: actions/checkout@v3
 
       - name: Build
-        uses: threeal/cmake-action@v1.2.0
-        with:
-          c-compiler: gcc
-          cxx-compiler: g++
-          options: OPENSSL_ROOT_DIR:string=${{ github.workspace }}/djgpp DJGPP_WATT32=ON
-          run-build: true
-
-      - name: Test & Move files to correct directory
         run: |
-          mkdir -p build/actions_upload
-          mv build/umskt build/actions_upload/umskt
+          source ${{ github.workspace }}/djgpp/setenv
+          pushd build
+          cmake ../ -D DJGPP_WATT32=${WATT_ROOT}/lib/libwatt.a -D CMAKE_FIND_ROOT_PATH=${CMAKE_FIND_ROOT_PATH}
+          make
+
+      - name: Move executable to upload directory
+        run: |
+          mkdir build/actions_upload
+          mv build/umskt.exe build/actions_upload/
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v3.1.2
         with:
-          name: UMSKT-DOS-DJGPP
+          name: UMSKT-DOS
           path: build/actions_upload
-

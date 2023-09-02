@@ -53,6 +53,8 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-n --number\tnumber of keys to generate (defaults to 1)\n");
     fmt::print("\t-f --file\tspecify which keys file to load\n");
     fmt::print("\t-i --instid\tinstallation ID used to generate confirmation ID\n");
+    fmt::print("\t-m --mode\tproduct family to activate.\n\t\t\tvalid options are \"WINDOWS\", \"OFFICEXP\", \"OFFICE2K3\", \"OFFICE2K7\" or \"PLUSDME\"\n\t\t\t(defaults to \"WINDOWS\")\n");
+    fmt::print("\t-p --productid\tthe product ID of the Program to activate. only required for Office 2K3 and Office 2K7 programs\n");
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
@@ -69,16 +71,18 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             "",
             "",
             "",
+            "",
             640,
             0,
             1,
-	    false,
             false,
             false,
             false,
             false,
             false,
-            MODE_BINK1998_GENERATE
+            false,
+            MODE_BINK1998_GENERATE,
+            WINDOWS
     };
 
     for (int i = 1; i < argc; i++) {
@@ -158,6 +162,28 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             options->instid = argv[i+1];
             options->applicationMode = MODE_CONFIRMATION_ID;
             i++;
+        } else if (arg == "-m" || arg == "--mode") {
+            std::string mode = argv[i+1];
+            char *p = &mode[0];
+            for (; *p; p++) {
+                *p = toupper((unsigned char)*p);
+	    }
+            p = &mode[0];
+            if (strcmp(p, "WINDOWS") == 0) {
+                options->activationMode = WINDOWS;
+	    } else if (strcmp(p, "OFFICEXP") == 0) {
+                options->activationMode = OFFICE_XP;
+	    } else if (strcmp(p, "OFFICE2K3") == 0) {
+                options->activationMode = OFFICE_2K3;
+            } else if (strcmp(p, "OFFICE2K7") == 0) {
+                options->activationMode = OFFICE_2K7;
+	    } else if (strcmp(p, "PLUSDME") == 0) {
+                options->activationMode = PLUS_DME;
+	    }
+            i++;
+        } else if (arg == "-p" || arg == "--productid") {
+            options->productid = argv[i+1];
+            i++;
         } else if (arg == "-V" || arg == "--validate") {
             if (i == argc - 1) {
                 options->error = true;
@@ -170,6 +196,11 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
         } else {
             options->error = true;
         }
+    }
+
+    // make sure that a product id is entered for OFFICE_2K3 or OFFICE_2K7 IIDs
+    if ((options->activationMode == OFFICE_2K3 || options->activationMode == OFFICE_2K7) && options->productid == "") {
+        return options->error = true;
     }
 
     return !options->error;
@@ -220,6 +251,12 @@ int CLI::validateCommandLine(Options* options, char *argv[], json *keys) {
     int intBinkID;
     sscanf(options->binkid.c_str(), "%x", &intBinkID);
 
+    // FE and FF are BINK 1998, but do not generate valid keys, so we throw an error
+    if (intBinkID >= 0xFE) {
+        fmt::print("ERROR: Terminal Services BINKs (FE and FF) are unsupported at this time\n");
+        return 1;
+    }
+    
     if (intBinkID >= 0x40) {
         // set bink2002 validate mode if in bink1998 validate mode, else set bink2002 generate mode
         options->applicationMode = (options->applicationMode == MODE_BINK1998_VALIDATE) ? MODE_BINK2002_VALIDATE : MODE_BINK2002_GENERATE;
@@ -383,13 +420,8 @@ int CLI::BINK1998Generate() {
     // generate a key
     BN_sub(this->privateKey, this->genOrder, this->privateKey);
 
-    // Specify whether an upgrade version or not
-    bool bUpgrade = false;
-    if (options.upgrade == true)
-	    bUpgrade = true;
-
     for (int i = 0; i < this->total; i++) {
-        PIDGEN3::BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw, bUpgrade, this->pKey);
+        PIDGEN3::BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw, options.upgrade, this->pKey);
 
         bool isValid = PIDGEN3::BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
         if (isValid) {
@@ -438,12 +470,7 @@ int CLI::BINK2002Generate() {
             fmt::print("> AuthInfo: {}\n", pAuthInfo);
         }
 
-        // Specify whether an upgrade version or not
-        bool bUpgrade = false;
-        if (options.upgrade == true)
-            bUpgrade = true;
-
-        PIDGEN3::BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, bUpgrade, this->pKey);
+        PIDGEN3::BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, options.upgrade, this->pKey);
 
         bool isValid = PIDGEN3::BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
         if (isValid) {
@@ -515,7 +542,7 @@ int CLI::BINK2002Validate() {
 
 int CLI::ConfirmationID() {
     char confirmation_id[49];
-    int err = ConfirmationID::Generate(this->options.instid.c_str(), confirmation_id);
+    int err = ConfirmationID::Generate(this->options.instid.c_str(), confirmation_id, options.activationMode, options.productid);
 
     switch (err) {
         case ERR_TOO_SHORT:
