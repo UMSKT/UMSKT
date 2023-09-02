@@ -37,7 +37,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 # neither does dos idk i'm trying random stuff
-if (DJGPP_WATT32) {
+if (DJGPP_WATT32)
     SET(UMSKT_USE_SHARED_OPENSSL ON)
 endif()
 
@@ -85,7 +85,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   MESSAGE(STATUS "[UMSKT] macOS has no static library - Shared library forced on")
 endif()
 
-if (DJGPP_WATT32) {
+if (DJGPP_WATT32)
   SET(BUILD_SHARED_LIBS ON)
   MESSAGE(STATUS "[UMSKT] DOS has no static library - Shared library forced on")
 endif()
