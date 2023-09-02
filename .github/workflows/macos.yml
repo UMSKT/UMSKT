@@ -22,9 +22,9 @@ name: C/C++ CI (macOS)
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    branches: [ "*" ]
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
+  workflow_dispatch:
 
 jobs:
   build-x86:
