@@ -195,7 +195,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             options->applicationMode = MODE_BINK1998_VALIDATE;
             i++;
 		
-	} else if (arg == "-N" || arg == "--nonewline") {
+	} else if (arg == "-N" || arg == "--nonewlines") {
 	    options->nonewlines = true;
 	} else {
             options->error = true;
