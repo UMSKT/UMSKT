@@ -20,7 +20,7 @@
   
  name: C/C++ CI (FreeBSD) 
   
-on:
+ on: 
   push:
     branches: [ "*" ]
     paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
