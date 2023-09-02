@@ -13,9 +13,9 @@
 
 [![C/C++ CI (Linux)](https://github.com/UMSKT/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml)
 
-[![C/C++ CI (FreeBSD)](https://github.com/UMSKT/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/dos-djgpp.yml)
+[![C/C++ CI (FreeBSD)](https://github.com/UMSKT/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/freebsd.yml)
 
-[![C/C++ CI (DOS DJGPP)](https://github.com/UMSKT/UMSKT/actions/workflows/dos-djgpp.yml/badge.svg)](../../actions/workflows/freebsd.yml)
+[![C/C++ CI (DOS DJGPP)](https://github.com/UMSKT/UMSKT/actions/workflows/dos-djgpp.yml/badge.svg)](../../actions/workflows/dos-djgpp.yml)
 
 ------
 
