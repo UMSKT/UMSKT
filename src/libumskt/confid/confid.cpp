@@ -925,14 +925,8 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 		case 3:
 			decode_iid_new_version(installation_id, hardwareID, &version);
 			productID[0] = stoi(productid.substr(0,5));
-			std::string channelid = productid.substr(6,3);
-			char *p = &channelid[0];
-			for (; *p; p++) {
-				*p = toupper((unsigned char)*p);
-			}
-			p = &channelid[0];
-			if (strcmp(p, "OEM") == 0) {
-				productID[3] = (stoi((productid.substr(10,2))) / 100000) * 1000;
+			if (stoi(productid.substr(6,3)) == 0) {
+				productID[3] = (stoi((productid.substr(10,2)))) * 1000;
 			} else {
 				productID[3] = stoi(productid.substr(18,5));
 			}
