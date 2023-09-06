@@ -36,10 +36,18 @@
 
 CMRC_DECLARE(umskt);
 
+enum ACTIVATION_ALGORITHM {
+    WINDOWS     = 0,
+    OFFICE_XP   = 1,
+    OFFICE_2K3  = 2,
+    OFFICE_2K7  = 3,
+    PLUS_DME    = 4,
+};
+
 enum MODE {
     MODE_BINK1998_GENERATE = 0,
     MODE_BINK2002_GENERATE = 1,
-    MODE_CONFIRMATION_ID = 2,
+    MODE_CONFIRMATION_ID   = 2,
     MODE_BINK1998_VALIDATE = 3,
     MODE_BINK2002_VALIDATE = 4,
 };
@@ -49,6 +57,7 @@ struct Options {
     std::string keysFilename;
     std::string instid;
     std::string keyToCheck;
+    std::string productid;
     int channelID;
     int serial;
     int numKeys;
@@ -60,6 +69,7 @@ struct Options {
     bool list;
 
     MODE applicationMode;
+    ACTIVATION_ALGORITHM activationMode;
 };
 
 class CLI {
