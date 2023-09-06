@@ -700,9 +700,9 @@ void ConfirmationID::decode_iid_new_version(unsigned char* iid, unsigned char* h
     DWORD v9 = (v6 >> 11) & 0x00001FFF;
     DWORD v10 = v9 & 0x00001C00;
     DWORD v11 = v9 & 0x000003FF;
-    DWORD = (((v6 << 21) & 0xFFFFFFFF) | v8) >> 10;
-    DWORD = (v11 << 22) & 0xFFFFFFFF;
-    DWORD = v13 | v12;
+    DWORD v12 = (((v6 << 21) & 0xFFFFFFFF) | v8) >> 10;
+    DWORD v13 = (v11 << 22) & 0xFFFFFFFF;
+    DWORD v14 = v13 | v12;
     productID[2] = v14 & 0x000FFFFF;
     productID[2] = calculateCheckDigit(productID[2]);
     productID[3] = (v14 & 0x3FF00000) >> 20;
