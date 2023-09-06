@@ -925,10 +925,11 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 		case 3:
 			decode_iid_new_version(installation_id, hardwareID, &version);
 			productID[0] = stoi(productid.substr(0,5));
-			if (stoi(productid.substr(6,3)) == 0) {
-				productID[3] = (stoi((productid.substr(10,2)))) * 1000;
+			int channelID = stoi(productid.substr(6,3));
+			if (channelID == 0) {
+				productID[3] = ((stoi(productid.substr(10,2))) * 1000) + productID[3];
 			} else {
-				productID[3] = stoi(productid.substr(18,5));
+				productID[3] = ((stoi(productid.substr(18,2))) * 1000) + productID[3];
 			}
 			switch (activationMode) {
 				case 2:
