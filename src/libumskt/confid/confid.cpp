@@ -32,10 +32,7 @@
 QWORD MOD = 0;
 QWORD NON_RESIDUE = 0;
 QWORD f[6] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-int productID1;
-int productID2;
-int productID3;
-int productID4;
+int productID[4];
 int activationMode;
 
 int ConfirmationID::calculateCheckDigit(int pid)
@@ -693,6 +690,22 @@ void ConfirmationID::decode_iid_new_version(unsigned char* iid, unsigned char* h
     QWORD hardwareIDVal = ((QWORD)v1 << 32) | v2;
     for (i = 0; i < 8; ++i)
         hwid[i] = (hardwareIDVal >> (8 * i)) & 0xFF;
+    unsigned __int32 v3 = ((buffer[0] & 0xFFFFFF80) >> 7) & 0xFFFFFFFF;
+    unsigned __int32 v4 = v3 & 0xFFFFF800;
+    unsigned __int32 v5 = buffer[1] & 0x7F;
+    unsigned __int32 v6 = buffer[1] >> 7;
+    unsigned __int32 v7 = ((v5 << 25) | v4) >> 11;
+    productID[1] = v7 & 0x000003FF;
+    unsigned __int32 v8 = v7 & 0xFFFFFC00;
+    unsigned __int32 v9 = (v6 >> 11) & 0x00001FFF;
+    unsigned __int32 v10 = v9 & 0x00001C00;
+    unsigned __int32 v11 = v9 & 0x000003FF;
+    unsigned __int32 v12 = (((v6 << 21) & 0xFFFFFFFF) | v8) >> 10;
+    unsigned __int32 v13 = (v11 << 22) & 0xFFFFFFFF;
+    unsigned __int32 v14 = v13 | v12;
+    productID[2] = v14 & 0x000FFFFF;
+    productID[2] = calculateCheckDigit(productID[2]);
+    productID[3] = (v14 & 0x3FF00000) >> 20;
     *version = buffer[0] & 7;
 }
 
@@ -889,11 +902,11 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 		case 1:
 		case 4:
 			memcpy(&parsed, installation_id, sizeof(parsed));
-			productID1 = parsed.ProductIDLow & ((1 << 17) - 1);
-			productID2 = (parsed.ProductIDLow >> 17) & ((1 << 10) - 1);
-			productID3 = (parsed.ProductIDLow >> 27) & ((1 << 24) - 1);
+			productID[0] = parsed.ProductIDLow & ((1 << 17) - 1);
+			productID[1] = (parsed.ProductIDLow >> 17) & ((1 << 10) - 1);
+			productID[2] = (parsed.ProductIDLow >> 27) & ((1 << 24) - 1);
 			version    = (parsed.ProductIDLow >> 51) & 15;
-			productID4 = (parsed.ProductIDLow >> 55) | (parsed.ProductIDHigh << 9);
+			productID[3] = (parsed.ProductIDLow >> 55) | (parsed.ProductIDHigh << 9);
 			switch (activationMode) {
 				case 0:
 					if (version != (totalCount == 41 ? 9 : 10))
@@ -911,20 +924,17 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 		case 2:
 		case 3:
 			decode_iid_new_version(installation_id, hardwareID, &version);
-			productID1 = stoi(productid.substr(0,5));
+			productID[0] = stoi(productid.substr(0,5));
 			std::string channelid = productid.substr(6,3);
 			char *p = &channelid[0];
 			for (; *p; p++) {
 				*p = toupper((unsigned char)*p);
 			}
-			if (strcmp(&channelid[0], "OEM") == 0) {
-				productID2 = stoi(productid.substr(12,3));
-				productID3 = calculateCheckDigit((stoi(productid.substr(15,1)) * 100000) + (stoi(productid.substr(18,5))));
-				productID4 = (stoi((productid.substr(10,2))) / 100000) * 1000;
+			p = &channelid[0];
+			if (strcmp(p, "OEM") == 0) {
+				productID[3] = (stoi((productid.substr(10,2))) / 100000) * 1000;
 			} else {
-				productID2 = stoi(productid.substr(6,3));
-				productID3 = stoi(productid.substr(10,7));
-				productID4 = stoi(productid.substr(18,5));
+				productID[3] = stoi(productid.substr(18,5));
 			}
 			switch (activationMode) {
 				case 2:
@@ -938,11 +948,10 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 			memcpy(&parsed, hardwareID, 8);
 			break;
 	}
-	//printf("Product ID: %05u-%03u-%07u-%05u\n", productId1, productId2, productId3, productId4);
-
+	
 	unsigned char keybuf[16];
 	memcpy(keybuf, &parsed.HardwareID, 8);
-	QWORD productIdMixed = (QWORD)productID1 << 41 | (QWORD)productID2 << 58 | (QWORD)productID3 << 17 | productID4;
+	QWORD productIdMixed = (QWORD)productID[0] << 41 | (QWORD)productID[1] << 58 | (QWORD)productID[2] << 17 | productID[3];
 	memcpy(keybuf + 8, &productIdMixed, 8);
 
 	TDivisor d;
