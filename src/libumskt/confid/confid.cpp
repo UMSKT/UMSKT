@@ -940,8 +940,7 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 			for (; *p; p++) {
 				*p = toupper((unsigned char)*p);
 			}
-			p = &channelid[0];
-			if (strcmp(p, "OEM") == 0) {
+			if (strcmp(&channelid[0], "OEM") == 0) {
 				productID[3] = ((stoi(productid.substr(10,2))) * 1000) + productID[3];
 			} else {
 				productID[3] = ((stoi(productid.substr(18,2))) * 1000) + productID[3];
