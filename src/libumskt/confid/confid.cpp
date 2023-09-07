@@ -690,7 +690,7 @@ void ConfirmationID::decode_iid_new_version(unsigned char* iid, unsigned char* h
     QWORD hardwareIDVal = ((QWORD)v1 << 32) | v2;
     for (i = 0; i < 8; ++i)
         hwid[i] = (hardwareIDVal >> (8 * i)) & 0xFF;
-    DWORD v3 = ((buffer[0] & 0xFFFFFF80) >> 7) & 0xFFFFFFFF;
+    /*DWORD v3 = ((buffer[0] & 0xFFFFFF80) >> 7) & 0xFFFFFFFF;
     DWORD v4 = v3 & 0xFFFFF800;
     DWORD v5 = buffer[1] & 0x7F;
     DWORD v6 = buffer[1] >> 7;
@@ -705,7 +705,7 @@ void ConfirmationID::decode_iid_new_version(unsigned char* iid, unsigned char* h
     DWORD v14 = v13 | v12;
     productID[2] = v14 & 0x000FFFFF;
     productID[2] = calculateCheckDigit(productID[2]);
-    productID[3] = (v14 & 0x3FF00000) >> 20;
+    productID[3] = (v14 & 0x3FF00000) >> 20;*/
     *version = buffer[0] & 7;
 }
 
@@ -941,10 +941,16 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 				*p = toupper((unsigned char)*p);
 			}
 			if (strcmp(&channelid[0], "OEM") == 0) {
+				productID[1] = stoi(productid.substr(12,3));
+				productID[2] = (stoi(productid.substr(15,1)) * 1000000) + stoi(productid.substr(18,5));
+				productID[2] = calculateCheckDigit(productID[2]);
 				productID[3] = ((stoi(productid.substr(10,2))) * 1000) + productID[3];
 			} else {
-				productID[3] = ((stoi(productid.substr(18,2))) * 1000) + productID[3];
+				productID[1] = stoi(productid.substr(6,3));
+				productID[2] = stoi(productid.substr(10,7));
+				productID[3] = stoi(productid.substr(18,5));
 			}
+		fmt::print("ProductID: {}-{}-{}-{} \n", productID[0], productID[1], productID[2], productID[3]);
 	}
 	
 	unsigned char keybuf[16];
