@@ -690,22 +690,6 @@ void ConfirmationID::decode_iid_new_version(unsigned char* iid, unsigned char* h
     QWORD hardwareIDVal = ((QWORD)v1 << 32) | v2;
     for (i = 0; i < 8; ++i)
         hwid[i] = (hardwareIDVal >> (8 * i)) & 0xFF;
-    /*DWORD v3 = ((buffer[0] & 0xFFFFFF80) >> 7) & 0xFFFFFFFF;
-    DWORD v4 = v3 & 0xFFFFF800;
-    DWORD v5 = buffer[1] & 0x7F;
-    DWORD v6 = buffer[1] >> 7;
-    DWORD v7 = ((v5 << 25) | v4) >> 11;
-    productID[1] = v7 & 0x000003FF;
-    DWORD v8 = v7 & 0xFFFFFC00;
-    DWORD v9 = (v6 >> 11) & 0x00001FFF;
-    DWORD v10 = v9 & 0x00001C00;
-    DWORD v11 = v9 & 0x000003FF;
-    DWORD v12 = (((v6 << 21) & 0xFFFFFFFF) | v8) >> 10;
-    DWORD v13 = (v11 << 22) & 0xFFFFFFFF;
-    DWORD v14 = v13 | v12;
-    productID[2] = v14 & 0x000FFFFF;
-    productID[2] = calculateCheckDigit(productID[2]);
-    productID[3] = (v14 & 0x3FF00000) >> 20;*/
     *version = buffer[0] & 7;
 }
 
@@ -950,7 +934,7 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 				productID[2] = stoi(productid.substr(10,7));
 				productID[3] = stoi(productid.substr(18,5));
 			}
-		fmt::print("ProductID: {}-{}-{}-{} \n", productID[0], productID[1], productID[2], productID[3]);
+		//fmt::print("ProductID: {}-{}-{}-{} \n", productID[0], productID[1], productID[2], productID[3]);
 	}
 	
 	unsigned char keybuf[16];
