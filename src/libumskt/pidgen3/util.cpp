@@ -100,6 +100,13 @@ EC_GROUP* PIDGEN3::initializeEllipticCurve(
 
     // Cleanup
     BN_CTX_free(context);
+    BN_free(p);
+    BN_free(a);
+    BN_free(b);
+    BN_free(generatorX);
+    BN_free(generatorY);
+    BN_free(publicKeyX);
+    BN_free(publicKeyY);
 
     return eCurve;
 }
