@@ -207,7 +207,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
     }
 
     // make sure that a product id is entered for OFFICE_2K3 or OFFICE_2K7 IIDs
-    if ((options->activationMode == OFFICE_2K3 || options->activationMode == OFFICE_2K7) && options->productid == "") {
+    if ((options->activationMode == OFFICE_2K3 || options->activationMode == OFFICE_2K7) && (options->productid.empty() || options->instid.empty()) ) {
         return options->error = true;
     }
 
