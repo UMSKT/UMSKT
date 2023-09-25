@@ -22,6 +22,15 @@
 
 #include "cli.h"
 
+CLI::~CLI()
+{
+    EC_GROUP_free(eCurve);
+    EC_POINT_free(genPoint);
+    EC_POINT_free(pubPoint);
+    BN_free(privateKey);
+    BN_free(genOrder);
+}
+
 bool CLI::loadJSON(const fs::path& filename, json *output) {
     if (!filename.empty() && !fs::exists(filename)) {
         fmt::print("ERROR: File {} does not exist\n", filename.string());
@@ -417,6 +426,7 @@ int CLI::BINK1998Generate() {
 
         sscanf(cRaw, "%d", &oRaw);
         nRaw += (oRaw % 999999); // ensure our serial is less than 999999
+	BN_free(bnrand);
     }
 
     if (this->options.verbose) {
