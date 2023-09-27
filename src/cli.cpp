@@ -22,6 +22,15 @@
 
 #include "cli.h"
 
+CLI::~CLI()
+{
+    EC_GROUP_free(eCurve);
+    EC_POINT_free(genPoint);
+    EC_POINT_free(pubPoint);
+    BN_free(privateKey);
+    BN_free(genOrder);
+}
+
 bool CLI::loadJSON(const fs::path& filename, json *output) {
     if (!filename.empty() && !fs::exists(filename)) {
         fmt::print("ERROR: File {} does not exist\n", filename.string());
@@ -183,6 +192,10 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
 	    }
             i++;
         } else if (arg == "-p" || arg == "--productid") {
+	    if (i == argc -1) {
+                options->error = true;
+                break;
+	    }
             options->productid = argv[i+1];
             i++;
         } else if (arg == "-V" || arg == "--validate") {
@@ -203,7 +216,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
     }
 
     // make sure that a product id is entered for OFFICE_2K3 or OFFICE_2K7 IIDs
-    if ((options->activationMode == OFFICE_2K3 || options->activationMode == OFFICE_2K7) && options->productid == "") {
+    if ((options->activationMode == OFFICE_2K3 || options->activationMode == OFFICE_2K7) && (options->productid.empty() || options->instid.empty()) ) {
         return options->error = true;
     }
 
@@ -413,6 +426,7 @@ int CLI::BINK1998Generate() {
 
         sscanf(cRaw, "%d", &oRaw);
         nRaw += (oRaw % 999999); // ensure our serial is less than 999999
+	BN_free(bnrand);
     }
 
     if (this->options.verbose) {

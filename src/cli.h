@@ -85,6 +85,7 @@ class CLI {
 
 public:
     CLI(Options options, json keys);
+    ~CLI();
 
     static bool loadJSON(const fs::path& filename, json *output);
     static void showHelp(char *argv[]);
