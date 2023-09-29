@@ -70,11 +70,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   MESSAGE(STATUS "[UMSKT] macOS has no static library - Shared library forced on")
 endif()
 
-if (DJGPP_WATT32)
-  SET(BUILD_SHARED_LIBS ON)
-  MESSAGE(STATUS "[UMSKT] DOS has no static library - Shared library forced on")
-endif()
-
 # if we're compiling with MSVC, respect the DEBUG compile option
 IF(MSVC)
     SET(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
