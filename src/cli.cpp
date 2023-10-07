@@ -257,6 +257,13 @@ int CLI::validateCommandLine(Options* options, char *argv[], json *keys) {
             int id;
             sscanf((el.value()["BINK"][0]).get<std::string>().c_str(), "%x", &id);
             std::cout << el.key() << ": " << el.value()["BINK"] << std::endl;
+            if (!el.value()["CID"].is_null() && !el.value()["CID"].empty()) {
+                std::cout << "\t" << "Valid Channel IDs:" << std::endl;
+                for (auto range : el.value()["CID"].items()) {
+                    std::cout << "\t\t" << range.key() << ": " << range.value() << std::endl;
+                }
+                std::cout << std::endl;
+            }
         }
 
         fmt::print("\n\n");
