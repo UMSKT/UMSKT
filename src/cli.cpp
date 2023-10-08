@@ -65,7 +65,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-m --mode\tproduct family to activate.\n\t\t\tvalid options are \"WINDOWS\", \"OFFICEXP\", \"OFFICE2K3\", \"OFFICE2K7\" or \"PLUSDME\"\n\t\t\t(defaults to \"WINDOWS\")\n");
     fmt::print("\t-p --productid\tthe product ID of the Program to activate. only required for Office 2K3 and Office 2K7 programs\n");
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
-    fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
+    fmt::print("\t-l --list\tshow which products/binks (and their associated channel ids) can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
     fmt::print("\t-s --serial\tspecifies a serial to use in the product ID (defaults to random, BINK1998 only)\n");
     fmt::print("\t-u --upgrade\tspecifies the Product Key will be an \"Upgrade\" version\n");
@@ -253,17 +253,52 @@ int CLI::validateCommandLine(Options* options, char *argv[], json *keys) {
     }
 
     if (options->list) {
+        //List each product
         for (auto el : (*keys)["Products"].items()) {
-            int id;
-            sscanf((el.value()["BINK"][0]).get<std::string>().c_str(), "%x", &id);
-            std::cout << el.key() << ": " << el.value()["BINK"] << std::endl;
-            if (!el.value()["CID"].is_null() && !el.value()["CID"].empty()) {
-                std::cout << "\t" << "Valid Channel IDs:" << std::endl;
-                for (auto range : el.value()["CID"].items()) {
-                    std::cout << "\t\t" << range.key() << ": " << range.value() << std::endl;
+            std::cout << el.key() << ": [";
+
+            //List each bink
+            bool f = false;
+            for (auto bink : el.value()["BINK"].items()) {
+                if (bink.value().empty()) { //If no CIDs are associated
+                    if (f) { std::cout << ", "; } else { f = true; }
+                    std::cout << bink.key();
+                } else { //If CIDs are associated
+                    size_t padding = el.key().length() + 2;
+                    if (!f) { std::cout << std::endl;
+                        for (int i = 0; i < padding; i++) {
+                            std::cout << " ";
+                        }
+                        f = true;
+                    }
+                    std::cout << " ";
+
+                    std::cout << bink.key() << ":" << std::endl;
+
+                    //List each CID
+                    for (auto cids : bink.value().items()) {
+                        for (int i = 0; i < padding + 5; i++) {
+                            std::cout << " ";
+                        }
+
+                        std::cout << cids.key() << ": ";
+
+                        //List each CID's values
+                        bool ff = false;
+                        for (auto cid : cids.value().items()) {
+                            if (ff) { std::cout << ", "; } else { ff = true; }
+                            std::cout << cid.value();
+                        }
+
+                        std::cout << std::endl;
+                    }
+
+                    for (int i = 0; i < padding; i++) {
+                        std::cout << " ";
+                    }
                 }
-                std::cout << std::endl;
             }
+            std::cout << "]" << std::endl;
         }
 
         fmt::print("\n\n");
