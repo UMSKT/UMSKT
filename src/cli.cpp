@@ -253,7 +253,7 @@ int CLI::validateCommandLine(Options* options, char *argv[], json *keys) {
     }
 
     if (options->list) {
-        for (auto el : (*keys)["Products"].items()) {
+        for (auto const el : (*keys)["Products"].items()) {
             int id;
             sscanf((el.value()["BINK"][0]).get<std::string>().c_str(), "%x", &id);
             std::cout << el.key() << ": " << el.value()["BINK"] << std::endl;
@@ -426,7 +426,7 @@ int CLI::BINK1998Generate() {
 
         sscanf(cRaw, "%d", &oRaw);
         nRaw += (oRaw % 999999); // ensure our serial is less than 999999
-	BN_free(bnrand);
+	    BN_free(bnrand);
     }
 
     if (this->options.verbose) {
@@ -464,9 +464,11 @@ int CLI::BINK1998Generate() {
     if (this->options.verbose) {
         fmt::print("\nSuccess count: {}/{}", this->count, this->total);
     }
-    if (this->options.nonewlines == false) {
-	fmt::print("\n"); 
+
+    if (!options.nonewlines) {
+	    fmt::print("\n");
     }
+
     return 0;
 }
 
@@ -512,8 +514,9 @@ int CLI::BINK2002Generate() {
     if (this->options.verbose) {
         fmt::print("\nSuccess count: {}/{}", this->count, this->total);
     }
-    if (this->options.nonewlines == false) {
-	fmt::print("\n"); 
+
+    if (!this->options.nonewlines) {
+	    fmt::print("\n");
     }
 
     return 0;
@@ -588,8 +591,8 @@ int CLI::ConfirmationID() {
 
         case SUCCESS:
             fmt::print(confirmation_id);
-    	    if (this->options.nonewlines == false) {
-	        fmt::print("\n"); 
+    	    if (!this->options.nonewlines) {
+	            fmt::print("\n");
     	    }
             return 0;
 

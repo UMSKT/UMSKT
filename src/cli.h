@@ -36,14 +36,6 @@
 
 CMRC_DECLARE(umskt);
 
-enum ACTIVATION_ALGORITHM {
-    WINDOWS     = 0,
-    OFFICE_XP   = 1,
-    OFFICE_2K3  = 2,
-    OFFICE_2K7  = 3,
-    PLUS_DME    = 4,
-};
-
 enum MODE {
     MODE_BINK1998_GENERATE = 0,
     MODE_BINK2002_GENERATE = 1,
