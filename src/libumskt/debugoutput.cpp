@@ -22,14 +22,13 @@
 
 #include "libumskt.h"
 
-
 #ifdef _WIN32
-std::FILE* UMSKT::debug = std::fopen("NUL:", "w");
+std::FILE *UMSKT::debug = std::fopen("NUL:", "w");
 #else
-std::FILE* UMSKT::debug = std::fopen("/dev/null", "w");
+std::FILE *UMSKT::debug = std::fopen("/dev/null", "w");
 #endif
 
-
-void UMSKT::setDebugOutput(std::FILE* input) {
+void UMSKT::setDebugOutput(std::FILE *input)
+{
     debug = input;
 }

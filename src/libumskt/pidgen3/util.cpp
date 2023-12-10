@@ -22,14 +22,17 @@
 
 #include "PIDGEN3.h"
 
-int randomRange() {
-    return 4;  // chosen by fair dice roll
-               // guaranteed to be random
+int randomRange()
+{
+    return 4; // chosen by fair dice roll
+              // guaranteed to be random
 }
 
 /* Convert data between endianness types. */
-void PIDGEN3::endian(BYTE *data, int length) {
-    for (int i = 0; i < length / 2; i++) {
+void PIDGEN3::endian(BYTE *data, int length)
+{
+    for (int i = 0; i < length / 2; i++)
+    {
         BYTE temp = data[i];
         data[i] = data[length - i - 1];
         data[length - i - 1] = temp;
@@ -37,17 +40,11 @@ void PIDGEN3::endian(BYTE *data, int length) {
 }
 
 /* Initializes the elliptic curve. */
-EC_GROUP* PIDGEN3::initializeEllipticCurve(
-        const std::string pSel,
-        const std::string aSel,
-        const std::string bSel,
-        const std::string generatorXSel,
-        const std::string generatorYSel,
-        const std::string publicKeyXSel,
-        const std::string publicKeyYSel,
-        EC_POINT *&genPoint,
-        EC_POINT *&pubPoint
-) {
+EC_GROUP *PIDGEN3::initializeEllipticCurve(const std::string pSel, const std::string aSel, const std::string bSel,
+                                           const std::string generatorXSel, const std::string generatorYSel,
+                                           const std::string publicKeyXSel, const std::string publicKeyYSel,
+                                           EC_POINT *&genPoint, EC_POINT *&pubPoint)
+{
     // Initialize BIGNUM and BIGNUMCTX structures.
     // BIGNUM - Large numbers
     // BIGNUMCTX - Context large numbers (temporary)
@@ -83,7 +80,8 @@ EC_GROUP* PIDGEN3::initializeEllipticCurve(
 
     /* Elliptic Curve calculations. */
     // The group is defined via Fp = all integers [0; p - 1], where p is prime.
-    // The function EC_POINT_set_affine_coordinates() sets the x and y coordinates for the point p defined over the curve given in group.
+    // The function EC_POINT_set_affine_coordinates() sets the x and y coordinates for the point p defined over the
+    // curve given in group.
     EC_GROUP *eCurve = EC_GROUP_new_curve_GFp(p, a, b, context);
 
     // Create new point for the generator on the elliptic curve and set its coordinates to (genX; genY).
@@ -94,7 +92,8 @@ EC_GROUP* PIDGEN3::initializeEllipticCurve(
     pubPoint = EC_POINT_new(eCurve);
     EC_POINT_set_affine_coordinates(eCurve, pubPoint, publicKeyX, publicKeyY, context);
 
-    // If generator and public key points are not on the elliptic curve, either the generator or the public key values are incorrect.
+    // If generator and public key points are not on the elliptic curve, either the generator or the public key values
+    // are incorrect.
     assert(EC_POINT_is_on_curve(eCurve, genPoint, context) == true);
     assert(EC_POINT_is_on_curve(eCurve, pubPoint, context) == true);
 
@@ -111,14 +110,19 @@ EC_GROUP* PIDGEN3::initializeEllipticCurve(
     return eCurve;
 }
 
-int PIDGEN3::BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen) {
+int PIDGEN3::BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen)
+{
     if (a == nullptr || to == nullptr)
+    {
         return 0;
+    }
 
     int len = BN_bn2bin(a, to);
 
     if (len > tolen)
+    {
         return -1;
+    }
 
     // Choke point inside BN_bn2lebinpad: OpenSSL uses len instead of tolen.
     endian(to, tolen);

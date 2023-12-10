@@ -25,49 +25,49 @@
 
 #include "../typedefs.h"
 
-#include <string>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #include <openssl/bn.h>
 #include <openssl/ec.h>
-#include <openssl/sha.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
+#include <openssl/sha.h>
 
 #include <fmt/core.h>
 #include <fmt/format.h>
 
 // Algorithm macros
-#define PK_LENGTH               25
-#define NULL_TERMINATOR         1
+#define PK_LENGTH 25
+#define NULL_TERMINATOR 1
 
-#define FIELD_BITS              384
-#define FIELD_BYTES             48
-#define FIELD_BITS_2003         512
-#define FIELD_BYTES_2003        64
+#define FIELD_BITS 384
+#define FIELD_BYTES 48
+#define FIELD_BITS_2003 512
+#define FIELD_BYTES_2003 64
 
-#define SHA_MSG_LENGTH_XP       (4 + 2 * FIELD_BYTES)
-#define SHA_MSG_LENGTH_2003     (3 + 2 * FIELD_BYTES_2003)
+#define SHA_MSG_LENGTH_XP (4 + 2 * FIELD_BYTES)
+#define SHA_MSG_LENGTH_2003 (3 + 2 * FIELD_BYTES_2003)
 
-#define NEXTSNBITS(field, n, offset)   (((QWORD)(field) >> (offset)) & ((1ULL << (n)) - 1))
-#define FIRSTNBITS(field, n)           NEXTSNBITS((field), (n), 0)
+#define NEXTSNBITS(field, n, offset) (((QWORD)(field) >> (offset)) & ((1ULL << (n)) - 1))
+#define FIRSTNBITS(field, n) NEXTSNBITS((field), (n), 0)
 
-#define HIBYTES(field, bytes)          NEXTSNBITS((QWORD)(field), ((bytes) * 8), ((bytes) * 8))
-#define LOBYTES(field, bytes)          FIRSTNBITS((QWORD)(field), ((bytes) * 8))
+#define HIBYTES(field, bytes) NEXTSNBITS((QWORD)(field), ((bytes)*8), ((bytes)*8))
+#define LOBYTES(field, bytes) FIRSTNBITS((QWORD)(field), ((bytes)*8))
 
-#define BYDWORD(n)                     (DWORD)(*((n) + 0) | *((n) + 1) << 8 | *((n) + 2) << 16 | *((n) + 3) << 24)
-#define BITMASK(n)                     ((1ULL << (n)) - 1)
+#define BYDWORD(n) (DWORD)(*((n) + 0) | *((n) + 1) << 8 | *((n) + 2) << 16 | *((n) + 3) << 24)
+#define BITMASK(n) ((1ULL << (n)) - 1)
 
-class UMSKT {
-public:
-    static std::FILE* debug;
+class UMSKT
+{
+  public:
+    static std::FILE *debug;
     class PIDGEN2;
     class PIDGEN3;
     class ConfigurationID;
 
-    static void setDebugOutput(std::FILE* input);
+    static void setDebugOutput(std::FILE *input);
 };
 
-
-#endif //UMSKT_LIBUMSKT_H
+#endif // UMSKT_LIBUMSKT_H

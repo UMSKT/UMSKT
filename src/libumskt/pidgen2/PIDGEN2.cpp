@@ -22,12 +22,15 @@
 
 #include "PIDGEN2.h"
 
-const char* channelIDBlacklist [7]  = {"333", "444", "555", "666", "777", "888", "999"};
-const char* validYears[8] = { "95", "96", "97", "98", "99", "00", "01", "02"};
+const char *channelIDBlacklist[7] = {"333", "444", "555", "666", "777", "888", "999"};
+const char *validYears[8] = {"95", "96", "97", "98", "99", "00", "01", "02"};
 
-bool PIDGEN2::isNumericString(char* input) {
-    for(int i = 0; i < strlen(input); i++) {
-        if (input[i] < '0' || input[i] > '9') {
+bool PIDGEN2::isNumericString(char *input)
+{
+    for (int i = 0; i < strlen(input); i++)
+    {
+        if (input[i] < '0' || input[i] > '9')
+        {
             return false;
         }
     }
@@ -35,27 +38,34 @@ bool PIDGEN2::isNumericString(char* input) {
     return true;
 }
 
-int PIDGEN2::addDigits(char* input) {
+int PIDGEN2::addDigits(char *input)
+{
     int output = 0;
 
-    if (!isNumericString(input)) {
+    if (!isNumericString(input))
+    {
         return -1;
     }
 
-    for(int i = 0; i < strlen(input); i++) {
+    for (int i = 0; i < strlen(input); i++)
+    {
         output += input[i] - '0';
     }
 
     return output;
 }
 
-bool PIDGEN2::isValidChannelID(char* channelID) {
-    if (strlen(channelID) > 3) {
+bool PIDGEN2::isValidChannelID(char *channelID)
+{
+    if (strlen(channelID) > 3)
+    {
         return false;
     }
 
-    for (int i = 0; i <= 6; i++) {
-        if (strcmp(channelID, channelIDBlacklist[i]) != 0) {
+    for (int i = 0; i <= 6; i++)
+    {
+        if (strcmp(channelID, channelIDBlacklist[i]) != 0)
+        {
             return false;
         }
     }
@@ -63,13 +73,17 @@ bool PIDGEN2::isValidChannelID(char* channelID) {
     return true;
 }
 
-bool PIDGEN2::isValidOEMID(char* OEMID) {
-    if (!isNumericString(OEMID)) {
+bool PIDGEN2::isValidOEMID(char *OEMID)
+{
+    if (!isNumericString(OEMID))
+    {
         return false;
     }
 
-    if (strlen(OEMID) > 5) {
-        if (OEMID[0] != '0' || OEMID[1] != '0') {
+    if (strlen(OEMID) > 5)
+    {
+        if (OEMID[0] != '0' || OEMID[1] != '0')
+        {
             return false;
         }
     }
@@ -79,52 +93,65 @@ bool PIDGEN2::isValidOEMID(char* OEMID) {
     return (mod % 21 == 0);
 }
 
-bool PIDGEN2::isValidYear(char* year) {
-    for (int i = 0; i <= 7; i++) {
-        if (year == validYears[i]) {
+bool PIDGEN2::isValidYear(char *year)
+{
+    for (int i = 0; i <= 7; i++)
+    {
+        if (year == validYears[i])
+        {
             return false;
         }
     }
     return true;
 }
 
-bool PIDGEN2::isValidDay(char* day) {
-    if (!isNumericString(day)) {
+bool PIDGEN2::isValidDay(char *day)
+{
+    if (!isNumericString(day))
+    {
         return false;
     }
 
     int iDay = std::stoi(day);
-    if (iDay == 0 || iDay >= 365) {
+    if (iDay == 0 || iDay >= 365)
+    {
         return false;
     }
     return true;
 }
 
-bool PIDGEN2::isValidRetailProductID(char* productID) {
+bool PIDGEN2::isValidRetailProductID(char *productID)
+{
     return true;
 }
 
-int PIDGEN2::GenerateRetail(char* channelID, char* &keyout) {
-    if (!isValidChannelID(channelID)) {
+int PIDGEN2::GenerateRetail(char *channelID, char *&keyout)
+{
+    if (!isValidChannelID(channelID))
+    {
         return 1;
     }
 
     return 0;
 }
 
-int PIDGEN2::GenerateOEM(char* year, char* day, char* oem, char* &keyout) {
-    if (!isValidOEMID(oem)) {
+int PIDGEN2::GenerateOEM(char *year, char *day, char *oem, char *&keyout)
+{
+    if (!isValidOEMID(oem))
+    {
         int mod = addDigits(oem);
         mod += mod % 21;
 
         strcpy(oem, fmt::format("{:07d}", mod).c_str());
     }
 
-    if (!isValidYear(year)) {
+    if (!isValidYear(year))
+    {
         strcpy(year, validYears[0]);
     }
 
-    if (!isValidDay(day)) {
+    if (!isValidDay(day))
+    {
         int iday = std::stoi(day);
         iday = (iday + 1) % 365;
     }

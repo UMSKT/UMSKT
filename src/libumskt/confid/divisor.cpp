@@ -22,7 +22,7 @@
 
 #include "confid.h"
 
-int Divisor::find_divisor_v(TDivisor* d)
+int Divisor::find_divisor_v(TDivisor *d)
 {
     // u | v^2 - f
     // u = u0 + u1*x + x^2
@@ -36,7 +36,7 @@ int Divisor::find_divisor_v(TDivisor* d)
 
     const QWORD u0 = d->u[0];
     const QWORD u1 = d->u[1];
-    for (int j = 4; j--; )
+    for (int j = 4; j--;)
     {
         f2[j] = parent->residue->sub(f2[j], parent->residue->mul(u0, f2[j + 2]));
         f2[j + 1] = parent->residue->sub(f2[j + 1], parent->residue->mul(u1, f2[j + 2]));
@@ -63,11 +63,12 @@ int Divisor::find_divisor_v(TDivisor* d)
             if (f1 == 0)
             {
                 // impossible
-                //printf("bad f(), double root detected\n");
+                // printf("bad f(), double root detected\n");
             }
             return 0;
         }
-        QWORD sqr = parent->residue->mul(parent->residue->mul(f1, f1), parent->residue->inv(parent->residue->add(coeff1, coeff1)));
+        QWORD sqr = parent->residue->mul(parent->residue->mul(f1, f1),
+                                         parent->residue->inv(parent->residue->add(coeff1, coeff1)));
         v1 = parent->residue->sqrt(sqr);
         if (v1 == BAD)
         {
@@ -76,7 +77,9 @@ int Divisor::find_divisor_v(TDivisor* d)
     }
     else
     {
-        QWORD d = parent->residue->add(parent->residue->mul(f0, f0), parent->residue->mul(f1, parent->residue->sub(parent->residue->mul(f1, u0), parent->residue->mul(f0, u1))));
+        QWORD d = parent->residue->add(
+            parent->residue->mul(f0, f0),
+            parent->residue->mul(f1, parent->residue->sub(parent->residue->mul(f1, u0), parent->residue->mul(f0, u1))));
         d = parent->residue->sqrt(d);
         if (d == BAD)
         {
@@ -98,14 +101,15 @@ int Divisor::find_divisor_v(TDivisor* d)
         }
     }
 
-    QWORD v0 = parent->residue->mul(parent->residue->add(f1, parent->residue->mul(u1, parent->residue->mul(v1, v1))), parent->residue->inv(parent->residue->add(v1, v1)));
+    QWORD v0 = parent->residue->mul(parent->residue->add(f1, parent->residue->mul(u1, parent->residue->mul(v1, v1))),
+                                    parent->residue->inv(parent->residue->add(v1, v1)));
     d->v[0] = v0;
     d->v[1] = v1;
 
     return 1;
 }
 
-int Divisor::u2poly(const TDivisor* src, QWORD polyu[3], QWORD polyv[2])
+int Divisor::u2poly(const TDivisor *src, QWORD polyu[3], QWORD polyv[2])
 {
     if (src->u[1] != BAD)
     {
@@ -132,7 +136,7 @@ int Divisor::u2poly(const TDivisor* src, QWORD polyu[3], QWORD polyv[2])
     return 0;
 }
 
-void Divisor::add(const TDivisor* src1, const TDivisor* src2, TDivisor* dst)
+void Divisor::add(const TDivisor *src1, const TDivisor *src2, TDivisor *dst)
 {
     QWORD u1[3], u2[3], v1[2], v2[2];
     int u1deg = u2poly(src1, u1, v1);
@@ -198,21 +202,25 @@ void Divisor::add(const TDivisor* src1, const TDivisor* src2, TDivisor* dst)
 
     if (ddeg > 0)
     {
-        assert(udeg >= 2*ddeg);
+        assert(udeg >= 2 * ddeg);
         QWORD udiv[5];
-        parent->polynomial->div_monic(udeg, u, ddeg, d, udiv); udeg -= ddeg;
-        parent->polynomial->div_monic(udeg, udiv, ddeg, d, u); udeg -= ddeg;
+        parent->polynomial->div_monic(udeg, u, ddeg, d, udiv);
+        udeg -= ddeg;
+        parent->polynomial->div_monic(udeg, udiv, ddeg, d, u);
+        udeg -= ddeg;
         if (vdeg >= 0)
         {
             assert(vdeg >= ddeg);
-            parent->polynomial->div_monic(vdeg, v, ddeg, d, udiv); vdeg -= ddeg;
+            parent->polynomial->div_monic(vdeg, v, ddeg, d, udiv);
+            vdeg -= ddeg;
             memcpy(v, udiv, (vdeg + 1) * sizeof(v[0]));
         }
     }
 
     vdeg = parent->polynomial->div_monic(vdeg, v, udeg, u, NULL);
 
-    while (udeg > 2) {
+    while (udeg > 2)
+    {
         assert(udeg <= 4);
         assert(vdeg <= 3);
         // u' = monic((f-v^2)/u), v'=-v mod u'
@@ -280,7 +288,7 @@ void Divisor::add(const TDivisor* src1, const TDivisor* src2, TDivisor* dst)
 
 #define divisor_double(src, dst) add(src, src, dst)
 
-void Divisor::mul(const TDivisor* src, QWORD mult, TDivisor* dst)
+void Divisor::mul(const TDivisor *src, QWORD mult, TDivisor *dst)
 {
     if (mult == 0)
     {
@@ -309,7 +317,7 @@ void Divisor::mul(const TDivisor* src, QWORD mult, TDivisor* dst)
     }
 }
 
-void Divisor::mul128(const TDivisor* src, QWORD mult_lo, QWORD mult_hi, TDivisor* dst)
+void Divisor::mul128(const TDivisor *src, QWORD mult_lo, QWORD mult_hi, TDivisor *dst)
 {
     if (mult_lo == 0 && mult_hi == 0)
     {
@@ -325,7 +333,8 @@ void Divisor::mul128(const TDivisor* src, QWORD mult_lo, QWORD mult_hi, TDivisor
     {
         divisor_double(&cur, &cur);
         mult_lo >>= 1;
-        if (mult_hi & 1) {
+        if (mult_hi & 1)
+        {
             mult_lo |= (1ULL << 63);
         }
         mult_hi >>= 1;

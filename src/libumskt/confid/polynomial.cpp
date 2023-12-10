@@ -55,7 +55,7 @@ int Polynomial::mul(int adeg, const QWORD a[], int bdeg, const QWORD b[], int re
     return resultprevdeg;
 }
 
-int Polynomial::div_monic(int adeg, QWORD a[], int bdeg, const QWORD b[], QWORD* quotient)
+int Polynomial::div_monic(int adeg, QWORD a[], int bdeg, const QWORD b[], QWORD *quotient)
 {
     assert(bdeg >= 0);
     assert(b[bdeg] == 1);
@@ -84,25 +84,32 @@ int Polynomial::div_monic(int adeg, QWORD a[], int bdeg, const QWORD b[], QWORD*
     return i;
 }
 
-void Polynomial::xgcd(int adeg, const QWORD a[3], int bdeg, const QWORD b[3], int* pgcddeg, QWORD gcd[3], int* pmult1deg, QWORD mult1[3], int* pmult2deg, QWORD mult2[3])
+void Polynomial::xgcd(int adeg, const QWORD a[3], int bdeg, const QWORD b[3], int *pgcddeg, QWORD gcd[3],
+                      int *pmult1deg, QWORD mult1[3], int *pmult2deg, QWORD mult2[3])
 {
     int sdeg = -1;
     QWORD s[3] = {0, 0, 0};
 
     int mult1deg = 0;
-    mult1[0] = 1; mult1[1] = 0; mult1[2] = 0;
+    mult1[0] = 1;
+    mult1[1] = 0;
+    mult1[2] = 0;
 
     int tdeg = 0;
     QWORD t[3] = {1, 0, 0};
 
     int mult2deg = -1;
-    mult2[0] = 0; mult2[1] = 0; mult2[2] = 0;
+    mult2[0] = 0;
+    mult2[1] = 0;
+    mult2[2] = 0;
 
     int rdeg = bdeg;
     QWORD r[3] = {b[0], b[1], b[2]};
 
     int gcddeg = adeg;
-    gcd[0] = a[0]; gcd[1] = a[1]; gcd[2] = a[2];
+    gcd[0] = a[0];
+    gcd[1] = a[1];
+    gcd[2] = a[2];
     // s*u1 + t*u2 = r
     // mult1*u1 + mult2*u2 = gcd
 
@@ -112,19 +119,43 @@ void Polynomial::xgcd(int adeg, const QWORD a[3], int bdeg, const QWORD b[3], in
         {
             unsigned tmp;
             int tmpi;
-            tmp = rdeg; rdeg = gcddeg; gcddeg = tmp;
-            tmpi = sdeg; sdeg = mult1deg; mult1deg = tmpi;
-            tmpi = tdeg; tdeg = mult2deg; mult2deg = tmpi;
+            tmp = rdeg;
+            rdeg = gcddeg;
+            gcddeg = tmp;
+            tmpi = sdeg;
+            sdeg = mult1deg;
+            mult1deg = tmpi;
+            tmpi = tdeg;
+            tdeg = mult2deg;
+            mult2deg = tmpi;
             QWORD tmp2;
-            tmp2 = r[0]; r[0] = gcd[0]; gcd[0] = tmp2;
-            tmp2 = r[1]; r[1] = gcd[1]; gcd[1] = tmp2;
-            tmp2 = r[2]; r[2] = gcd[2]; gcd[2] = tmp2;
-            tmp2 = s[0]; s[0] = mult1[0]; mult1[0] = tmp2;
-            tmp2 = s[1]; s[1] = mult1[1]; mult1[1] = tmp2;
-            tmp2 = s[2]; s[2] = mult1[2]; mult1[2] = tmp2;
-            tmp2 = t[0]; t[0] = mult2[0]; mult2[0] = tmp2;
-            tmp2 = t[1]; t[1] = mult2[1]; mult2[1] = tmp2;
-            tmp2 = t[2]; t[2] = mult2[2]; mult2[2] = tmp2;
+            tmp2 = r[0];
+            r[0] = gcd[0];
+            gcd[0] = tmp2;
+            tmp2 = r[1];
+            r[1] = gcd[1];
+            gcd[1] = tmp2;
+            tmp2 = r[2];
+            r[2] = gcd[2];
+            gcd[2] = tmp2;
+            tmp2 = s[0];
+            s[0] = mult1[0];
+            mult1[0] = tmp2;
+            tmp2 = s[1];
+            s[1] = mult1[1];
+            mult1[1] = tmp2;
+            tmp2 = s[2];
+            s[2] = mult1[2];
+            mult1[2] = tmp2;
+            tmp2 = t[0];
+            t[0] = mult2[0];
+            mult2[0] = tmp2;
+            tmp2 = t[1];
+            t[1] = mult2[1];
+            mult2[1] = tmp2;
+            tmp2 = t[2];
+            t[2] = mult2[2];
+            mult2[2] = tmp2;
             continue;
         }
 

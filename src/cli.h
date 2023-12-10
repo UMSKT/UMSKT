@@ -27,24 +27,26 @@
 
 #include <cmrc/cmrc.hpp>
 
+#include "libumskt/confid/confid.h"
 #include "libumskt/libumskt.h"
 #include "libumskt/pidgen2/PIDGEN2.h"
-#include "libumskt/pidgen3/PIDGEN3.h"
 #include "libumskt/pidgen3/BINK1998.h"
 #include "libumskt/pidgen3/BINK2002.h"
-#include "libumskt/confid/confid.h"
+#include "libumskt/pidgen3/PIDGEN3.h"
 
 CMRC_DECLARE(umskt);
 
-enum MODE {
+enum MODE
+{
     MODE_BINK1998_GENERATE = 0,
     MODE_BINK2002_GENERATE = 1,
-    MODE_CONFIRMATION_ID   = 2,
+    MODE_CONFIRMATION_ID = 2,
     MODE_BINK1998_VALIDATE = 3,
     MODE_BINK2002_VALIDATE = 4,
 };
 
-struct Options {
+struct Options
+{
     std::string binkid;
     std::string keysFilename;
     std::string instid;
@@ -65,24 +67,25 @@ struct Options {
     ACTIVATION_ALGORITHM activationMode;
 };
 
-class CLI {
+class CLI
+{
     Options options;
     json keys;
-    const char* BINKID;
+    const char *BINKID;
     BIGNUM *privateKey, *genOrder;
     EC_POINT *genPoint, *pubPoint;
     EC_GROUP *eCurve;
     char pKey[25];
     int count, total;
 
-public:
+  public:
     CLI(Options options, json keys);
     ~CLI();
 
-    static bool loadJSON(const fs::path& filename, json *output);
+    static bool loadJSON(const fs::path &filename, json *output);
     static void showHelp(char *argv[]);
-    static int parseCommandLine(int argc, char* argv[], Options *options);
-    static int validateCommandLine(Options* options, char *argv[], json *keys);
+    static int parseCommandLine(int argc, char *argv[], Options *options);
+    static int validateCommandLine(Options *options, char *argv[], json *keys);
     static void printID(DWORD *pid);
     static void printKey(char *pk);
     static bool stripKey(const char *in_key, char out_key[PK_LENGTH]);
@@ -94,4 +97,4 @@ public:
     int ConfirmationID();
 };
 
-#endif //UMSKT_CLI_H
+#endif // UMSKT_CLI_H

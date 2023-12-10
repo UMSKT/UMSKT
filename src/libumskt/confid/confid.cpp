@@ -82,19 +82,18 @@ void ConfirmationID::setFlagVersion(unsigned int flagVersion)
     ConfirmationID::flagVersion = flagVersion;
 }
 
-
 int ConfirmationID::calculateCheckDigit(int pid)
 {
-	unsigned int i = 0, j = 0, k = 0;
-	for (j = pid; j; i += k)
-	{
-		k = j % 10;
-		j /= 10;
-	}
-	return ((10 * pid) - (i % 7)) + 7;
+    unsigned int i = 0, j = 0, k = 0;
+    for (j = pid; j; i += k)
+    {
+        k = j % 10;
+        j /= 10;
+    }
+    return ((10 * pid) - (i % 7)) + 7;
 }
 
-void ConfirmationID::decode_iid_new_version(unsigned char* iid, unsigned char* hwid, int* version)
+void ConfirmationID::decode_iid_new_version(unsigned char *iid, unsigned char *hwid, int *version)
 {
     QWORD buffer[5];
     for (int i = 0; i < 5; i++)
@@ -113,15 +112,15 @@ void ConfirmationID::decode_iid_new_version(unsigned char* iid, unsigned char* h
     *version = buffer[0] & 7;
 }
 
-void ConfirmationID::Mix(unsigned char* buffer, size_t bufSize, const unsigned char* key, size_t keySize)
+void ConfirmationID::Mix(unsigned char *buffer, size_t bufSize, const unsigned char *key, size_t keySize)
 {
-	unsigned char sha1_input[64], sha1_result[20];
-	size_t half = bufSize / 2;
+    unsigned char sha1_input[64], sha1_result[20];
+    size_t half = bufSize / 2;
 
-	//assert(half <= sizeof(sha1_result) && half + keySize <= sizeof(sha1_input) - 9);
-	for (int external_counter = 0; external_counter < 4; external_counter++)
+    // assert(half <= sizeof(sha1_result) && half + keySize <= sizeof(sha1_input) - 9);
+    for (int external_counter = 0; external_counter < 4; external_counter++)
     {
-		memset(sha1_input, 0, sizeof(sha1_input));
+        memset(sha1_input, 0, sizeof(sha1_input));
 
         if (isXPBrand)
         {
@@ -145,30 +144,30 @@ void ConfirmationID::Mix(unsigned char* buffer, size_t bufSize, const unsigned c
 
         SHA1(sha1_input, sizeof(sha1_input), sha1_result);
 
-		for (size_t i = half & ~3; i < half; i++)
+        for (size_t i = half & ~3; i < half; i++)
         {
             sha1_result[i] = sha1_result[i + 4 - (half & 3)];
         }
 
-		for (size_t i = 0; i < half; i++)
+        for (size_t i = 0; i < half; i++)
         {
-			unsigned char tmp = buffer[i + half];
-			buffer[i + half] = buffer[i] ^ sha1_result[i];
-			buffer[i] = tmp;
-		}
-	}
+            unsigned char tmp = buffer[i + half];
+            buffer[i + half] = buffer[i] ^ sha1_result[i];
+            buffer[i] = tmp;
+        }
+    }
 }
 
-void ConfirmationID::Unmix(unsigned char* buffer, size_t bufSize, const unsigned char key[4], size_t keySize)
+void ConfirmationID::Unmix(unsigned char *buffer, size_t bufSize, const unsigned char key[4], size_t keySize)
 {
-	unsigned char sha1_input[64];
-	unsigned char sha1_result[20];
-	size_t half = bufSize / 2;
-	//assert(half <= sizeof(sha1_result) && half + keySize <= sizeof(sha1_input) - 9);
+    unsigned char sha1_input[64];
+    unsigned char sha1_result[20];
+    size_t half = bufSize / 2;
+    // assert(half <= sizeof(sha1_result) && half + keySize <= sizeof(sha1_input) - 9);
 
-	for (int external_counter = 0; external_counter < 4; external_counter++)
+    for (int external_counter = 0; external_counter < 4; external_counter++)
     {
-		memset(sha1_input, 0, sizeof(sha1_input));
+        memset(sha1_input, 0, sizeof(sha1_input));
 
         if (isXPBrand)
         {
@@ -188,116 +187,117 @@ void ConfirmationID::Unmix(unsigned char* buffer, size_t bufSize, const unsigned
             sha1_input[sizeof(sha1_input) - 2] = (1 + half + keySize) * 8 / 0x100;
         }
 
-		SHA1(sha1_input, sizeof(sha1_input), sha1_result);
+        SHA1(sha1_input, sizeof(sha1_input), sha1_result);
 
-		for (size_t i = half & ~3; i < half; i++)
+        for (size_t i = half & ~3; i < half; i++)
         {
             sha1_result[i] = sha1_result[i + 4 - (half & 3)];
         }
 
-		for (size_t i = 0; i < half; i++)
+        for (size_t i = 0; i < half; i++)
         {
-			unsigned char tmp = buffer[i];
-			buffer[i] = buffer[i + half] ^ sha1_result[i];
-			buffer[i + half] = tmp;
-		}
-	}
+            unsigned char tmp = buffer[i];
+            buffer[i] = buffer[i + half] ^ sha1_result[i];
+            buffer[i + half] = tmp;
+        }
+    }
 }
 
-int ConfirmationID::Generate(const char* installation_id_str, char confirmation_id[49], std::string productid)
+int ConfirmationID::Generate(const char *installation_id_str, char confirmation_id[49], std::string productid)
 {
-	int version;
-	unsigned char hardwareID[8];
-	unsigned char installation_id[19]; // 10**45 < 256**19
+    int version;
+    unsigned char hardwareID[8];
+    unsigned char installation_id[19]; // 10**45 < 256**19
     unsigned char productID[4];
 
-	size_t installation_id_len = 0;
-	const char* pid = installation_id_str;
+    size_t installation_id_len = 0;
+    const char *pid = installation_id_str;
 
-	size_t count = 0, totalCount = 0;
-	unsigned check = 0;
+    size_t count = 0, totalCount = 0;
+    unsigned check = 0;
 
-	size_t i;
+    size_t i;
 
-	for (; *pid; pid++)
+    for (; *pid; pid++)
     {
-		if (*pid == ' ' || *pid == '-')
+        if (*pid == ' ' || *pid == '-')
         {
             continue;
         }
 
-		int d = *pid - '0';
+        int d = *pid - '0';
 
-		if (d < 0 || d > 9)
+        if (d < 0 || d > 9)
         {
             return ERR_INVALID_CHARACTER;
         }
 
-		if (count == 5 || p[1] == 0)
+        if (count == 5 || p[1] == 0)
         {
-			if (!count)
+            if (!count)
             {
                 return (totalCount == 45) ? ERR_TOO_LARGE : ERR_TOO_SHORT;
             }
 
-			if (d != check % 7)
+            if (d != check % 7)
             {
                 return (count < 5) ? ERR_TOO_SHORT : ERR_INVALID_CHECK_DIGIT;
             }
 
-			check = 0;
-			count = 0;
-			continue;
-		}
+            check = 0;
+            count = 0;
+            continue;
+        }
 
-		check += (count % 2 ? d * 2 : d);
-		count++;
+        check += (count % 2 ? d * 2 : d);
+        count++;
 
-		totalCount++;
-		if (totalCount > 45)
+        totalCount++;
+        if (totalCount > 45)
         {
             return ERR_TOO_LARGE;
         }
 
-		unsigned char carry = d;
-		for (i = 0; i < installation_id_len; i++)
+        unsigned char carry = d;
+        for (i = 0; i < installation_id_len; i++)
         {
-			unsigned x = installation_id[i] * 10 + carry;
-			installation_id[i] = x & 0xFF;
-			carry = x >> 8;
-		}
+            unsigned x = installation_id[i] * 10 + carry;
+            installation_id[i] = x & 0xFF;
+            carry = x >> 8;
+        }
 
-		if (carry)
+        if (carry)
         {
-			assert(installation_id_len < sizeof(installation_id));
-			installation_id[installation_id_len++] = carry;
-		}
-	}
+            assert(installation_id_len < sizeof(installation_id));
+            installation_id[installation_id_len++] = carry;
+        }
+    }
 
-	if (totalCount != 41 && totalCount < 45)
+    if (totalCount != 41 && totalCount < 45)
     {
         return ERR_TOO_SHORT;
     }
 
-	for (; installation_id_len < sizeof(installation_id); installation_id_len++)
+    for (; installation_id_len < sizeof(installation_id); installation_id_len++)
     {
         installation_id[installation_id_len] = 0;
     }
 
-	Unmix(installation_id, totalCount == 41 ? 17 : 19, iid_key, 4);
+    Unmix(installation_id, totalCount == 41 ? 17 : 19, iid_key, 4);
 
-	if (installation_id[18] >= 0x10)
+    if (installation_id[18] >= 0x10)
     {
         return ERR_UNKNOWN_VERSION;
     }
 
 #pragma pack(push, 1)
-	struct {
-		QWORD HardwareID;
-		QWORD ProductIDLow;
-		unsigned char ProductIDHigh;
-		unsigned short KeySHA1;
-	} parsed;
+    struct
+    {
+        QWORD HardwareID;
+        QWORD ProductIDLow;
+        unsigned char ProductIDHigh;
+        unsigned short KeySHA1;
+    } parsed;
 #pragma pack(pop)
 
     if (isXPBrand)
@@ -306,7 +306,7 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
         productID[0] = parsed.ProductIDLow & ((1 << 17) - 1);
         productID[1] = (parsed.ProductIDLow >> 17) & ((1 << 10) - 1);
         productID[2] = (parsed.ProductIDLow >> 27) & ((1 << 24) - 1);
-        version      = (parsed.ProductIDLow >> 51) & 15;
+        version = (parsed.ProductIDLow >> 51) & 15;
         productID[3] = (parsed.ProductIDLow >> 55) | (parsed.ProductIDHigh << 9);
 
         if (flagVersion == 0)
@@ -331,9 +331,9 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
         }
 
         memcpy(&parsed, hardwareID, 8);
-        productID[0] = stoi(productid.substr(0,5));
+        productID[0] = stoi(productid.substr(0, 5));
 
-        std::string channelid = productid.substr(6,3);
+        std::string channelid = productid.substr(6, 3);
         char *p = &channelid[0];
         for (; *p; p++)
         {
@@ -342,38 +342,40 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 
         if (strcmp(&channelid[0], "OEM") == 0)
         {
-            productID[1] = stoi(productid.substr(12,3));
-            productID[2] = (stoi(productid.substr(15,1)) * 100000) + stoi(productid.substr(18,5));
+            productID[1] = stoi(productid.substr(12, 3));
+            productID[2] = (stoi(productid.substr(15, 1)) * 100000) + stoi(productid.substr(18, 5));
             productID[2] = calculateCheckDigit(productID[2]);
-            productID[3] = ((stoi(productid.substr(10,2))) * 1000) + productID[3];
+            productID[3] = ((stoi(productid.substr(10, 2))) * 1000) + productID[3];
         }
         else
         {
-            productID[1] = stoi(productid.substr(6,3));
-            productID[2] = stoi(productid.substr(10,7));
-            productID[3] = stoi(productid.substr(18,5));
+            productID[1] = stoi(productid.substr(6, 3));
+            productID[2] = stoi(productid.substr(10, 7));
+            productID[3] = stoi(productid.substr(18, 5));
         }
-        //fmt::print("ProductID: {}-{}-{}-{} \n", productID[0], productID[1], productID[2], productID[3]);
+        // fmt::print("ProductID: {}-{}-{}-{} \n", productID[0], productID[1], productID[2], productID[3]);
     }
 
-	unsigned char keybuf[16];
-	memcpy(keybuf, &parsed.HardwareID, 8);
+    unsigned char keybuf[16];
+    memcpy(keybuf, &parsed.HardwareID, 8);
 
-	QWORD productIdMixed = (QWORD)productID[0] << 41 | (QWORD)productID[1] << 58 | (QWORD)productID[2] << 17 | productID[3];
-	memcpy(keybuf + 8, &productIdMixed, 8);
+    QWORD productIdMixed =
+        (QWORD)productID[0] << 41 | (QWORD)productID[1] << 58 | (QWORD)productID[2] << 17 | productID[3];
+    memcpy(keybuf + 8, &productIdMixed, 8);
 
-	TDivisor d;
-	unsigned char attempt;
+    TDivisor d;
+    unsigned char attempt;
 
     union {
         unsigned char buffer[14];
-        struct {
+        struct
+        {
             QWORD lo;
             QWORD hi;
         };
     } ulowhi;
 
-	for (attempt = 0; attempt <= 0x80; attempt++)
+    for (attempt = 0; attempt <= 0x80; attempt++)
     {
         ulowhi.lo = this->u[0];
         ulowhi.hi = this->u[1];
@@ -387,122 +389,123 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
             ulowhi.buffer[6] = attempt;
         }
 
-		Mix(ulowhi.buffer, 14, keybuf, 16);
-		QWORD x2 = residue->ui128_quotient_mod(ulowhi.lo, ulowhi.hi);
-		QWORD x1 = ulowhi.lo - x2 * MOD;
-		x2++;
+        Mix(ulowhi.buffer, 14, keybuf, 16);
+        QWORD x2 = residue->ui128_quotient_mod(ulowhi.lo, ulowhi.hi);
+        QWORD x1 = ulowhi.lo - x2 * MOD;
+        x2++;
 
-		d.u[0] = residue->sub(residue->mul(x1, x1), residue->mul(NON_RESIDUE, residue->mul(x2, x2)));
-		d.u[1] = residue->add(x1, x1);
-		if (divisor->find_divisor_v(&d))
+        d.u[0] = residue->sub(residue->mul(x1, x1), residue->mul(NON_RESIDUE, residue->mul(x2, x2)));
+        d.u[1] = residue->add(x1, x1);
+        if (divisor->find_divisor_v(&d))
         {
             break;
         }
-	}
+    }
 
-	if (attempt > 0x80)
+    if (attempt > 0x80)
     {
         return ERR_UNLUCKY;
     }
 
     divisor->mul128(&d, u[0], u[1], &d);
 
-	union {
-		struct {
-			QWORD encoded_lo, encoded_hi;
-		};
-		struct {
-			uint32_t encoded[4];
-		};
-	} e;
+    union {
+        struct
+        {
+            QWORD encoded_lo, encoded_hi;
+        };
+        struct
+        {
+            uint32_t encoded[4];
+        };
+    } e;
 
-	if (d.u[0] == BAD)
+    if (d.u[0] == BAD)
     {
-		// we can not get the zero divisor, actually...
-		e.encoded_lo = residue->__umul128(MOD + 2, MOD, &e.encoded_hi);
-	}
+        // we can not get the zero divisor, actually...
+        e.encoded_lo = residue->__umul128(MOD + 2, MOD, &e.encoded_hi);
+    }
     else if (d.u[1] == BAD)
     {
-		// O(1/MOD) chance
-		//encoded = (unsigned __int128)(MOD + 1) * d.u[0] + MOD; // * MOD + d.u[0] is fine too
-		e.encoded_lo = residue->__umul128(MOD + 1, d.u[0], &e.encoded_hi);
-		e.encoded_lo += MOD;
-		e.encoded_hi += (e.encoded_lo < MOD);
-	}
+        // O(1/MOD) chance
+        // encoded = (unsigned __int128)(MOD + 1) * d.u[0] + MOD; // * MOD + d.u[0] is fine too
+        e.encoded_lo = residue->__umul128(MOD + 1, d.u[0], &e.encoded_hi);
+        e.encoded_lo += MOD;
+        e.encoded_hi += (e.encoded_lo < MOD);
+    }
     else
     {
-		QWORD x1 = (d.u[1] % 2 ? d.u[1] + MOD : d.u[1]) / 2;
-		QWORD x2sqr = residue->sub(residue->mul(x1, x1), d.u[0]);
-		QWORD x2 = residue->sqrt(x2sqr);
+        QWORD x1 = (d.u[1] % 2 ? d.u[1] + MOD : d.u[1]) / 2;
+        QWORD x2sqr = residue->sub(residue->mul(x1, x1), d.u[0]);
+        QWORD x2 = residue->sqrt(x2sqr);
 
         if (x2 == BAD)
         {
-			x2 = residue->sqrt(residue->mul(x2sqr, residue->inv(NON_RESIDUE)));
-			assert(x2 != BAD);
-			e.encoded_lo = residue->__umul128(MOD + 1, MOD + x2, &e.encoded_hi);
-			e.encoded_lo += x1;
-			e.encoded_hi += (e.encoded_lo < x1);
-		}
+            x2 = residue->sqrt(residue->mul(x2sqr, residue->inv(NON_RESIDUE)));
+            assert(x2 != BAD);
+            e.encoded_lo = residue->__umul128(MOD + 1, MOD + x2, &e.encoded_hi);
+            e.encoded_lo += x1;
+            e.encoded_hi += (e.encoded_lo < x1);
+        }
         else
         {
-			// points (-x1+x2, v(-x1+x2)) and (-x1-x2, v(-x1-x2))
-			QWORD x1a = residue->sub(x1, x2);
-			QWORD y1  = residue->sub(d.v[0], residue->mul(d.v[1], x1a));
-			QWORD x2a = residue->add(x1, x2);
-			QWORD y2  = residue->sub(d.v[0], residue->mul(d.v[1], x2a));
-			if (x1a > x2a)
+            // points (-x1+x2, v(-x1+x2)) and (-x1-x2, v(-x1-x2))
+            QWORD x1a = residue->sub(x1, x2);
+            QWORD y1 = residue->sub(d.v[0], residue->mul(d.v[1], x1a));
+            QWORD x2a = residue->add(x1, x2);
+            QWORD y2 = residue->sub(d.v[0], residue->mul(d.v[1], x2a));
+            if (x1a > x2a)
             {
-				QWORD tmp = x1a;
-				x1a = x2a;
-				x2a = tmp;
-			}
+                QWORD tmp = x1a;
+                x1a = x2a;
+                x2a = tmp;
+            }
 
             if ((y1 ^ y2) & 1)
             {
-				QWORD tmp = x1a;
-				x1a = x2a;
-				x2a = tmp;
-			}
+                QWORD tmp = x1a;
+                x1a = x2a;
+                x2a = tmp;
+            }
 
-			e.encoded_lo = residue->__umul128(MOD + 1, x1a, &e.encoded_hi);
-			e.encoded_lo += x2a;
-			e.encoded_hi += (e.encoded_lo < x2a);
+            e.encoded_lo = residue->__umul128(MOD + 1, x1a, &e.encoded_hi);
+            e.encoded_lo += x2a;
+            e.encoded_hi += (e.encoded_lo < x2a);
+        }
+    }
 
-		}
-	}
-
-	unsigned char decimal[35];
-	for (i = 0; i < 35; i++)
+    unsigned char decimal[35];
+    for (i = 0; i < 35; i++)
     {
-		unsigned c = e.encoded[3] % 10;
-		e.encoded[3] /= 10;
-		unsigned c2 = ((QWORD)c << 32 | e.encoded[2]) % 10;
-		e.encoded[2] = ((QWORD)c << 32 | e.encoded[2]) / 10;
-		unsigned c3 = ((QWORD)c2 << 32 | e.encoded[1]) % 10;
-		e.encoded[1] = ((QWORD)c2 << 32 | e.encoded[1]) / 10;
-		unsigned c4 = ((QWORD)c3 << 32 | e.encoded[0]) % 10;
-		e.encoded[0] = ((QWORD)c3 << 32 | e.encoded[0]) / 10;
-		decimal[34 - i] = c4;
-	}
+        unsigned c = e.encoded[3] % 10;
+        e.encoded[3] /= 10;
+        unsigned c2 = ((QWORD)c << 32 | e.encoded[2]) % 10;
+        e.encoded[2] = ((QWORD)c << 32 | e.encoded[2]) / 10;
+        unsigned c3 = ((QWORD)c2 << 32 | e.encoded[1]) % 10;
+        e.encoded[1] = ((QWORD)c2 << 32 | e.encoded[1]) / 10;
+        unsigned c4 = ((QWORD)c3 << 32 | e.encoded[0]) % 10;
+        e.encoded[0] = ((QWORD)c3 << 32 | e.encoded[0]) / 10;
+        decimal[34 - i] = c4;
+    }
 
-	assert(e.encoded[0] == 0 && e.encoded[1] == 0 && e.encoded[2] == 0 && e.encoded[3] == 0);
-	char* q = confirmation_id;
-	for (i = 0; i < 7; i++)
+    assert(e.encoded[0] == 0 && e.encoded[1] == 0 && e.encoded[2] == 0 && e.encoded[3] == 0);
+    char *q = confirmation_id;
+    for (i = 0; i < 7; i++)
     {
-		if (i)
+        if (i)
         {
             *q++ = '-';
         }
 
-		unsigned char* p = decimal + i*5;
-		q[0] = p[0] + '0';
-		q[1] = p[1] + '0';
-		q[2] = p[2] + '0';
-		q[3] = p[3] + '0';
-		q[4] = p[4] + '0';
-		q[5] = ((p[0]+p[1]*2+p[2]+p[3]*2+p[4]) % 7) + '0';
-		q += 6;
-	}
-	*q++ = 0;
-	return 0;
+        unsigned char *p = decimal + i * 5;
+        q[0] = p[0] + '0';
+        q[1] = p[1] + '0';
+        q[2] = p[2] + '0';
+        q[3] = p[3] + '0';
+        q[4] = p[4] + '0';
+        q[5] = ((p[0] + p[1] * 2 + p[2] + p[3] * 2 + p[4]) % 7) + '0';
+        q += 6;
+    }
+    *q++ = 0;
+    return 0;
 }

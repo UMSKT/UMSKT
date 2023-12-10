@@ -25,12 +25,12 @@
 
 #include "typedefs.h"
 
-#include <iostream>
-#include <fstream>
 #include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>
@@ -38,4 +38,4 @@
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
-#endif //UMSKT_HEADER_H
+#endif // UMSKT_HEADER_H

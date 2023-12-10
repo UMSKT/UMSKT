@@ -25,40 +25,17 @@
 
 #include "PIDGEN3.h"
 
-EXPORT class PIDGEN3::BINK1998 {
-public:
-    static void Unpack(
-            QWORD (&pRaw)[2],
-             BOOL &pUpgrade,
-            DWORD &pSerial,
-            DWORD &pHash,
-            QWORD &pSignature
-    );
+EXPORT class PIDGEN3::BINK1998
+{
+  public:
+    static void Unpack(QWORD (&pRaw)[2], BOOL &pUpgrade, DWORD &pSerial, DWORD &pHash, QWORD &pSignature);
 
-    static void Pack(
-            QWORD (&pRaw)[2],
-             BOOL pUpgrade,
-            DWORD pSerial,
-            DWORD pHash,
-            QWORD pSignature
-    );
+    static void Pack(QWORD (&pRaw)[2], BOOL pUpgrade, DWORD pSerial, DWORD pHash, QWORD pSignature);
 
-    static bool Verify(
-            EC_GROUP *eCurve,
-            EC_POINT *basePoint,
-            EC_POINT *publicKey,
-                char (&pKey)[25]
-    );
+    static bool Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *publicKey, char (&pKey)[25]);
 
-    static void Generate(
-            EC_GROUP *eCurve,
-            EC_POINT *basePoint,
-              BIGNUM *genOrder,
-              BIGNUM *privateKey,
-               DWORD pSerial,
-                BOOL pUpgrade,
-                char (&pKey)[25]
-    );
+    static void Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *genOrder, BIGNUM *privateKey, DWORD pSerial,
+                         BOOL pUpgrade, char (&pKey)[25]);
 };
 
-#endif //UMSKT_BINK1998_H
+#endif // UMSKT_BINK1998_H

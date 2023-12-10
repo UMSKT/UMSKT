@@ -23,8 +23,8 @@
 #ifndef UMSKT_TYPEDEFS_H
 #define UMSKT_TYPEDEFS_H
 
-#include <cstdint>
 #include <cstdbool>
+#include <cstdint>
 
 #ifdef DEBUG
 #include <cassert>
@@ -46,8 +46,8 @@
 #endif
 
 // Type definitions
-typedef bool     BOOL;
-typedef uint8_t  BYTE;
+typedef bool BOOL;
+typedef uint8_t BYTE;
 typedef uint16_t WORD;
 typedef uint32_t DWORD;
 typedef uint64_t QWORD;
@@ -56,4 +56,4 @@ typedef uint64_t QWORD;
 typedef unsigned __int128 OWORD;
 #endif
 
-#endif //UMSKT_TYPEDEFS_H
+#endif // UMSKT_TYPEDEFS_H

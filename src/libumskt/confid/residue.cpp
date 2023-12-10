@@ -24,11 +24,11 @@
 
 #if defined(__x86_64__) || defined(_M_AMD64) || defined(__aarch64__) || (defined(__arm64__) && defined(__APPLE__))
 #ifdef __GNUC__
-inline QWORD Residue::__umul128(QWORD a, QWORD b, QWORD* hi)
+inline QWORD Residue::__umul128(QWORD a, QWORD b, QWORD *hi)
 {
     OWORD r = (OWORD)a * (OWORD)b;
     *hi = r >> 64;
-    return (QWORD) r;
+    return (QWORD)r;
 }
 #else
 #define __umul128 _umul128
@@ -44,9 +44,9 @@ inline QWORD Residue::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *pro
     QWORD c = multiplicand >> 32;
     QWORD d = multiplicand & 0xFFFFFFFF;
 
-    //QWORD ac = a * c;
+    // QWORD ac = a * c;
     QWORD ad = a * d;
-    //QWORD bc = b * c;
+    // QWORD bc = b * c;
     QWORD bd = b * d;
 
     QWORD adbc = ad + (b * c);
@@ -91,7 +91,7 @@ QWORD Residue::ui128_quotient_mod(QWORD lo, QWORD hi)
 
 QWORD Residue::mul(QWORD x, QWORD y)
 {
-// * ceil(2**170/MOD) = 0x2d351 c6d04f8b|604fa6a1 c6346a87 for (p-1)*(p-1) max
+    // * ceil(2**170/MOD) = 0x2d351 c6d04f8b|604fa6a1 c6346a87 for (p-1)*(p-1) max
     QWORD hi;
     QWORD lo = __umul128(x, y, &hi);
     QWORD quotient = ui128_quotient_mod(lo, hi);
@@ -128,7 +128,7 @@ QWORD Residue::pow(QWORD x, QWORD y)
 QWORD Residue::add(QWORD x, QWORD y)
 {
     QWORD z = x + y;
-    //z = z - (z >= MOD ? MOD : 0);
+    // z = z - (z >= MOD ? MOD : 0);
     if (z >= parent->MOD)
     {
         z -= parent->MOD;
@@ -139,7 +139,7 @@ QWORD Residue::add(QWORD x, QWORD y)
 QWORD Residue::sub(QWORD x, QWORD y)
 {
     QWORD z = x - y;
-    //z += (x < y ? MOD : 0);
+    // z += (x < y ? MOD : 0);
     if (x < y)
     {
         z += parent->MOD;
@@ -149,15 +149,20 @@ QWORD Residue::sub(QWORD x, QWORD y)
 
 QWORD Residue::inverse(QWORD u, QWORD v)
 {
-    //assert(u);
+    // assert(u);
     int64_t tmp;
     int64_t xu = 1, xv = 0;
     QWORD v0 = v;
     while (u > 1)
     {
-        QWORD d = v / u; QWORD remainder = v % u;
-        tmp = u; u = remainder; v = tmp;
-        tmp = xu; xu = xv - d * xu; xv = tmp;
+        QWORD d = v / u;
+        QWORD remainder = v % u;
+        tmp = u;
+        u = remainder;
+        v = tmp;
+        tmp = xu;
+        xu = xv - d * xu;
+        xv = tmp;
     }
     xu += (xu < 0 ? v0 : 0);
     return xu;
@@ -190,15 +195,15 @@ QWORD Residue::sqrt(QWORD what)
     x = pow(what, (q - 1) / 2);
     b = mul(mul(what, x), x);
     x = mul(what, x);
-    while (b != 1) {
+    while (b != 1)
+    {
         QWORD m = 0, b2 = b;
 
         do
         {
             m++;
             b2 = mul(b2, b2);
-        }
-        while (b2 != 1);
+        } while (b2 != 1);
 
         if (m == r)
         {
@@ -214,7 +219,7 @@ QWORD Residue::sqrt(QWORD what)
 
     if (mul(x, x) != what)
     {
-        //printf("internal error in sqrt\n");
+        // printf("internal error in sqrt\n");
         return BAD;
     }
 

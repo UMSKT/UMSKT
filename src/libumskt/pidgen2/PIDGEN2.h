@@ -25,17 +25,18 @@
 
 #include "../libumskt.h"
 
-EXPORT class PIDGEN2 {
-public:
-    static bool isNumericString(char* input);
-    static bool isValidChannelID(char* channelID);
-    static bool isValidOEMID(char* OEMID);
-    static bool isValidYear(char* year);
-    static bool isValidDay(char* day);
-    static bool isValidRetailProductID(char* productID);
-    static int addDigits(char* input);
-    static int GenerateRetail(char* channelID, char* &keyout);
-    static int GenerateOEM(char* year, char* day, char* oem, char* &keyout);
+EXPORT class PIDGEN2
+{
+  public:
+    static bool isNumericString(char *input);
+    static bool isValidChannelID(char *channelID);
+    static bool isValidOEMID(char *OEMID);
+    static bool isValidYear(char *year);
+    static bool isValidDay(char *day);
+    static bool isValidRetailProductID(char *productID);
+    static int addDigits(char *input);
+    static int GenerateRetail(char *channelID, char *&keyout);
+    static int GenerateOEM(char *year, char *day, char *oem, char *&keyout);
 };
 
-#endif //UMSKT_PIDGEN2_H
+#endif // UMSKT_PIDGEN2_H

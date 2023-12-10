@@ -30,13 +30,8 @@
 #include "BINK1998.h"
 
 /* Unpacks a Windows XP-like Product Key. */
-void PIDGEN3::BINK1998::Unpack(
-        QWORD (&pRaw)[2],
-         BOOL &pUpgrade,
-        DWORD &pSerial,
-        DWORD &pHash,
-        QWORD &pSignature
-) {
+void PIDGEN3::BINK1998::Unpack(QWORD (&pRaw)[2], BOOL &pUpgrade, DWORD &pSerial, DWORD &pHash, QWORD &pSignature)
+{
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
 
@@ -54,13 +49,8 @@ void PIDGEN3::BINK1998::Unpack(
 }
 
 /* Packs a Windows XP-like Product Key. */
-void PIDGEN3::BINK1998::Pack(
-        QWORD (&pRaw)[2],
-         BOOL pUpgrade,
-        DWORD pSerial,
-        DWORD pHash,
-        QWORD pSignature
-) {
+void PIDGEN3::BINK1998::Pack(QWORD (&pRaw)[2], BOOL pUpgrade, DWORD pSerial, DWORD pHash, QWORD pSignature)
+{
     // The quantity of information the key provides is 114 bits.
     // We're storing it in 2 64-bit quad-words with 14 trailing bits.
     // 64 * 2 = 128
@@ -71,22 +61,15 @@ void PIDGEN3::BINK1998::Pack(
 }
 
 /* Verifies a Windows XP-like Product Key. */
-bool PIDGEN3::BINK1998::Verify(
-        EC_GROUP *eCurve,
-        EC_POINT *basePoint,
-        EC_POINT *publicKey,
-            char (&pKey)[25]
-) {
+bool PIDGEN3::BINK1998::Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *publicKey, char (&pKey)[25])
+{
     BN_CTX *numContext = BN_CTX_new();
 
-    QWORD pRaw[2]{},
-          pSignature;
+    QWORD pRaw[2]{}, pSignature;
 
-    DWORD pData,
-          pSerial,
-          pHash;
+    DWORD pData, pSerial, pHash;
 
-    BOOL  pUpgrade;
+    BOOL pUpgrade;
 
     // Convert Base24 CD-key to bytecode.
     PIDGEN3::unbase24((BYTE *)pRaw, pKey);
@@ -119,9 +102,7 @@ bool PIDGEN3::BINK1998::Verify(
      */
 
     BIGNUM *e = BN_lebin2bn((BYTE *)&pHash, sizeof(pHash), nullptr),
-           *s = BN_lebin2bn((BYTE *)&pSignature, sizeof(pSignature), nullptr),
-           *x = BN_new(),
-           *y = BN_new();
+           *s = BN_lebin2bn((BYTE *)&pSignature, sizeof(pSignature), nullptr), *x = BN_new(), *y = BN_new();
 
     // Create 2 points on the elliptic curve.
     EC_POINT *t = EC_POINT_new(eCurve);
@@ -139,10 +120,7 @@ bool PIDGEN3::BINK1998::Verify(
     // x = P.x; y = P.y;
     EC_POINT_get_affine_coordinates(eCurve, p, x, y, numContext);
 
-    BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
-            msgBuffer[SHA_MSG_LENGTH_XP]{},
-            xBin[FIELD_BYTES]{},
-            yBin[FIELD_BYTES]{};
+    BYTE msgDigest[SHA_DIGEST_LENGTH]{}, msgBuffer[SHA_MSG_LENGTH_XP]{}, xBin[FIELD_BYTES]{}, yBin[FIELD_BYTES]{};
 
     // Convert resulting point coordinates to bytes.
     BN_bn2lebin(x, xBin, FIELD_BYTES);
@@ -175,29 +153,20 @@ bool PIDGEN3::BINK1998::Verify(
 }
 
 /* Generates a Windows XP-like Product Key. */
-void PIDGEN3::BINK1998::Generate(
-        EC_GROUP *eCurve,
-        EC_POINT *basePoint,
-          BIGNUM *genOrder,
-          BIGNUM *privateKey,
-           DWORD pSerial,
-            BOOL pUpgrade,
-            char (&pKey)[25]
-) {
+void PIDGEN3::BINK1998::Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *genOrder, BIGNUM *privateKey,
+                                 DWORD pSerial, BOOL pUpgrade, char (&pKey)[25])
+{
     BN_CTX *numContext = BN_CTX_new();
 
-    BIGNUM *c = BN_new(),
-           *s = BN_new(),
-           *x = BN_new(),
-           *y = BN_new();
+    BIGNUM *c = BN_new(), *s = BN_new(), *x = BN_new(), *y = BN_new();
 
-    QWORD pRaw[2]{},
-          pSignature = 0;
+    QWORD pRaw[2]{}, pSignature = 0;
 
     // Data segment of the RPK.
     DWORD pData = pSerial << 1 | pUpgrade;
 
-    do {
+    do
+    {
         EC_POINT *r = EC_POINT_new(eCurve);
 
         // Generate a random number c consisting of 384 bits without any constraints.
@@ -211,10 +180,7 @@ void PIDGEN3::BINK1998::Generate(
         // x = R.x; y = R.y;
         EC_POINT_get_affine_coordinates(eCurve, r, x, y, numContext);
 
-        BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
-                msgBuffer[SHA_MSG_LENGTH_XP]{},
-                xBin[FIELD_BYTES]{},
-                yBin[FIELD_BYTES]{};
+        BYTE msgDigest[SHA_DIGEST_LENGTH]{}, msgBuffer[SHA_MSG_LENGTH_XP]{}, xBin[FIELD_BYTES]{}, yBin[FIELD_BYTES]{};
 
         // Convert coordinates to bytes.
         BN_bn2lebin(x, xBin, FIELD_BYTES);

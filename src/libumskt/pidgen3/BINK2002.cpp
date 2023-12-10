@@ -30,14 +30,9 @@
 #include "BINK2002.h"
 
 /* Unpacks a Windows Server 2003-like Product Key. */
-void PIDGEN3::BINK2002::Unpack(
-        QWORD (&pRaw)[2],
-         BOOL &pUpgrade,
-        DWORD &pChannelID,
-        DWORD &pHash,
-        QWORD &pSignature,
-        DWORD &pAuthInfo
-) {
+void PIDGEN3::BINK2002::Unpack(QWORD (&pRaw)[2], BOOL &pUpgrade, DWORD &pChannelID, DWORD &pHash, QWORD &pSignature,
+                               DWORD &pAuthInfo)
+{
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
 
@@ -60,37 +55,24 @@ void PIDGEN3::BINK2002::Unpack(
 }
 
 /* Packs a Windows Server 2003-like Product Key. */
-void PIDGEN3::BINK2002::Pack(
-        QWORD (&pRaw)[2],
-         BOOL pUpgrade,
-        DWORD pChannelID,
-        DWORD pHash,
-        QWORD pSignature,
-        DWORD pAuthInfo
-) {
+void PIDGEN3::BINK2002::Pack(QWORD (&pRaw)[2], BOOL pUpgrade, DWORD pChannelID, DWORD pHash, QWORD pSignature,
+                             DWORD pAuthInfo)
+{
     // AuthInfo [113..104] <- Signature [103..42] <- Hash [41..11] <- Channel ID [10..1] <- Upgrade [0]
     pRaw[0] = FIRSTNBITS(pSignature, 22) << 42 | (QWORD)pHash << 11 | pChannelID << 1 | pUpgrade;
     pRaw[1] = FIRSTNBITS(pAuthInfo, 10) << 40 | NEXTSNBITS(pSignature, 40, 22);
 }
 
 /* Verifies a Windows Server 2003-like Product Key. */
-bool PIDGEN3::BINK2002::Verify(
-        EC_GROUP *eCurve,
-        EC_POINT *basePoint,
-        EC_POINT *publicKey,
-            char (&cdKey)[25]
-) {
+bool PIDGEN3::BINK2002::Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *publicKey, char (&cdKey)[25])
+{
     BN_CTX *context = BN_CTX_new();
 
-    QWORD bKey[2]{},
-          pSignature = 0;
+    QWORD bKey[2]{}, pSignature = 0;
 
-    DWORD pData,
-          pChannelID,
-          pHash,
-          pAuthInfo;
+    DWORD pData, pChannelID, pHash, pAuthInfo;
 
-    BOOL  pUpgrade;
+    BOOL pUpgrade;
 
     // Convert Base24 CD-key to bytecode.
     unbase24((BYTE *)bKey, cdKey);
@@ -108,10 +90,8 @@ bool PIDGEN3::BINK2002::Verify(
     fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", pAuthInfo);
     fmt::print(UMSKT::debug, "\n");
 
-    BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
-            msgBuffer[SHA_MSG_LENGTH_2003]{},
-            xBin[FIELD_BYTES_2003]{},
-            yBin[FIELD_BYTES_2003]{};
+    BYTE msgDigest[SHA_DIGEST_LENGTH]{}, msgBuffer[SHA_MSG_LENGTH_2003]{}, xBin[FIELD_BYTES_2003]{},
+        yBin[FIELD_BYTES_2003]{};
 
     // Assemble the first SHA message.
     msgBuffer[0x00] = 0x5D;
@@ -130,7 +110,8 @@ bool PIDGEN3::BINK2002::Verify(
     SHA1(msgBuffer, 11, msgDigest);
 
     // Translate the byte digest into a 64-bit integer - this is our computed intermediate signature.
-    // As the signature is only 62 bits long at most, we have to truncate it by shifting the high DWORD right 2 bits (per spec).
+    // As the signature is only 62 bits long at most, we have to truncate it by shifting the high DWORD right 2 bits
+    // (per spec).
     QWORD iSignature = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
 
     /*
@@ -149,9 +130,7 @@ bool PIDGEN3::BINK2002::Verify(
      */
 
     BIGNUM *e = BN_lebin2bn((BYTE *)&iSignature, sizeof(iSignature), nullptr),
-           *s = BN_lebin2bn((BYTE *)&pSignature, sizeof(pSignature), nullptr),
-           *x = BN_new(),
-           *y = BN_new();
+           *s = BN_lebin2bn((BYTE *)&pSignature, sizeof(pSignature), nullptr), *x = BN_new(), *y = BN_new();
 
     // Create 2 points on the elliptic curve.
     EC_POINT *p = EC_POINT_new(eCurve);
@@ -206,33 +185,22 @@ bool PIDGEN3::BINK2002::Verify(
 }
 
 /* Generates a Windows Server 2003-like Product Key. */
-void PIDGEN3::BINK2002::Generate(
-        EC_GROUP *eCurve,
-        EC_POINT *basePoint,
-          BIGNUM *genOrder,
-          BIGNUM *privateKey,
-           DWORD pChannelID,
-           DWORD pAuthInfo,
-            BOOL pUpgrade,
-            char (&pKey)[25]
-) {
+void PIDGEN3::BINK2002::Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *genOrder, BIGNUM *privateKey,
+                                 DWORD pChannelID, DWORD pAuthInfo, BOOL pUpgrade, char (&pKey)[25])
+{
     BN_CTX *numContext = BN_CTX_new();
 
-    BIGNUM *c = BN_new(),
-           *e = BN_new(),
-           *s = BN_new(),
-           *x = BN_new(),
-           *y = BN_new();
+    BIGNUM *c = BN_new(), *e = BN_new(), *s = BN_new(), *x = BN_new(), *y = BN_new();
 
-    QWORD pRaw[2]{},
-          pSignature = 0;
+    QWORD pRaw[2]{}, pSignature = 0;
 
     // Data segment of the RPK.
     DWORD pData = pChannelID << 1 | pUpgrade;
 
     BOOL noSquare;
 
-    do {
+    do
+    {
         EC_POINT *r = EC_POINT_new(eCurve);
 
         // Generate a random number c consisting of 512 bits without any constraints.
@@ -245,10 +213,8 @@ void PIDGEN3::BINK2002::Generate(
         // x = R.x; y = R.y;
         EC_POINT_get_affine_coordinates(eCurve, r, x, y, numContext);
 
-        BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
-                msgBuffer[SHA_MSG_LENGTH_2003]{},
-                xBin[FIELD_BYTES_2003]{},
-                yBin[FIELD_BYTES_2003]{};
+        BYTE msgDigest[SHA_DIGEST_LENGTH]{}, msgBuffer[SHA_MSG_LENGTH_2003]{}, xBin[FIELD_BYTES_2003]{},
+            yBin[FIELD_BYTES_2003]{};
 
         // Convert resulting point coordinates to bytes.
         BN_bn2lebin(x, xBin, FIELD_BYTES_2003);
@@ -286,7 +252,8 @@ void PIDGEN3::BINK2002::Generate(
         SHA1(msgBuffer, 11, msgDigest);
 
         // Translate the byte digest into a 64-bit integer - this is our computed intermediate signature.
-        // As the signature is only 62 bits long at most, we have to truncate it by shifting the high DWORD right 2 bits (per spec).
+        // As the signature is only 62 bits long at most, we have to truncate it by shifting the high DWORD right 2
+        // bits (per spec).
         QWORD iSignature = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
 
         BN_lebin2bn((BYTE *)&iSignature, sizeof(iSignature), e);
@@ -346,9 +313,11 @@ void PIDGEN3::BINK2002::Generate(
         // If s is odd, add order to it.
         // The order is a prime, so it can't be even.
         if (BN_is_odd(s))
+        {
 
             // s = -ek + √((ek)² + 4c) + n
             BN_add(s, s, genOrder);
+        }
 
         // s /= 2 (s >>= 1)
         BN_rshift1(s, s);

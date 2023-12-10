@@ -25,25 +25,20 @@
 
 #include "../libumskt.h"
 
-class PIDGEN3 {
-public:
+class PIDGEN3
+{
+  public:
     class BINK1998;
     class BINK2002;
 
     // util.cpp
-    static int BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen); // Hello OpenSSL developers, please tell me, where is this function at?
+    static int BN_bn2lebin(const BIGNUM *a, unsigned char *to,
+                           int tolen); // Hello OpenSSL developers, please tell me, where is this function at?
     static void endian(BYTE *data, int length);
-    static EC_GROUP* initializeEllipticCurve(
-            std::string pSel,
-            std::string aSel,
-            std::string bSel,
-            std::string generatorXSel,
-            std::string generatorYSel,
-            std::string publicKeyXSel,
-            std::string publicKeyYSel,
-            EC_POINT *&genPoint,
-            EC_POINT *&pubPoint
-    );
+    static EC_GROUP *initializeEllipticCurve(std::string pSel, std::string aSel, std::string bSel,
+                                             std::string generatorXSel, std::string generatorYSel,
+                                             std::string publicKeyXSel, std::string publicKeyYSel, EC_POINT *&genPoint,
+                                             EC_POINT *&pubPoint);
 
     // key.cpp
     static constexpr char pKeyCharset[] = "BCDFGHJKMPQRTVWXY2346789";
@@ -51,4 +46,4 @@ public:
     static void base24(char *cdKey, BYTE *byteSeq);
 };
 
-#endif //UMSKT_PIDGEN3_H
+#endif // UMSKT_PIDGEN3_H

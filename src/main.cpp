@@ -20,13 +20,15 @@
  * @Maintainer Neo
  */
 
-#include "header.h"
 #include "cli.h"
+#include "header.h"
 
 Options options;
 
-int main(int argc, char *argv[]) {
-    if (!CLI::parseCommandLine(argc, argv, &options)) {
+int main(int argc, char *argv[])
+{
+    if (!CLI::parseCommandLine(argc, argv, &options))
+    {
         fmt::print("error parsing command line options\n");
         CLI::showHelp(argv);
         return !options.error ? 0 : 1;
@@ -35,29 +37,31 @@ int main(int argc, char *argv[]) {
     json keys;
 
     int status = CLI::validateCommandLine(&options, argv, &keys);
-    if (status > 0) {
+    if (status > 0)
+    {
         return status;
     }
 
     CLI run(options, keys);
 
-    switch(options.applicationMode) {
-        case MODE_BINK1998_GENERATE:
-            return run.BINK1998Generate();
+    switch (options.applicationMode)
+    {
+    case MODE_BINK1998_GENERATE:
+        return run.BINK1998Generate();
 
-        case MODE_BINK2002_GENERATE:
-            return run.BINK2002Generate();
+    case MODE_BINK2002_GENERATE:
+        return run.BINK2002Generate();
 
-        case MODE_BINK1998_VALIDATE:
-            return run.BINK1998Validate();
+    case MODE_BINK1998_VALIDATE:
+        return run.BINK1998Validate();
 
-        case MODE_BINK2002_VALIDATE:
-            return run.BINK2002Validate();
+    case MODE_BINK2002_VALIDATE:
+        return run.BINK2002Validate();
 
-        case MODE_CONFIRMATION_ID:
-            return run.ConfirmationID();
+    case MODE_CONFIRMATION_ID:
+        return run.ConfirmationID();
 
-        default:
-            return 1;
+    default:
+        return 1;
     }
 }
