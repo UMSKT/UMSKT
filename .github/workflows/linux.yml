@@ -50,6 +50,7 @@ jobs:
           musl-dev
           openssl-dev
           openssl-libs-static
+          zlib-dev
         arch: ${{ matrix.arch }}
         shell-name: alpine-target.sh
 
@@ -70,3 +71,17 @@ jobs:
       with:
         name: UMSKT-linux-${{ matrix.arch }}-static
         path: build/actions_upload
+
+    - name: Configure and build static internal deps UMSKT
+      uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
+      with:
+        options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=OFF
+        run-build: true
+        shell: alpine-target.sh {0}
+
+    - name: Configure and build shared deps UMSKT
+      uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
+      with:
+        options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=ON
+        run-build: true
+        shell: alpine-target.sh {0}
