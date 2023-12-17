@@ -24,6 +24,10 @@
   push:
     branches: [ "*" ]
     paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
+  pull_request:
+    branches: [ "*" ]
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
+
   workflow_dispatch:
   
  jobs: 
