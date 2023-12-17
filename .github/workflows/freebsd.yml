@@ -28,14 +28,14 @@
   
  jobs: 
    build: 
-     runs-on: macos-latest
+     runs-on: ubuntu-latest
      name: build-x86_64 
      steps: 
      - uses: actions/checkout@v3 
   
      - name: Build & Test in FreeBSD 
        id: test 
-       uses: vmactions/freebsd-vm@v0 
+       uses: vmactions/freebsd-vm@v1 
        with: 
          envs: 'MYTOKEN MYTOKEN2' 
          usesh: true 
