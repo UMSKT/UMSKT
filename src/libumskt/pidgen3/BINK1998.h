@@ -27,12 +27,11 @@
 
 class BINK1998 : public PIDGEN3
 {
-
   public:
-    BOOL Unpack(QWORD (&pRaw)[2]) override;
-    BOOL Pack(QWORD (&pRaw)[2]) override;
+    BOOL Unpack(KeyInfo &info, QWORD *pRaw) override;
+    BOOL Pack(const KeyInfo &info, QWORD *pRaw) override;
     BOOL Verify(std::string &pKey) override;
-    BOOL Generate(std::string &pKey) override;
+    BOOL Generate(KeyInfo &info, std::string &pKey) override;
 };
 
 #endif // UMSKT_BINK1998_H

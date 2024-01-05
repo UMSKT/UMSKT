@@ -66,6 +66,12 @@ class UMSKT
     static BOOL VERBOSE;
     static BOOL DEBUG;
 
+    static void DESTRUCT()
+    {
+        std::fclose(debug);
+        debug = nullptr;
+    }
+
     static void setDebugOutput(std::FILE *input);
     template <typename T> static T getRandom()
     {

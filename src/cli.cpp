@@ -29,7 +29,7 @@ json CLI::keys;
 BYTE CLI::Init(int argcIn, char **argvIn)
 {
     // set default options
-    options = {argcIn, argvIn, "2E",  "",    "",    "",    "",    "",    "WINXPPVLK", 0,
+    options = {argcIn, argvIn, "",    "",    "",    "",    "",    "",    "WINXPPVLK", 0,
                0,      1,      false, false, false, false, false, false, false,       STATE_BINK1998_GENERATE};
 
     SetHelpText();
@@ -140,6 +140,61 @@ BOOL CLI::processOptions()
         return false;
     }
 
+    if (!options.productCode.empty())
+    {
+        const char *productCode = &options.productCode[0];
+        auto product = keys["Products"][productCode];
+
+        if (options.verbose)
+        {
+            fmt::print("Selecting product: {}\n", productCode);
+        }
+
+        if (options.oem)
+        {
+            options.binkid = product["BINK"][1].get<std::string>();
+        }
+        else
+        {
+            options.binkid = product["BINK"][0].get<std::string>();
+        }
+
+        if (options.verbose)
+        {
+            fmt::print("Selected BINK: {}\n", options.binkid);
+        }
+
+        std::vector<json> filtered;
+
+        if (product.contains("DPC") && options.channelID == 0)
+        {
+            for (auto const &i : product["DPC"][options.binkid].items())
+            {
+                auto el = i.value();
+                if (!el["IsEvaluation"].get<bool>())
+                {
+                    filtered.push_back(el);
+                }
+            }
+
+            // roll a die to choose which DPC entry to pick
+            auto rand = UMSKT::getRandom<BYTE>();
+            auto dpc = filtered[rand % filtered.size()];
+            auto min = dpc["Min"].get<WORD>(), max = dpc["Max"].get<WORD>();
+            options.channelID = min + (rand % (max - min));
+
+            if (options.verbose)
+            {
+                fmt::print("Selected channel ID: {} (DPC entry {})\n", options.channelID, rand % filtered.size());
+            }
+        }
+
+        if (options.channelID == 0)
+        {
+            options.channelID = UMSKT::getRandom<WORD>() % 999;
+        }
+    }
+
     DWORD intBinkID;
     sscanf(&options.binkid[0], "%x", &intBinkID);
 
@@ -195,7 +250,7 @@ void CLI::printID(DWORD *pid)
  *
  * @param pk
  */
-void CLI::printKey(std::string pk)
+void CLI::printKey(std::string &pk)
 {
     assert(pk.length() >= PK_LENGTH);
 
@@ -249,57 +304,6 @@ BOOL CLI::stripKey(const std::string &in_key, std::string &out_key)
  */
 BOOL CLI::InitPIDGEN3(PIDGEN3 *pidgen3)
 {
-    if (!options.productCode.empty())
-    {
-        const char *productCode = &options.productCode[0];
-        auto product = keys["Products"][productCode];
-
-        if (options.verbose)
-        {
-            fmt::print("Selecting product: {}\n", productCode);
-        }
-
-        if (options.oem)
-        {
-            options.binkid = product["BINK"][1].get<std::string>();
-        }
-        else
-        {
-            options.binkid = product["BINK"][0].get<std::string>();
-        }
-
-        if (options.verbose)
-        {
-            fmt::print("Selected BINK: {}\n", options.binkid);
-        }
-
-        std::vector<json> filtered;
-
-        if (product.contains("DPC") && options.channelID == 0)
-        {
-            for (auto const &i : product["DPC"][options.binkid].items())
-            {
-                auto el = i.value();
-                if (!el["IsEvaluation"].get<bool>())
-                {
-                    filtered.push_back(el);
-                }
-            }
-
-            // roll a die to choose which DPC entry to pick
-            auto rand = UMSKT::getRandom<BYTE>();
-            auto dpc = filtered[rand % filtered.size()];
-            auto min = dpc["Min"].get<WORD>(), max = dpc["Max"].get<WORD>();
-            options.channelID = min + (rand % (max - min));
-            if (options.verbose)
-            {
-                fmt::print("Selected channel ID: {} (DPC entry {})\n", options.channelID, rand % filtered.size());
-            }
-        }
-
-        return false;
-    }
-
     const char *BINKID = &options.binkid[0];
     auto bink = keys["BINK"][BINKID];
 
@@ -320,12 +324,10 @@ BOOL CLI::InitPIDGEN3(PIDGEN3 *pidgen3)
         fmt::print("\n");
     }
 
-    pidgen3->LoadEllipticCurve(bink["p"].get<std::string>(), bink["a"].get<std::string>(), bink["b"].get<std::string>(),
-                               bink["g"]["x"].get<std::string>(), bink["g"]["y"].get<std::string>(),
-                               bink["pub"]["x"].get<std::string>(), bink["pub"]["y"].get<std::string>(),
-                               bink["n"].get<std::string>(), bink["priv"].get<std::string>());
+    pidgen3->LoadEllipticCurve(bink["p"], bink["a"], bink["b"], bink["g"]["x"], bink["g"]["y"], bink["pub"]["x"],
+                               bink["pub"]["y"], bink["n"], bink["priv"]);
 
-    pidgen3->setChannelID(options.channelID);
+    options.info.setChannelID(options.channelID);
     if (options.verbose)
     {
         fmt::print("> Channel ID: {:03d}\n", options.channelID);
@@ -333,7 +335,7 @@ BOOL CLI::InitPIDGEN3(PIDGEN3 *pidgen3)
 
     if (options.serialSet)
     {
-        pidgen3->setSerial(options.serial);
+        options.info.setSerial(options.serial);
         if (options.verbose)
         {
             fmt::print("> Serial {:#09d}\n", options.serial);
@@ -368,20 +370,21 @@ BOOL CLI::BINK1998Generate()
 
     // raw PID/serial value
     DWORD nRaw = options.channelID * 1'000'000;
+    DWORD serialRnd;
 
-    // using user-provided serial
     if (options.serialSet)
     {
-        // just in case, make sure it's less than 999999
-        int serialRnd = (options.serial % 999999);
-        nRaw += serialRnd;
+        // using user-provided serial
+        serialRnd = options.serial;
     }
     else
     {
         // generate a random number to use as a serial
-        auto oRaw = UMSKT::getRandom<DWORD>();
-        nRaw += (oRaw % 999999); // ensure our serial is less than 999999
+        serialRnd = UMSKT::getRandom<DWORD>();
     }
+
+    // make sure it's less than 999999
+    nRaw += (serialRnd % 999999);
 
     if (options.verbose)
     {
@@ -392,12 +395,13 @@ BOOL CLI::BINK1998Generate()
 
     for (int i = 0; i < total; i++)
     {
-        bink1998.Generate(pKey);
+        options.info.setSerial(nRaw);
+        bink1998.Generate(options.info, pKey);
 
         bool isValid = bink1998.Verify(pKey);
         if (isValid)
         {
-            CLI::printKey(pKey);
+            printKey(pKey);
             if (i < total - 1 || options.verbose)
             {
                 fmt::print("\n");
@@ -408,7 +412,7 @@ BOOL CLI::BINK1998Generate()
         {
             if (options.verbose)
             {
-                CLI::printKey(pKey);
+                printKey(pKey);
                 fmt::print(" [Invalid]");
                 if (i < total - 1)
                 {
@@ -448,7 +452,7 @@ BOOL CLI::BINK2002Generate()
             fmt::print("> AuthInfo: {}\n", pAuthInfo);
         }
 
-        bink2002.Generate(pKey);
+        bink2002.Generate(options.info, pKey);
 
         bool isValid = bink2002.Verify(pKey);
         if (isValid)

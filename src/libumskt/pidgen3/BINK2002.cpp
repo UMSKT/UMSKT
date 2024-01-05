@@ -34,27 +34,27 @@
  *
  * @param pRaw *QWORD[2] raw product key input
  **/
-BOOL BINK2002::Unpack(QWORD (&pRaw)[2])
+BOOL BINK2002::Unpack(KeyInfo &info, QWORD *pRaw)
 {
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
 
     // Upgrade = Bit 0
-    isUpgrade = FIRSTNBITS(pRaw[0], 1);
+    info.isUpgrade = FIRSTNBITS(pRaw[0], 1);
 
     // Channel ID = Bits [1..10] -> 10 bits
-    ChannelID = NEXTSNBITS(pRaw[0], 10, 1);
+    info.ChannelID = NEXTSNBITS(pRaw[0], 10, 1);
 
     // Hash = Bits [11..41] -> 31 bits
-    Hash = NEXTSNBITS(pRaw[0], 31, 11);
+    info.Hash = NEXTSNBITS(pRaw[0], 31, 11);
 
     // Signature = Bits [42..103] -> 62 bits
     // The quad-word signature overlaps AuthInfo in bits 104 and 105,
     // hence Microsoft employs a secret technique called: Signature = HIDWORD(Signature) >> 2 | LODWORD(Signature)
-    Signature = NEXTSNBITS(pRaw[1], 30, 10) << 32 | FIRSTNBITS(pRaw[1], 10) << 22 | NEXTSNBITS(pRaw[0], 22, 42);
+    info.Signature = NEXTSNBITS(pRaw[1], 30, 10) << 32 | FIRSTNBITS(pRaw[1], 10) << 22 | NEXTSNBITS(pRaw[0], 22, 42);
 
     // AuthInfo = Bits [104..113] -> 10 bits
-    AuthInfo = NEXTSNBITS(pRaw[1], 10, 40);
+    info.AuthInfo = NEXTSNBITS(pRaw[1], 10, 40);
 
     return true;
 }
@@ -64,11 +64,11 @@ BOOL BINK2002::Unpack(QWORD (&pRaw)[2])
  *
  * @param pRaw *QWORD[2] raw product key output
  **/
-BOOL BINK2002::Pack(QWORD (&pRaw)[2])
+BOOL BINK2002::Pack(const KeyInfo &info, QWORD *pRaw)
 {
     // AuthInfo [113..104] <- Signature [103..42] <- Hash [41..11] <- Channel ID [10..1] <- Upgrade [0]
-    pRaw[0] = FIRSTNBITS(Signature, 22) << 42 | (QWORD)Hash << 11 | ChannelID << 1 | isUpgrade;
-    pRaw[1] = FIRSTNBITS(AuthInfo, 10) << 40 | NEXTSNBITS(Signature, 40, 22);
+    pRaw[0] = FIRSTNBITS(info.Signature, 22) << 42 | (QWORD)info.Hash << 11 | info.ChannelID << 1 | info.isUpgrade;
+    pRaw[1] = FIRSTNBITS(info.AuthInfo, 10) << 40 | NEXTSNBITS(info.Signature, 40, 22);
 
     return true;
 }
@@ -81,23 +81,24 @@ BOOL BINK2002::Pack(QWORD (&pRaw)[2])
 BOOL BINK2002::Verify(std::string &pKey)
 {
     BN_CTX *context = BN_CTX_new();
+    KeyInfo info;
 
-    QWORD bKey[2]{};
+    QWORD bKey[2];
 
     // Convert Base24 CD-key to bytecode.
     unbase24((BYTE *)bKey, pKey.c_str());
 
     // Extract product key segments from bytecode.
-    Unpack(bKey);
+    Unpack(info, bKey);
 
-    DWORD pData = ChannelID << 1 | isUpgrade;
+    DWORD pData = info.ChannelID << 1 | info.isUpgrade;
 
     fmt::print(UMSKT::debug, "Validation results:\n");
-    fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", isUpgrade);
-    fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", ChannelID);
-    fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", Hash);
-    fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", Signature);
-    fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", AuthInfo);
+    fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", info.isUpgrade);
+    fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", info.ChannelID);
+    fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", info.Hash);
+    fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", info.Signature);
+    fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", info.AuthInfo);
     fmt::print(UMSKT::debug, "\n");
 
     BYTE msgDigest[SHA_DIGEST_LENGTH]{}, msgBuffer[SHA_MSG_LENGTH_2003]{}, xBin[FIELD_BYTES_2003]{},
@@ -107,12 +108,12 @@ BOOL BINK2002::Verify(std::string &pKey)
     msgBuffer[0x00] = 0x5D;
     msgBuffer[0x01] = (pData & 0x00FF);
     msgBuffer[0x02] = (pData & 0xFF00) >> 8;
-    msgBuffer[0x03] = (Hash & 0x000000FF);
-    msgBuffer[0x04] = (Hash & 0x0000FF00) >> 8;
-    msgBuffer[0x05] = (Hash & 0x00FF0000) >> 16;
-    msgBuffer[0x06] = (Hash & 0xFF000000) >> 24;
-    msgBuffer[0x07] = (AuthInfo & 0x00FF);
-    msgBuffer[0x08] = (AuthInfo & 0xFF00) >> 8;
+    msgBuffer[0x03] = (info.Hash & 0x000000FF);
+    msgBuffer[0x04] = (info.Hash & 0x0000FF00) >> 8;
+    msgBuffer[0x05] = (info.Hash & 0x00FF0000) >> 16;
+    msgBuffer[0x06] = (info.Hash & 0xFF000000) >> 24;
+    msgBuffer[0x07] = (info.AuthInfo & 0x00FF);
+    msgBuffer[0x08] = (info.AuthInfo & 0xFF00) >> 8;
     msgBuffer[0x09] = 0x00;
     msgBuffer[0x0A] = 0x00;
 
@@ -140,7 +141,7 @@ BOOL BINK2002::Verify(std::string &pKey)
      */
 
     BIGNUM *e = BN_lebin2bn((BYTE *)&iSignature, sizeof(iSignature), nullptr),
-           *s = BN_lebin2bn((BYTE *)&Signature, sizeof(Signature), nullptr), *x = BN_new(), *y = BN_new();
+           *s = BN_lebin2bn((BYTE *)&info.Signature, sizeof(info.Signature), nullptr), *x = BN_new(), *y = BN_new();
 
     // Create 2 points on the elliptic curve.
     EC_POINT *p = EC_POINT_new(eCurve), *t = EC_POINT_new(eCurve);
@@ -190,11 +191,11 @@ BOOL BINK2002::Verify(std::string &pKey)
     EC_POINT_free(t);
 
     // If the computed hash checks out, the key is valid.
-    return compHash == Hash;
+    return compHash == info.Hash;
 }
 
 /* Generates a Windows Server 2003-like Product Key. */
-BOOL BINK2002::Generate(std::string &pKey)
+BOOL BINK2002::Generate(KeyInfo &info, std::string &pKey)
 {
     BN_CTX *numContext = BN_CTX_new();
 
@@ -203,7 +204,7 @@ BOOL BINK2002::Generate(std::string &pKey)
     QWORD pRaw[2]{};
 
     // Data segment of the RPK.
-    DWORD pData = ChannelID << 1 | isUpgrade;
+    DWORD pData = info.ChannelID << 1 | info.isUpgrade;
 
     BOOL noSquare;
 
@@ -251,8 +252,8 @@ BOOL BINK2002::Generate(std::string &pKey)
         msgBuffer[0x04] = (pHash & 0x0000FF00) >> 8;
         msgBuffer[0x05] = (pHash & 0x00FF0000) >> 16;
         msgBuffer[0x06] = (pHash & 0xFF000000) >> 24;
-        msgBuffer[0x07] = (AuthInfo & 0x00FF);
-        msgBuffer[0x08] = (AuthInfo & 0xFF00) >> 8;
+        msgBuffer[0x07] = (info.AuthInfo & 0x00FF);
+        msgBuffer[0x08] = (info.AuthInfo & 0xFF00) >> 8;
         msgBuffer[0x09] = 0x00;
         msgBuffer[0x0A] = 0x00;
 
@@ -331,21 +332,21 @@ BOOL BINK2002::Generate(std::string &pKey)
         BN_rshift1(s, s);
 
         // Translate resulting scalar into a 64-bit integer (the byte order is little-endian).
-        BN_bn2lebinpad(s, (BYTE *)&Signature, BN_num_bytes(s));
+        BN_bn2lebinpad(s, (BYTE *)&info.Signature, BN_num_bytes(s));
 
         // Pack product key.
-        Pack(pRaw);
+        Pack(info, pRaw);
 
         fmt::print(UMSKT::debug, "Generation results:\n");
-        fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", isUpgrade);
-        fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", ChannelID);
-        fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", Hash);
-        fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", Signature);
-        fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", AuthInfo);
+        fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", info.isUpgrade);
+        fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", info.ChannelID);
+        fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", info.Hash);
+        fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", info.Signature);
+        fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", info.AuthInfo);
         fmt::print(UMSKT::debug, "\n");
 
         EC_POINT_free(r);
-    } while (Signature > BITMASK(62) || noSquare);
+    } while (info.Signature > BITMASK(62) || noSquare);
     // ↑ ↑ ↑
     // The signature can't be longer than 62 bits, else it will
     // overlap with the AuthInfo segment next to it.

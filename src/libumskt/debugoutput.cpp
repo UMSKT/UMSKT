@@ -34,8 +34,8 @@ std::FILE *UMSKT::debug = getFileStreamToNul();
 std::FILE *UMSKT::debug = std::fopen("/dev/null", "w");
 #endif
 
-BOOL UMSKT::VERBOSE;
-BOOL UMSKT::DEBUG;
+BOOL UMSKT::VERBOSE = false;
+BOOL UMSKT::DEBUG = false;
 
 void UMSKT::setDebugOutput(std::FILE *input)
 {

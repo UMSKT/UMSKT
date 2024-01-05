@@ -108,7 +108,7 @@ FNEXPORT BOOL PIDGEN3_Generate(void *&ptrIn, char *&pKeyOut, int pKeySizeIn)
     auto *p3((PIDGEN3 *)ptrIn);
 
     std::string str;
-    BOOL retval = p3->Generate(str);
+    // BOOL retval = p3->Generate(str);
 
     if (pKeySizeIn > str.length() + 1)
     {
@@ -118,7 +118,7 @@ FNEXPORT BOOL PIDGEN3_Generate(void *&ptrIn, char *&pKeyOut, int pKeySizeIn)
     memcpy(pKeyOut, &str[0], str.length());
     pKeyOut[str.length()] = 0;
 
-    return retval;
+    return true;
 }
 
 FNEXPORT BOOL PIDGEN3_Verify(void *&ptrIn, char *pKeyIn)

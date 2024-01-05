@@ -41,7 +41,7 @@ void CLI::SetHelpText()
                                   true, "1",      &SetNumberOption};
 
     helpOptions[OPTION_PRODUCT] = {"p",  "product",           "which product to generate keys for",
-                                   true, options.productCode, nullptr};
+                                   true, options.productCode, &SetProductCodeOption};
 
     helpOptions[OPTION_ACTIVATIONID] = {
         "i",  "instid", "(activation only) installation ID used to generate confirmation ID",
@@ -116,7 +116,8 @@ BOOL CLI::parseCommandLine()
                 }
                 else
                 {
-                    nextarg = arg[i + 1];
+                    i++;
+                    nextarg = std::string(options.argv[i]);
                 }
             }
 
@@ -311,8 +312,18 @@ BOOL CLI::SetProductIDOption(int count, char *product)
     return true;
 }
 
-BOOL CLI::SetValidateOption(int count, char *product)
+BOOL CLI::SetValidateOption(int count, char *productID)
 {
-    options.keyToCheck = product;
+    options.keyToCheck = productID;
+    return true;
+}
+
+BOOL CLI::SetProductCodeOption(int, char *product)
+{
+    if (options.verbose)
+    {
+        fmt::print("Setting product code to {}\n", product);
+    }
+    options.productCode = product;
     return true;
 }

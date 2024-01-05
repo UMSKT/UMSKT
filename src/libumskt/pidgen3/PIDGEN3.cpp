@@ -62,39 +62,36 @@ BOOL PIDGEN3::LoadEllipticCurve(const std::string pSel, const std::string aSel, 
     // Initialize BIGNUM and BIGNUMCTX structures.
     // BIGNUM - Large numbers
     // BIGNUMCTX - Context large numbers (temporary)
-    BIGNUM *a, *b, *p, *generatorX, *generatorY, *publicKeyX, *publicKeyY;
-    BN_CTX *context;
+
+    // Context variable
+    BN_CTX *context = BN_CTX_new();
 
     // We're presented with an elliptic curve, a multivariable function y(x; p; a; b), where
     // y^2 % p = x^3 + ax + b % p.
-    a = BN_new();
-    b = BN_new();
-    p = BN_new();
+    BIGNUM *a = BN_CTX_get(context), *b = BN_CTX_get(context), *p = BN_CTX_get(context);
 
     // Public key will consist of the resulting (x; y) values.
-    publicKeyX = BN_new();
-    publicKeyY = BN_new();
+    BIGNUM *publicKeyX = BN_CTX_get(context), *publicKeyY = BN_CTX_get(context);
 
     // G(x; y) is a generator function, its return value represents a point on the elliptic curve.
-    generatorX = BN_new();
-    generatorY = BN_new();
+    BIGNUM *generatorX = BN_CTX_get(context), *generatorY = BN_CTX_get(context);
 
-    // Context variable
-    context = BN_CTX_new();
+    genOrder = BN_new();
+    privateKey = BN_new();
 
     /* Public data */
-    BN_dec2bn(&p, pSel.c_str());
-    BN_dec2bn(&a, aSel.c_str());
-    BN_dec2bn(&b, bSel.c_str());
-    BN_dec2bn(&generatorX, generatorXSel.c_str());
-    BN_dec2bn(&generatorY, generatorYSel.c_str());
+    BN_dec2bn(&p, &pSel[0]);
+    BN_dec2bn(&a, &aSel[0]);
+    BN_dec2bn(&b, &bSel[0]);
+    BN_dec2bn(&generatorX, &generatorXSel[0]);
+    BN_dec2bn(&generatorY, &generatorYSel[0]);
 
-    BN_dec2bn(&publicKeyX, publicKeyXSel.c_str());
-    BN_dec2bn(&publicKeyY, publicKeyYSel.c_str());
+    BN_dec2bn(&publicKeyX, &publicKeyXSel[0]);
+    BN_dec2bn(&publicKeyY, &publicKeyYSel[0]);
 
     /* Computed Data */
-    BN_dec2bn(&genOrder, genOrderSel.c_str());
-    BN_dec2bn(&privateKey, privateKeySel.c_str());
+    BN_dec2bn(&genOrder, &genOrderSel[0]);
+    BN_dec2bn(&privateKey, &privateKeySel[0]);
     BN_sub(privateKey, genOrder, privateKey);
 
     /* Elliptic Curve calculations. */
@@ -118,13 +115,6 @@ BOOL PIDGEN3::LoadEllipticCurve(const std::string pSel, const std::string aSel, 
 
     // Cleanup
     BN_CTX_free(context);
-    BN_free(p);
-    BN_free(a);
-    BN_free(b);
-    BN_free(generatorX);
-    BN_free(generatorY);
-    BN_free(publicKeyX);
-    BN_free(publicKeyY);
 
     return true;
 }
@@ -182,7 +172,7 @@ int PIDGEN3::BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen)
  **/
 void PIDGEN3::base24(std::string &cdKey, BYTE *byteSeq)
 {
-    BYTE rbyteSeq[16];
+    BYTE rbyteSeq[16], output[26];
     BIGNUM *z;
 
     // Copy byte sequence to the reversed byte sequence.
@@ -204,8 +194,12 @@ void PIDGEN3::base24(std::string &cdKey, BYTE *byteSeq)
     // Divide z by 24 and convert the remainder to a CD-key char.
     for (int i = 24; i >= 0; i--)
     {
-        cdKey[i] = pKeyCharset[BN_div_word(z, 24)];
+        output[i] = pKeyCharset[BN_div_word(z, 24)];
     }
+
+    output[25] = 0;
+
+    cdKey = (char *)output;
 
     BN_free(z);
 }

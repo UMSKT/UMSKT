@@ -82,6 +82,8 @@ struct Options
     BOOL error;
     BOOL list;
 
+    PIDGEN3::KeyInfo info;
+
     APPLICATION_STATE state;
 };
 
@@ -105,7 +107,8 @@ class CLI
     static BYTE Init(int argv, char *argc[]);
     static void SetHelpText();
 
-    static CLIHandlerFunc loadJSON;
+    static BOOL loadJSON(const fs::path &filename);
+
     static CLIHandlerFunc DisplayHelp;
     static CLIHandlerFunc DisplayErrorMessage;
     static CLIHandlerFunc SetVerboseOption;
@@ -126,7 +129,7 @@ class CLI
     static BOOL parseCommandLine();
     static BOOL processOptions();
     static void printID(DWORD *pid);
-    static void printKey(std::string pk);
+    static void printKey(std::string &pk);
     static BOOL stripKey(const std::string &in_key, std::string &out_key);
 
     BOOL InitPIDGEN3(PIDGEN3 *pidgen3);

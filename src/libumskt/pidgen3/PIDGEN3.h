@@ -31,9 +31,6 @@ class PIDGEN3
     EC_GROUP *eCurve;
     EC_POINT *basePoint, *publicKey, *genPoint, *pubPoint;
     BIGNUM *genOrder, *privateKey;
-    DWORD Serial, AuthInfo, ChannelID, Hash;
-    QWORD Signature;
-    BOOL isUpgrade;
 
   public:
     PIDGEN3()
@@ -49,9 +46,29 @@ class PIDGEN3
         EC_POINT_free(publicKey);
         BN_free(genOrder);
         BN_free(privateKey);
-        BN_free(privateKey);
-        BN_free(genOrder);
     }
+
+    struct KeyInfo
+    {
+        DWORD Serial = 0, AuthInfo = 0, ChannelID = 0, Hash = 0;
+        QWORD Signature = 0;
+        BOOL isUpgrade = false;
+
+        void setSerial(DWORD serialIn)
+        {
+            Serial = serialIn;
+        }
+
+        void setAuthInfo(DWORD AuthInfoIn)
+        {
+            AuthInfo = AuthInfoIn;
+        }
+
+        void setChannelID(DWORD ChannelIDIn)
+        {
+            ChannelID = ChannelIDIn;
+        }
+    };
 
     static constexpr char pKeyCharset[] = "BCDFGHJKMPQRTVWXY2346789";
 
@@ -59,10 +76,10 @@ class PIDGEN3
                            std::string generatorYSel, std::string publicKeyXSel, std::string publicKeyYSel,
                            std::string genOrderSel, std::string privateKeySel);
 
-    virtual BOOL Unpack(QWORD (&pRaw)[2]) = 0;
-    virtual BOOL Pack(QWORD (&pRaw)[2]) = 0;
+    virtual BOOL Unpack(KeyInfo &info, QWORD *pRaw) = 0;
+    virtual BOOL Pack(const KeyInfo &info, QWORD *pRaw) = 0;
     virtual BOOL Verify(std::string &pKey) = 0;
-    virtual BOOL Generate(std::string &pKey) = 0;
+    virtual BOOL Generate(KeyInfo &info, std::string &pKey) = 0;
 
     // PIDGEN3.cpp
     // Hello OpenSSL developers, please tell me, where is this function at?
@@ -71,21 +88,6 @@ class PIDGEN3
 
     void base24(std::string &cdKey, BYTE *byteSeq);
     void unbase24(BYTE *byteSeq, std::string cdKey);
-
-    void setSerial(DWORD serialIn)
-    {
-        Serial = serialIn;
-    }
-
-    void setAuthInfo(DWORD AuthInfoIn)
-    {
-        AuthInfo = AuthInfoIn;
-    }
-
-    void setChannelID(DWORD ChannelIDIn)
-    {
-        ChannelID = ChannelIDIn;
-    }
 };
 
 #endif // UMSKT_PIDGEN3_H

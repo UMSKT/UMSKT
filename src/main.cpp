@@ -31,5 +31,8 @@ int main(int argc, char *argv[])
     }
 
     auto cli = CLI();
-    return cli.Run();
+    status = cli.Run();
+
+    UMSKT::DESTRUCT();
+    return status;
 }
