@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -24,17 +24,20 @@
 
 #if defined(__x86_64__) || defined(_M_AMD64) || defined(__aarch64__) || (defined(__arm64__) && defined(__APPLE__))
 #ifdef __GNUC__
-inline QWORD Residue::__umul128(QWORD a, QWORD b, QWORD *hi)
+inline QWORD ConfirmationID::Residue::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi)
 {
-    OWORD r = (OWORD)a * (OWORD)b;
-    *hi = r >> 64;
+    OWORD r = (OWORD)multiplier * (OWORD)multiplicand;
+    *product_hi = r >> 64;
     return (QWORD)r;
 }
 #else
-#define __umul128 _umul128
+inline QWORD ConfirmationID::Residue::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi)
+{
+    return _umul128(multiplier, multiplicand, product_hi);
+}
 #endif
 #elif defined(__i386__) || defined(_M_IX86) || defined(__arm__) || defined(__EMSCRIPTEN__)
-inline QWORD Residue::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi)
+inline QWORD ConfirmationID::Residue::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi)
 {
     // multiplier   = ab = a * 2^32 + b
     // multiplicand = cd = c * 2^32 + d
@@ -63,17 +66,14 @@ inline QWORD Residue::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *pro
 #error Unknown architecture detected - please edit confid.cpp to tailor __umul128() your architecture
 #endif
 
-QWORD Residue::ui128_quotient_mod(QWORD lo, QWORD hi)
+QWORD ConfirmationID::Residue::ui128_quotient_mod(QWORD lo, QWORD hi)
 {
     // hi:lo * ceil(2**170/MOD) >> (64 + 64 + 42)
     QWORD prod1;
-    __umul128(lo, parent->p0, &prod1);
+    __umul128(lo, parent->privateKey.qword[0], &prod1);
 
-    QWORD part1hi, part1lo;
-    part1lo = __umul128(lo, parent->p1, &part1hi);
-
-    QWORD part2hi, part2lo;
-    part2lo = __umul128(hi, parent->p2, &part2hi);
+    QWORD part1hi, part1lo = __umul128(lo, parent->privateKey.qword[1], &part1hi);
+    QWORD part2hi, part2lo = __umul128(hi, parent->privateKey.qword[0], &part2hi);
 
     QWORD sum1 = part1lo + part2lo;
     unsigned sum1carry = (sum1 < part1lo);
@@ -81,24 +81,22 @@ QWORD Residue::ui128_quotient_mod(QWORD lo, QWORD hi)
     sum1carry += (sum1 < prod1);
     QWORD prod2 = part1hi + part2hi + sum1carry;
 
-    QWORD prod3hi, prod3lo;
-    prod3lo = __umul128(hi, parent->p3, &prod3hi);
+    QWORD prod3hi, prod3lo = __umul128(hi, parent->privateKey.qword[1], &prod3hi);
 
     prod3lo += prod2;
     prod3hi += (prod3lo < prod2);
     return (prod3lo >> 42) | (prod3hi << 22);
 }
 
-QWORD Residue::mul(QWORD x, QWORD y)
+QWORD ConfirmationID::Residue::mul(QWORD x, QWORD y)
 {
     // * ceil(2**170/MOD) = 0x2d351 c6d04f8b|604fa6a1 c6346a87 for (p-1)*(p-1) max
-    QWORD hi;
-    QWORD lo = __umul128(x, y, &hi);
+    QWORD hi, lo = __umul128(x, y, &hi);
     QWORD quotient = ui128_quotient_mod(lo, hi);
     return lo - quotient * parent->MOD;
 }
 
-QWORD Residue::pow(QWORD x, QWORD y)
+QWORD ConfirmationID::Residue::pow(QWORD x, QWORD y)
 {
     if (y == 0)
     {
@@ -125,7 +123,7 @@ QWORD Residue::pow(QWORD x, QWORD y)
     return res;
 }
 
-QWORD Residue::add(QWORD x, QWORD y)
+QWORD ConfirmationID::Residue::add(QWORD x, QWORD y)
 {
     QWORD z = x + y;
     // z = z - (z >= MOD ? MOD : 0);
@@ -136,7 +134,7 @@ QWORD Residue::add(QWORD x, QWORD y)
     return z;
 }
 
-QWORD Residue::sub(QWORD x, QWORD y)
+QWORD ConfirmationID::Residue::sub(QWORD x, QWORD y)
 {
     QWORD z = x - y;
     // z += (x < y ? MOD : 0);
@@ -147,7 +145,7 @@ QWORD Residue::sub(QWORD x, QWORD y)
     return z;
 }
 
-QWORD Residue::inverse(QWORD u, QWORD v)
+QWORD ConfirmationID::Residue::inverse(QWORD u, QWORD v)
 {
     // assert(u);
     int64_t tmp;
@@ -168,13 +166,13 @@ QWORD Residue::inverse(QWORD u, QWORD v)
     return xu;
 }
 
-QWORD Residue::inv(QWORD x)
+QWORD ConfirmationID::Residue::inv(QWORD x)
 {
     return inverse(x, parent->MOD);
     // return residue_pow(x, MOD - 2);
 }
 
-QWORD Residue::sqrt(QWORD what)
+QWORD ConfirmationID::Residue::sqrt(QWORD what)
 {
     if (!what)
     {
@@ -195,6 +193,7 @@ QWORD Residue::sqrt(QWORD what)
     x = pow(what, (q - 1) / 2);
     b = mul(mul(what, x), x);
     x = mul(what, x);
+
     while (b != 1)
     {
         QWORD m = 0, b2 = b;

@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -23,7 +23,8 @@
 #include "confid.h"
 
 // generic short slow code
-int Polynomial::mul(int adeg, const QWORD a[], int bdeg, const QWORD b[], int resultprevdeg, QWORD result[])
+int ConfirmationID::Polynomial::mul(int adeg, const QWORD a[], int bdeg, const QWORD b[], int resultprevdeg,
+                                    QWORD result[])
 {
     if (adeg < 0 || bdeg < 0)
     {
@@ -55,7 +56,7 @@ int Polynomial::mul(int adeg, const QWORD a[], int bdeg, const QWORD b[], int re
     return resultprevdeg;
 }
 
-int Polynomial::div_monic(int adeg, QWORD a[], int bdeg, const QWORD b[], QWORD *quotient)
+int ConfirmationID::Polynomial::div_monic(int adeg, QWORD a[], int bdeg, const QWORD b[], QWORD *quotient)
 {
     assert(bdeg >= 0);
     assert(b[bdeg] == 1);
@@ -84,8 +85,8 @@ int Polynomial::div_monic(int adeg, QWORD a[], int bdeg, const QWORD b[], QWORD 
     return i;
 }
 
-void Polynomial::xgcd(int adeg, const QWORD a[3], int bdeg, const QWORD b[3], int *pgcddeg, QWORD gcd[3],
-                      int *pmult1deg, QWORD mult1[3], int *pmult2deg, QWORD mult2[3])
+void ConfirmationID::Polynomial::xgcd(int adeg, const QWORD a[3], int bdeg, const QWORD b[3], int *pgcddeg,
+                                      QWORD gcd[3], int *pmult1deg, QWORD mult1[3], int *pmult2deg, QWORD mult2[3])
 {
     int sdeg = -1;
     QWORD s[3] = {0, 0, 0};
@@ -119,43 +120,56 @@ void Polynomial::xgcd(int adeg, const QWORD a[3], int bdeg, const QWORD b[3], in
         {
             unsigned tmp;
             int tmpi;
+
             tmp = rdeg;
             rdeg = gcddeg;
             gcddeg = tmp;
+
             tmpi = sdeg;
             sdeg = mult1deg;
             mult1deg = tmpi;
+
             tmpi = tdeg;
             tdeg = mult2deg;
             mult2deg = tmpi;
+
             QWORD tmp2;
             tmp2 = r[0];
             r[0] = gcd[0];
             gcd[0] = tmp2;
+
             tmp2 = r[1];
             r[1] = gcd[1];
             gcd[1] = tmp2;
+
             tmp2 = r[2];
             r[2] = gcd[2];
             gcd[2] = tmp2;
+
             tmp2 = s[0];
             s[0] = mult1[0];
             mult1[0] = tmp2;
+
             tmp2 = s[1];
             s[1] = mult1[1];
             mult1[1] = tmp2;
+
             tmp2 = s[2];
             s[2] = mult1[2];
             mult1[2] = tmp2;
+
             tmp2 = t[0];
             t[0] = mult2[0];
             mult2[0] = tmp2;
+
             tmp2 = t[1];
             t[1] = mult2[1];
             mult2[1] = tmp2;
+
             tmp2 = t[2];
             t[2] = mult2[2];
             mult2[2] = tmp2;
+
             continue;
         }
 

@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -16,17 +16,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 6/25/2023
+ * @FileCreated by Neo on 06/25/2023
  * @Maintainer Neo
  */
 
 #include "libumskt.h"
 
 #ifdef _WIN32
-std::FILE *UMSKT::debug = std::fopen("NUL:", "w");
+// this seems janky but it works, and doesn't use storage that would otherwise get clobbered
+std::FILE *getFileStreamToNul()
+{
+    fopen_s(&UMSKT::debug, "nul", "w");
+    return UMSKT::debug;
+}
+std::FILE *UMSKT::debug = getFileStreamToNul();
 #else
 std::FILE *UMSKT::debug = std::fopen("/dev/null", "w");
 #endif
+
+BOOL UMSKT::VERBOSE;
+BOOL UMSKT::DEBUG;
 
 void UMSKT::setDebugOutput(std::FILE *input)
 {

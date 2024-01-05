@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -29,62 +29,81 @@
 
 #include "BINK1998.h"
 
-/* Unpacks a Windows XP-like Product Key. */
-void PIDGEN3::BINK1998::Unpack(QWORD (&pRaw)[2], BOOL &pUpgrade, DWORD &pSerial, DWORD &pHash, QWORD &pSignature)
+/**
+ * Unpacks a Windows XP-like Product Key.
+ *
+ * @param pRaw [out] *QWORD[2] raw product key output
+ **/
+BOOL BINK1998::Unpack(QWORD (&pRaw)[2])
 {
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
 
     // Upgrade = Bit 0
-    pUpgrade = FIRSTNBITS(pRaw[0], 1);
+    isUpgrade = FIRSTNBITS(pRaw[0], 1);
 
     // Serial = Bits [1..30] -> 30 bits
-    pSerial = NEXTSNBITS(pRaw[0], 30, 1);
+    Serial = NEXTSNBITS(pRaw[0], 30, 1);
 
     // Hash = Bits [31..58] -> 28 bits
-    pHash = NEXTSNBITS(pRaw[0], 28, 31);
+    Hash = NEXTSNBITS(pRaw[0], 28, 31);
 
     // Signature = Bits [59..113] -> 56 bits
-    pSignature = FIRSTNBITS(pRaw[1], 51) << 5 | NEXTSNBITS(pRaw[0], 5, 59);
+    Signature = FIRSTNBITS(pRaw[1], 51) << 5 | NEXTSNBITS(pRaw[0], 5, 59);
+
+    return true;
 }
 
-/* Packs a Windows XP-like Product Key. */
-void PIDGEN3::BINK1998::Pack(QWORD (&pRaw)[2], BOOL pUpgrade, DWORD pSerial, DWORD pHash, QWORD pSignature)
+/**
+ * Packs a Windows XP-like Product Key.
+ *
+ * @param pRaw [in] *QWORD[2] raw product key input
+ **/
+BOOL BINK1998::Pack(QWORD (&pRaw)[2])
 {
     // The quantity of information the key provides is 114 bits.
     // We're storing it in 2 64-bit quad-words with 14 trailing bits.
     // 64 * 2 = 128
 
     // Signature [114..59] <- Hash [58..31] <- Serial [30..1] <- Upgrade [0]
-    pRaw[0] = FIRSTNBITS(pSignature, 5) << 59 | FIRSTNBITS(pHash, 28) << 31 | pSerial << 1 | pUpgrade;
-    pRaw[1] = NEXTSNBITS(pSignature, 51, 5);
+    pRaw[0] = FIRSTNBITS(Signature, 5) << 59 | FIRSTNBITS(Hash, 28) << 31 | Serial << 1 | isUpgrade;
+    pRaw[1] = NEXTSNBITS(Signature, 51, 5);
+
+    return true;
 }
 
-/* Verifies a Windows XP-like Product Key. */
-bool PIDGEN3::BINK1998::Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *publicKey, char (&pKey)[25])
+/**
+ * Verifies a Windows XP-like Product Key.
+ *
+ * @param pKey [in]
+ *
+ * @return true if provided key validates against loaded curve
+ */
+BOOL BINK1998::Verify(std::string &pKey)
 {
+    if (pKey.length() != 25)
+    {
+        return false;
+    }
+
     BN_CTX *numContext = BN_CTX_new();
 
-    QWORD pRaw[2]{}, pSignature;
-
-    DWORD pData, pSerial, pHash;
-
-    BOOL pUpgrade;
+    QWORD pRaw[2]{};
 
     // Convert Base24 CD-key to bytecode.
-    PIDGEN3::unbase24((BYTE *)pRaw, pKey);
+    unbase24((BYTE *)pRaw, pKey);
 
     // Extract RPK, hash and signature from bytecode.
-    Unpack(pRaw, pUpgrade, pSerial, pHash, pSignature);
+    Unpack(pRaw);
 
     fmt::print(UMSKT::debug, "Validation results:\n");
-    fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", pUpgrade);
-    fmt::print(UMSKT::debug, "    Serial: 0x{:08x}\n", pSerial);
-    fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
-    fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
+    fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", isUpgrade);
+    fmt::print(UMSKT::debug, "    Serial: 0x{:08x}\n", Serial);
+    fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", Hash);
+    fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", Signature);
     fmt::print(UMSKT::debug, "\n");
 
-    pData = pSerial << 1 | pUpgrade;
+    DWORD pData = Serial << 1 | isUpgrade;
 
     /*
      *
@@ -101,8 +120,8 @@ bool PIDGEN3::BINK1998::Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *
      *
      */
 
-    BIGNUM *e = BN_lebin2bn((BYTE *)&pHash, sizeof(pHash), nullptr),
-           *s = BN_lebin2bn((BYTE *)&pSignature, sizeof(pSignature), nullptr), *x = BN_new(), *y = BN_new();
+    BIGNUM *e = BN_lebin2bn((BYTE *)&Hash, sizeof(Hash), nullptr),
+           *s = BN_lebin2bn((BYTE *)&Signature, sizeof(Signature), nullptr), *x = BN_new(), *y = BN_new();
 
     // Create 2 points on the elliptic curve.
     EC_POINT *t = EC_POINT_new(eCurve);
@@ -149,21 +168,26 @@ bool PIDGEN3::BINK1998::Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *
     EC_POINT_free(p);
 
     // If the computed hash checks out, the key is valid.
-    return compHash == pHash;
+    return compHash == Hash;
 }
 
-/* Generates a Windows XP-like Product Key. */
-void PIDGEN3::BINK1998::Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *genOrder, BIGNUM *privateKey,
-                                 DWORD pSerial, BOOL pUpgrade, char (&pKey)[25])
+/**
+ * Generates a Windows XP-like Product Key.
+ *
+ * @param pKey [out]
+ *
+ * @return true on success, false on fail
+ */
+BOOL BINK1998::Generate(std::string &pKey)
 {
     BN_CTX *numContext = BN_CTX_new();
 
     BIGNUM *c = BN_new(), *s = BN_new(), *x = BN_new(), *y = BN_new();
 
-    QWORD pRaw[2]{}, pSignature = 0;
+    QWORD pRaw[2]{};
 
     // Data segment of the RPK.
-    DWORD pData = pSerial << 1 | pUpgrade;
+    DWORD pData = Serial << 1 | isUpgrade;
 
     do
     {
@@ -225,20 +249,20 @@ void PIDGEN3::BINK1998::Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *
         BN_mod_add(s, s, c, genOrder, numContext);
 
         // Translate resulting scalar into a 64-bit integer (the byte order is little-endian).
-        BN_bn2lebinpad(s, (BYTE *)&pSignature, BN_num_bytes(s));
+        BN_bn2lebinpad(s, (BYTE *)&Signature, BN_num_bytes(s));
 
         // Pack product key.
-        Pack(pRaw, pUpgrade, pSerial, pHash, pSignature);
+        Pack(pRaw);
 
         fmt::print(UMSKT::debug, "Generation results:\n");
-        fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", pUpgrade);
-        fmt::print(UMSKT::debug, "    Serial: 0x{:08x}\n", pSerial);
-        fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
-        fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
+        fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", isUpgrade);
+        fmt::print(UMSKT::debug, "    Serial: 0x{:08x}\n", Serial);
+        fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", Hash);
+        fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", Signature);
         fmt::print(UMSKT::debug, "\n");
 
         EC_POINT_free(r);
-    } while (pSignature > BITMASK(55));
+    } while (Signature > BITMASK(55));
     // ↑ ↑ ↑
     // The signature can't be longer than 55 bits, else it will
     // make the CD-key longer than 25 characters.
@@ -252,4 +276,6 @@ void PIDGEN3::BINK1998::Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *
     BN_free(y);
 
     BN_CTX_free(numContext);
+
+    return true;
 }

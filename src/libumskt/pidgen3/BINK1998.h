@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 6/6/2023
+ * @FileCreated by Neo on 06/06/2023
  * @Maintainer Neo
  */
 
@@ -25,17 +25,14 @@
 
 #include "PIDGEN3.h"
 
-EXPORT class PIDGEN3::BINK1998
+class BINK1998 : public PIDGEN3
 {
+
   public:
-    static void Unpack(QWORD (&pRaw)[2], BOOL &pUpgrade, DWORD &pSerial, DWORD &pHash, QWORD &pSignature);
-
-    static void Pack(QWORD (&pRaw)[2], BOOL pUpgrade, DWORD pSerial, DWORD pHash, QWORD pSignature);
-
-    static bool Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *publicKey, char (&pKey)[25]);
-
-    static void Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *genOrder, BIGNUM *privateKey, DWORD pSerial,
-                         BOOL pUpgrade, char (&pKey)[25]);
+    BOOL Unpack(QWORD (&pRaw)[2]) override;
+    BOOL Pack(QWORD (&pRaw)[2]) override;
+    BOOL Verify(std::string &pKey) override;
+    BOOL Generate(std::string &pKey) override;
 };
 
 #endif // UMSKT_BINK1998_H

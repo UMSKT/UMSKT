@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteTargetsManager">
+    <option name="projectDefaultTargetUuid" value="36c80fd0-a122-4ef6-8ee6-1bd41007a378" />
+    <targets>
+      <target name="WSL - Ubuntu" type="wsl" uuid="36c80fd0-a122-4ef6-8ee6-1bd41007a378">
+        <config>
+          <option name="distributionMsId" value="Ubuntu" />
+          <option name="projectRootOnTarget" value="{exitCode=0, timeout=false, cancelled=false, stdout=/mnt/c/Users/neo/AppData/Local/Programs/CLion/jbr/bin&#10;, stderr=}/UMSKT" />
+        </config>
+      </target>
+    </targets>
+  </component>
+</project>

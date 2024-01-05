@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 6/25/2023
+ * @FileCreated by Neo on 06/25/2023
  * @Maintainer Neo
  */
 
@@ -27,48 +27,145 @@
 #include "pidgen3/BINK2002.h"
 #include "pidgen3/PIDGEN3.h"
 
-FNEXPORT int ConfirmationID_Generate(const char *installation_id_str, char confirmation_id[49], int mode,
-                                     std::string productid)
+FNEXPORT BOOL LIBUMSKT_SET_DEBUG_OUTPUT(void *filestream)
 {
-    return ConfirmationID::Generate(installation_id_str, confirmation_id, mode, productid);
+    char buffer[7];
+    memcpy(buffer, filestream, 6);
+    buffer[6] = 0;
+    auto buff_string = std::string(buffer);
+
+    if (strcasecmp("STDOUT", &buffer[0]) != 0)
+    {
+        UMSKT::debug = stdout;
+        return true;
+    }
+    else if (strcasecmp("STDERR", &buffer[0]) != 0)
+    {
+        UMSKT::debug = stderr;
+        return true;
+    }
+
+    return false;
 }
 
-FNEXPORT EC_GROUP *PIDGEN3_initializeEllipticCurve(char *pSel, char *aSel, char *bSel, char *generatorXSel,
-                                                   char *generatorYSel, char *publicKeyXSel, char *publicKeyYSel,
-                                                   EC_POINT *&genPoint, EC_POINT *&pubPoint)
+// ---------------------------------------------
+
+FNEXPORT void *CONFID_INIT()
 {
-    return PIDGEN3::initializeEllipticCurve(pSel, aSel, bSel, generatorXSel, generatorYSel, publicKeyXSel,
-                                            publicKeyYSel, genPoint, pubPoint);
+    auto cid = new ConfirmationID();
+
+    // cid->LoadHyperellipticCurve(0, 0, 0, 0, 0, 0, 0, 0, 0, false, false, 0);
+
+    return cid;
 }
 
-FNEXPORT bool PIDGEN3_BINK1998_Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *publicKey, char (&pKey)[25])
+FNEXPORT BYTE CONFID_GENERATE(void *cidIn, const char *installation_id_str, char *&confirmation_id, char *productid)
 {
-    return PIDGEN3::BINK1998::Verify(eCurve, basePoint, publicKey, pKey);
+    auto *cid((ConfirmationID *)cidIn);
+
+    std::string str, confid(confirmation_id), productids(productid);
+    auto retval = cid->Generate(str, confid, productids);
+
+    return retval;
 }
 
-FNEXPORT void PIDGEN3_BINK1998_Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *genOrder, BIGNUM *privateKey,
-                                        DWORD pSerial, BOOL pUpgrade, char (&pKey)[25])
+FNEXPORT BYTE CONFID_END(void *cidIn)
 {
-    return PIDGEN3::BINK1998::Generate(eCurve, basePoint, genOrder, privateKey, pSerial, pUpgrade, pKey);
+    auto *cid((ConfirmationID *)cidIn);
+    delete cid;
+
+    return true;
 }
 
-FNEXPORT bool PIDGEN3_BINK2002_Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *publicKey, char (&cdKey)[25])
+// ---------------------------------------------
+
+FNEXPORT void *PIDGEN3_BINK1998_INIT(const char *p, const char *a, const char *b, const char *generatorX,
+                                     const char *generatorY, const char *publicKeyX, const char *publicKeyY,
+                                     const char *genOrder, const char *privateKey)
 {
-    return PIDGEN3::BINK2002::Verify(eCurve, basePoint, publicKey, cdKey);
+
+    auto *bink1998 = new BINK1998();
+
+    bink1998->LoadEllipticCurve(p, a, b, generatorX, generatorY, publicKeyX, publicKeyY, genOrder, privateKey);
+
+    return bink1998;
 }
 
-FNEXPORT void PIDGEN3_BINK2002_Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *genOrder, BIGNUM *privateKey,
-                                        DWORD pChannelID, DWORD pAuthInfo, BOOL pUpgrade, char (&pKey)[25])
+FNEXPORT void *PIDGEN3_BINK2002_INIT(const char *p, const char *a, const char *b, const char *generatorX,
+                                     const char *generatorY, const char *publicKeyX, const char *publicKeyY,
+                                     const char *genOrder, const char *privateKey, const char *authinfo)
 {
-    return PIDGEN3::BINK2002::Generate(eCurve, basePoint, genOrder, privateKey, pChannelID, pAuthInfo, pUpgrade, pKey);
+
+    auto bink2002 = new BINK2002();
+
+    bink2002->LoadEllipticCurve(p, a, b, generatorX, generatorY, publicKeyX, publicKeyY, genOrder, privateKey);
+
+    return bink2002;
 }
 
-FNEXPORT int PIDGEN2_GenerateRetail(char *channelID, char *&keyout)
+FNEXPORT BOOL PIDGEN3_Generate(void *&ptrIn, char *&pKeyOut, int pKeySizeIn)
 {
-    return PIDGEN2::GenerateRetail(channelID, keyout);
+    auto *p3((PIDGEN3 *)ptrIn);
+
+    std::string str;
+    BOOL retval = p3->Generate(str);
+
+    if (pKeySizeIn > str.length() + 1)
+    {
+        return false;
+    }
+
+    memcpy(pKeyOut, &str[0], str.length());
+    pKeyOut[str.length()] = 0;
+
+    return retval;
 }
 
-FNEXPORT int PIDGEN2_GenerateOEM(char *year, char *day, char *oem, char *keyout)
+FNEXPORT BOOL PIDGEN3_Verify(void *&ptrIn, char *pKeyIn)
 {
-    return PIDGEN2::GenerateOEM(year, day, oem, keyout);
+    auto *p3((PIDGEN3 *)ptrIn);
+    std::string str(pKeyIn);
+
+    BOOL retval = p3->Verify(str);
+
+    return retval;
+}
+
+FNEXPORT void PIDGEN3_END(void *ptrIn)
+{
+    auto *p3((PIDGEN3 *)ptrIn);
+    delete p3;
+}
+
+// ---------------------------------------------
+
+FNEXPORT BOOL PIDGEN2_INIT()
+{
+    return true;
+}
+
+FNEXPORT BOOL PIDGEN2_GENERATE()
+{
+    return true;
+}
+
+FNEXPORT BOOL PIDGEN2_END()
+{
+    return true;
+}
+
+FNEXPORT BOOL PIDGEN2_GenerateRetail(char *channelID, char *&keyout)
+{
+    auto P2 = new PIDGEN2();
+    BOOL retval = P2->GenerateRetail(channelID, keyout);
+    delete P2;
+    return retval;
+}
+
+FNEXPORT BOOL PIDGEN2_GenerateOEM(char *year, char *day, char *oem, char *&keyout)
+{
+    auto P2 = new PIDGEN2();
+    BOOL retval = P2->GenerateOEM(year, day, oem, keyout);
+    delete P2;
+    return retval;
 }

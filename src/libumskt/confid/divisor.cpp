@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -22,21 +22,20 @@
 
 #include "confid.h"
 
-int Divisor::find_divisor_v(TDivisor *d)
+int ConfirmationID::ConfirmationID::Divisor::find_divisor_v(TDivisor *d)
 {
-    // u | v^2 - f
+    // u | v^2 - curve
     // u = u0 + u1*x + x^2
-    // f%u = f0 + f1*x
+    // curve%u = f0 + f1*x
     QWORD v1, f2[6];
 
-    for (int i = 0; i < 6; i++)
+    for (BYTE i = 0; i < 6; i++)
     {
-        f2[i] = parent->f[i];
+        f2[i] = parent->curve[i];
     }
 
-    const QWORD u0 = d->u[0];
-    const QWORD u1 = d->u[1];
-    for (int j = 4; j--;)
+    const QWORD u0 = d->u[0], u1 = d->u[1];
+    for (BYTE j = 4; j--;)
     {
         f2[j] = parent->residue->sub(f2[j], parent->residue->mul(u0, f2[j + 2]));
         f2[j + 1] = parent->residue->sub(f2[j + 1], parent->residue->mul(u1, f2[j + 2]));
@@ -50,8 +49,7 @@ int Divisor::find_divisor_v(TDivisor *d)
     // v0^2 = f0 + u0*v1^2 = (f1 + u1*v1^2)^2 / (2*v1)^2
     // (f1^2) + 2*(f1*u1-2*f0) * v1^2 + (u1^2-4*u0) * v1^4 = 0
     // v1^2 = ((2*f0-f1*u1) +- 2*sqrt(-f0*f1*u1 + f0^2 + f1^2*u0))) / (u1^2-4*u0)
-    const QWORD f0 = f2[0];
-    const QWORD f1 = f2[1];
+    const QWORD f0 = f2[0], f1 = f2[1];
     const QWORD u0double = parent->residue->add(u0, u0);
     const QWORD coeff2 = parent->residue->sub(parent->residue->mul(u1, u1), parent->residue->add(u0double, u0double));
     const QWORD coeff1 = parent->residue->sub(parent->residue->add(f0, f0), parent->residue->mul(f1, u1));
@@ -63,7 +61,7 @@ int Divisor::find_divisor_v(TDivisor *d)
             if (f1 == 0)
             {
                 // impossible
-                // printf("bad f(), double root detected\n");
+                // printf("bad curve(), double root detected\n");
             }
             return 0;
         }
@@ -109,15 +107,17 @@ int Divisor::find_divisor_v(TDivisor *d)
     return 1;
 }
 
-int Divisor::u2poly(const TDivisor *src, QWORD polyu[3], QWORD polyv[2])
+int ConfirmationID::ConfirmationID::Divisor::u2poly(const TDivisor *src, QWORD polyu[3], QWORD polyv[2])
 {
     if (src->u[1] != BAD)
     {
         polyu[0] = src->u[0];
         polyu[1] = src->u[1];
         polyu[2] = 1;
+
         polyv[0] = src->v[0];
         polyv[1] = src->v[1];
+
         return 2;
     }
 
@@ -125,8 +125,10 @@ int Divisor::u2poly(const TDivisor *src, QWORD polyu[3], QWORD polyv[2])
     {
         polyu[0] = src->u[0];
         polyu[1] = 1;
+
         polyv[0] = src->v[0];
         polyv[1] = 0;
+
         return 1;
     }
 
@@ -136,7 +138,7 @@ int Divisor::u2poly(const TDivisor *src, QWORD polyu[3], QWORD polyv[2])
     return 0;
 }
 
-void Divisor::add(const TDivisor *src1, const TDivisor *src2, TDivisor *dst)
+void ConfirmationID::Divisor::add(const TDivisor *src1, const TDivisor *src2, TDivisor *dst)
 {
     QWORD u1[3], u2[3], v1[2], v2[2];
     int u1deg = u2poly(src1, u1, v1);
@@ -182,8 +184,8 @@ void Divisor::add(const TDivisor *src1, const TDivisor *src2, TDivisor *dst)
 
     QWORD v[7], tmp[7];
     int vdeg, tmpdeg;
-    // c1*(e1*u1*v2 + e2*u2*v1) + c2*(v1*v2 + f)
-    // c1*(e1*u1*(v2-v1) + d1*v1) + c2*(v1*v2 + f)
+    // c1*(e1*u1*v2 + e2*u2*v1) + c2*(v1*v2 + curve)
+    // c1*(e1*u1*(v2-v1) + d1*v1) + c2*(v1*v2 + curve)
     v[0] = parent->residue->sub(v2[0], v1[0]);
     v[1] = parent->residue->sub(v2[1], v1[1]);
     tmpdeg = parent->polynomial->mul(e1deg, e1, 1, v, -1, tmp);
@@ -195,7 +197,7 @@ void Divisor::add(const TDivisor *src1, const TDivisor *src2, TDivisor *dst)
         v[i] = parent->residue->mul(v[i], c1[0]);
     }
 
-    memcpy(tmp, parent->f, 6 * sizeof(parent->f[0]));
+    memcpy(tmp, parent->curve, 6 * sizeof(parent->curve[0]));
     tmpdeg = 5;
     tmpdeg = parent->polynomial->mul(1, v1, 1, v2, tmpdeg, tmp);
     vdeg = parent->polynomial->mul(c2deg, c2, tmpdeg, tmp, vdeg, v);
@@ -223,11 +225,11 @@ void Divisor::add(const TDivisor *src1, const TDivisor *src2, TDivisor *dst)
     {
         assert(udeg <= 4);
         assert(vdeg <= 3);
-        // u' = monic((f-v^2)/u), v'=-v mod u'
+        // u' = monic((curve-v^2)/u), v'=-v mod u'
         tmpdeg = parent->polynomial->mul(vdeg, v, vdeg, v, -1, tmp);
         for (i = 0; i <= tmpdeg && i <= 5; i++)
         {
-            tmp[i] = parent->residue->sub(parent->f[i], tmp[i]);
+            tmp[i] = parent->residue->sub(parent->curve[i], tmp[i]);
         }
 
         for (; i <= tmpdeg; i++)
@@ -237,7 +239,7 @@ void Divisor::add(const TDivisor *src1, const TDivisor *src2, TDivisor *dst)
 
         for (; i <= 5; i++)
         {
-            tmp[i] = parent->f[i];
+            tmp[i] = parent->curve[i];
         }
 
         tmpdeg = i - 1;
@@ -288,7 +290,7 @@ void Divisor::add(const TDivisor *src1, const TDivisor *src2, TDivisor *dst)
 
 #define divisor_double(src, dst) add(src, src, dst)
 
-void Divisor::mul(const TDivisor *src, QWORD mult, TDivisor *dst)
+void ConfirmationID::Divisor::mul(const TDivisor *src, QWORD mult, TDivisor *dst)
 {
     if (mult == 0)
     {
@@ -317,7 +319,7 @@ void Divisor::mul(const TDivisor *src, QWORD mult, TDivisor *dst)
     }
 }
 
-void Divisor::mul128(const TDivisor *src, QWORD mult_lo, QWORD mult_hi, TDivisor *dst)
+void ConfirmationID::Divisor::mul128(const TDivisor *src, QWORD mult_lo, QWORD mult_hi, TDivisor *dst)
 {
     if (mult_lo == 0 && mult_hi == 0)
     {

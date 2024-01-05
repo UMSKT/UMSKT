@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 6/24/2023
+ * @FileCreated by Neo on 06/24/2023
  * @Maintainer Neo
  */
 
@@ -63,11 +63,19 @@ class UMSKT
 {
   public:
     static std::FILE *debug;
-    class PIDGEN2;
-    class PIDGEN3;
-    class ConfigurationID;
+    static BOOL VERBOSE;
+    static BOOL DEBUG;
 
     static void setDebugOutput(std::FILE *input);
+    template <typename T> static T getRandom()
+    {
+        T retval;
+        BIGNUM *bnrand = BN_new();
+        BN_rand(bnrand, sizeof(T) * 8, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
+        BN_bn2lebinpad(bnrand, (unsigned char *)&retval, sizeof(T));
+        BN_free(bnrand);
+        return retval;
+    }
 };
 
 #endif // UMSKT_LIBUMSKT_H

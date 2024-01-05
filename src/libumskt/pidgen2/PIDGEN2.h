@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -25,18 +25,26 @@
 
 #include "../libumskt.h"
 
-EXPORT class PIDGEN2
+class PIDGEN2
 {
+    DWORD year;
+    DWORD day;
+    BOOL isOEM;
+    BOOL isOffice;
+
+    static constexpr char channelIDBlacklist[7][4] = {"333", "444", "555", "666", "777", "888", "999"};
+    static constexpr char validYears[8][3] = {"95", "96", "97", "98", "99", "00", "01", "02"};
+
   public:
-    static bool isNumericString(char *input);
-    static bool isValidChannelID(char *channelID);
-    static bool isValidOEMID(char *OEMID);
-    static bool isValidYear(char *year);
-    static bool isValidDay(char *day);
-    static bool isValidRetailProductID(char *productID);
-    static int addDigits(char *input);
-    static int GenerateRetail(char *channelID, char *&keyout);
-    static int GenerateOEM(char *year, char *day, char *oem, char *&keyout);
+    BOOL isNumericString(char *input);
+    BOOL isValidChannelID(char *channelID);
+    BOOL isValidOEMID(char *OEMID);
+    BOOL isValidYear(char *year);
+    BOOL isValidDay(char *day);
+    BOOL isValidRetailProductID(char *productID);
+    int addDigits(char *input);
+    int GenerateRetail(char *channelID, char *&keyout);
+    int GenerateOEM(char *year, char *day, char *oem, char *&keyout);
 };
 
 #endif // UMSKT_PIDGEN2_H

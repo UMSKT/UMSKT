@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -21,9 +21,6 @@
  */
 
 #include "PIDGEN2.h"
-
-const char *channelIDBlacklist[7] = {"333", "444", "555", "666", "777", "888", "999"};
-const char *validYears[8] = {"95", "96", "97", "98", "99", "00", "01", "02"};
 
 bool PIDGEN2::isNumericString(char *input)
 {

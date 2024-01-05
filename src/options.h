@@ -16,23 +16,45 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 06/17/2023
+ * @FileCreated by Neo on 01/02/2024
  * @Maintainer Neo
  */
 
-//{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
-// Used by umskt.rc
-//
-#define IDI_ICON1 101
+#ifndef UMSKT_OPTIONS_H
+#define UMSKT_OPTIONS_H
 
-// Next default values for new objects
-//
-#ifdef APSTUDIO_INVOKED
-#ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE 102
-#define _APS_NEXT_COMMAND_VALUE 40001
-#define _APS_NEXT_CONTROL_VALUE 1001
-#define _APS_NEXT_SYMED_VALUE 101
-#endif
-#endif
+typedef BOOL CLIHandlerFunc(int, char *);
+
+enum CLIHelpOptionIDs
+{
+    OPTION_HELP,
+    OPTION_VERBOSE,
+    OPTION_DEBUG,
+    OPTION_FILE,
+    OPTION_LIST,
+    OPTION_NUMBER,
+    OPTION_PRODUCT,
+    OPTION_OEM,
+    OPTION_UPGRADE,
+    OPTION_ACTIVATIONID,
+    OPTION_ACTIVATIONPID,
+    OPTION_BINK,
+    OPTION_CHANNELID,
+    OPTION_SERIAL,
+    OPTION_AUTHDATA,
+    OPTION_VALIDATE,
+
+    CLIHelpOptionID_END
+};
+
+struct CLIHelpOptions
+{
+    std::string Short;
+    std::string Long;
+    std::string HelpText;
+    BOOL hasArguments;
+    std::string Default;
+    CLIHandlerFunc *handler;
+};
+
+#endif // UMSKT_OPTIONS_H

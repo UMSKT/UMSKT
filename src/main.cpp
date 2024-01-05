@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -21,47 +21,15 @@
  */
 
 #include "cli.h"
-#include "header.h"
-
-Options options;
 
 int main(int argc, char *argv[])
 {
-    if (!CLI::parseCommandLine(argc, argv, &options))
-    {
-        fmt::print("error parsing command line options\n");
-        CLI::showHelp(argv);
-        return !options.error ? 0 : 1;
-    }
-
-    json keys;
-
-    int status = CLI::validateCommandLine(&options, argv, &keys);
-    if (status > 0)
+    int status;
+    if (status = CLI::Init(argc, argv); status > 0)
     {
         return status;
     }
 
-    CLI run(options, keys);
-
-    switch (options.applicationMode)
-    {
-    case MODE_BINK1998_GENERATE:
-        return run.BINK1998Generate();
-
-    case MODE_BINK2002_GENERATE:
-        return run.BINK2002Generate();
-
-    case MODE_BINK1998_VALIDATE:
-        return run.BINK1998Validate();
-
-    case MODE_BINK2002_VALIDATE:
-        return run.BINK2002Validate();
-
-    case MODE_CONFIRMATION_ID:
-        return run.ConfirmationID();
-
-    default:
-        return 1;
-    }
+    auto cli = CLI();
+    return cli.Run();
 }

@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -29,65 +29,75 @@
 
 #include "BINK2002.h"
 
-/* Unpacks a Windows Server 2003-like Product Key. */
-void PIDGEN3::BINK2002::Unpack(QWORD (&pRaw)[2], BOOL &pUpgrade, DWORD &pChannelID, DWORD &pHash, QWORD &pSignature,
-                               DWORD &pAuthInfo)
+/**
+ * Unpacks a Windows Server 2003-like Product Key.
+ *
+ * @param pRaw *QWORD[2] raw product key input
+ **/
+BOOL BINK2002::Unpack(QWORD (&pRaw)[2])
 {
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
 
     // Upgrade = Bit 0
-    pUpgrade = FIRSTNBITS(pRaw[0], 1);
+    isUpgrade = FIRSTNBITS(pRaw[0], 1);
 
     // Channel ID = Bits [1..10] -> 10 bits
-    pChannelID = NEXTSNBITS(pRaw[0], 10, 1);
+    ChannelID = NEXTSNBITS(pRaw[0], 10, 1);
 
     // Hash = Bits [11..41] -> 31 bits
-    pHash = NEXTSNBITS(pRaw[0], 31, 11);
+    Hash = NEXTSNBITS(pRaw[0], 31, 11);
 
     // Signature = Bits [42..103] -> 62 bits
     // The quad-word signature overlaps AuthInfo in bits 104 and 105,
     // hence Microsoft employs a secret technique called: Signature = HIDWORD(Signature) >> 2 | LODWORD(Signature)
-    pSignature = NEXTSNBITS(pRaw[1], 30, 10) << 32 | FIRSTNBITS(pRaw[1], 10) << 22 | NEXTSNBITS(pRaw[0], 22, 42);
+    Signature = NEXTSNBITS(pRaw[1], 30, 10) << 32 | FIRSTNBITS(pRaw[1], 10) << 22 | NEXTSNBITS(pRaw[0], 22, 42);
 
     // AuthInfo = Bits [104..113] -> 10 bits
-    pAuthInfo = NEXTSNBITS(pRaw[1], 10, 40);
+    AuthInfo = NEXTSNBITS(pRaw[1], 10, 40);
+
+    return true;
 }
 
-/* Packs a Windows Server 2003-like Product Key. */
-void PIDGEN3::BINK2002::Pack(QWORD (&pRaw)[2], BOOL pUpgrade, DWORD pChannelID, DWORD pHash, QWORD pSignature,
-                             DWORD pAuthInfo)
+/**
+ * Packs a Windows Server 2003-like Product Key.
+ *
+ * @param pRaw *QWORD[2] raw product key output
+ **/
+BOOL BINK2002::Pack(QWORD (&pRaw)[2])
 {
     // AuthInfo [113..104] <- Signature [103..42] <- Hash [41..11] <- Channel ID [10..1] <- Upgrade [0]
-    pRaw[0] = FIRSTNBITS(pSignature, 22) << 42 | (QWORD)pHash << 11 | pChannelID << 1 | pUpgrade;
-    pRaw[1] = FIRSTNBITS(pAuthInfo, 10) << 40 | NEXTSNBITS(pSignature, 40, 22);
+    pRaw[0] = FIRSTNBITS(Signature, 22) << 42 | (QWORD)Hash << 11 | ChannelID << 1 | isUpgrade;
+    pRaw[1] = FIRSTNBITS(AuthInfo, 10) << 40 | NEXTSNBITS(Signature, 40, 22);
+
+    return true;
 }
 
-/* Verifies a Windows Server 2003-like Product Key. */
-bool PIDGEN3::BINK2002::Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *publicKey, char (&cdKey)[25])
+/**
+ * Verifies a Windows Server 2003-like Product Key.
+ *
+ * @param pKey
+ **/
+BOOL BINK2002::Verify(std::string &pKey)
 {
     BN_CTX *context = BN_CTX_new();
 
-    QWORD bKey[2]{}, pSignature = 0;
-
-    DWORD pData, pChannelID, pHash, pAuthInfo;
-
-    BOOL pUpgrade;
+    QWORD bKey[2]{};
 
     // Convert Base24 CD-key to bytecode.
-    unbase24((BYTE *)bKey, cdKey);
+    unbase24((BYTE *)bKey, pKey.c_str());
 
     // Extract product key segments from bytecode.
-    Unpack(bKey, pUpgrade, pChannelID, pHash, pSignature, pAuthInfo);
+    Unpack(bKey);
 
-    pData = pChannelID << 1 | pUpgrade;
+    DWORD pData = ChannelID << 1 | isUpgrade;
 
     fmt::print(UMSKT::debug, "Validation results:\n");
-    fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", pUpgrade);
-    fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", pChannelID);
-    fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
-    fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
-    fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", pAuthInfo);
+    fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", isUpgrade);
+    fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", ChannelID);
+    fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", Hash);
+    fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", Signature);
+    fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", AuthInfo);
     fmt::print(UMSKT::debug, "\n");
 
     BYTE msgDigest[SHA_DIGEST_LENGTH]{}, msgBuffer[SHA_MSG_LENGTH_2003]{}, xBin[FIELD_BYTES_2003]{},
@@ -97,12 +107,12 @@ bool PIDGEN3::BINK2002::Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *
     msgBuffer[0x00] = 0x5D;
     msgBuffer[0x01] = (pData & 0x00FF);
     msgBuffer[0x02] = (pData & 0xFF00) >> 8;
-    msgBuffer[0x03] = (pHash & 0x000000FF);
-    msgBuffer[0x04] = (pHash & 0x0000FF00) >> 8;
-    msgBuffer[0x05] = (pHash & 0x00FF0000) >> 16;
-    msgBuffer[0x06] = (pHash & 0xFF000000) >> 24;
-    msgBuffer[0x07] = (pAuthInfo & 0x00FF);
-    msgBuffer[0x08] = (pAuthInfo & 0xFF00) >> 8;
+    msgBuffer[0x03] = (Hash & 0x000000FF);
+    msgBuffer[0x04] = (Hash & 0x0000FF00) >> 8;
+    msgBuffer[0x05] = (Hash & 0x00FF0000) >> 16;
+    msgBuffer[0x06] = (Hash & 0xFF000000) >> 24;
+    msgBuffer[0x07] = (AuthInfo & 0x00FF);
+    msgBuffer[0x08] = (AuthInfo & 0xFF00) >> 8;
     msgBuffer[0x09] = 0x00;
     msgBuffer[0x0A] = 0x00;
 
@@ -130,11 +140,10 @@ bool PIDGEN3::BINK2002::Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *
      */
 
     BIGNUM *e = BN_lebin2bn((BYTE *)&iSignature, sizeof(iSignature), nullptr),
-           *s = BN_lebin2bn((BYTE *)&pSignature, sizeof(pSignature), nullptr), *x = BN_new(), *y = BN_new();
+           *s = BN_lebin2bn((BYTE *)&Signature, sizeof(Signature), nullptr), *x = BN_new(), *y = BN_new();
 
     // Create 2 points on the elliptic curve.
-    EC_POINT *p = EC_POINT_new(eCurve);
-    EC_POINT *t = EC_POINT_new(eCurve);
+    EC_POINT *p = EC_POINT_new(eCurve), *t = EC_POINT_new(eCurve);
 
     // t = sG
     EC_POINT_mul(eCurve, t, nullptr, basePoint, s, context);
@@ -181,21 +190,20 @@ bool PIDGEN3::BINK2002::Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *
     EC_POINT_free(t);
 
     // If the computed hash checks out, the key is valid.
-    return compHash == pHash;
+    return compHash == Hash;
 }
 
 /* Generates a Windows Server 2003-like Product Key. */
-void PIDGEN3::BINK2002::Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *genOrder, BIGNUM *privateKey,
-                                 DWORD pChannelID, DWORD pAuthInfo, BOOL pUpgrade, char (&pKey)[25])
+BOOL BINK2002::Generate(std::string &pKey)
 {
     BN_CTX *numContext = BN_CTX_new();
 
     BIGNUM *c = BN_new(), *e = BN_new(), *s = BN_new(), *x = BN_new(), *y = BN_new();
 
-    QWORD pRaw[2]{}, pSignature = 0;
+    QWORD pRaw[2]{};
 
     // Data segment of the RPK.
-    DWORD pData = pChannelID << 1 | pUpgrade;
+    DWORD pData = ChannelID << 1 | isUpgrade;
 
     BOOL noSquare;
 
@@ -243,8 +251,8 @@ void PIDGEN3::BINK2002::Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *
         msgBuffer[0x04] = (pHash & 0x0000FF00) >> 8;
         msgBuffer[0x05] = (pHash & 0x00FF0000) >> 16;
         msgBuffer[0x06] = (pHash & 0xFF000000) >> 24;
-        msgBuffer[0x07] = (pAuthInfo & 0x00FF);
-        msgBuffer[0x08] = (pAuthInfo & 0xFF00) >> 8;
+        msgBuffer[0x07] = (AuthInfo & 0x00FF);
+        msgBuffer[0x08] = (AuthInfo & 0xFF00) >> 8;
         msgBuffer[0x09] = 0x00;
         msgBuffer[0x0A] = 0x00;
 
@@ -323,21 +331,21 @@ void PIDGEN3::BINK2002::Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *
         BN_rshift1(s, s);
 
         // Translate resulting scalar into a 64-bit integer (the byte order is little-endian).
-        BN_bn2lebinpad(s, (BYTE *)&pSignature, BN_num_bytes(s));
+        BN_bn2lebinpad(s, (BYTE *)&Signature, BN_num_bytes(s));
 
         // Pack product key.
-        Pack(pRaw, pUpgrade, pChannelID, pHash, pSignature, pAuthInfo);
+        Pack(pRaw);
 
         fmt::print(UMSKT::debug, "Generation results:\n");
-        fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", pUpgrade);
-        fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", pChannelID);
-        fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
-        fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
-        fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", pAuthInfo);
+        fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", isUpgrade);
+        fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", ChannelID);
+        fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", Hash);
+        fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", Signature);
+        fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", AuthInfo);
         fmt::print(UMSKT::debug, "\n");
 
         EC_POINT_free(r);
-    } while (pSignature > BITMASK(62) || noSquare);
+    } while (Signature > BITMASK(62) || noSquare);
     // ↑ ↑ ↑
     // The signature can't be longer than 62 bits, else it will
     // overlap with the AuthInfo segment next to it.
@@ -352,4 +360,6 @@ void PIDGEN3::BINK2002::Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *
     BN_free(e);
 
     BN_CTX_free(numContext);
+
+    return true;
 }

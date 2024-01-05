@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -22,16 +22,39 @@
 
 #include "cli.h"
 
-CLI::~CLI()
+// define static storage
+Options CLI::options;
+json CLI::keys;
+
+BYTE CLI::Init(int argcIn, char **argvIn)
 {
-    EC_GROUP_free(eCurve);
-    EC_POINT_free(genPoint);
-    EC_POINT_free(pubPoint);
-    BN_free(privateKey);
-    BN_free(genOrder);
+    // set default options
+    options = {argcIn, argvIn, "2E",  "",    "",    "",    "",    "",    "WINXPPVLK", 0,
+               0,      1,      false, false, false, false, false, false, false,       STATE_BINK1998_GENERATE};
+
+    SetHelpText();
+
+    BOOL success = parseCommandLine();
+    if (!success)
+    {
+        return options.error;
+    }
+
+    success = processOptions();
+    if (!success)
+    {
+        return 2;
+    }
+
+    return 0;
 }
 
-bool CLI::loadJSON(const fs::path &filename, json *output)
+/**
+ *
+ * @param filename
+ * @return success
+ */
+BOOL CLI::loadJSON(const fs::path &filename)
 {
     if (!filename.empty() && !fs::exists(filename))
     {
@@ -41,16 +64,23 @@ bool CLI::loadJSON(const fs::path &filename, json *output)
     else if (fs::exists(filename))
     {
         std::ifstream f(filename);
-        *output = json::parse(f, nullptr, false, false);
+        try
+        {
+            keys = json::parse(f, nullptr, false, false);
+        }
+        catch (const json::exception &e)
+        {
+            fmt::print("ERROR: Exception thrown while parsing {}: {}\n", filename.string(), e.what());
+        }
     }
     else if (filename.empty())
     {
         cmrc::embedded_filesystem fs = cmrc::umskt::get_filesystem();
-        cmrc::file keys = fs.open("keys.json");
-        *output = json::parse(keys, nullptr, false, false);
+        cmrc::file jsonFile = fs.open("keys.json");
+        keys = json::parse(jsonFile, nullptr, false, false);
     }
 
-    if (output->is_discarded())
+    if (keys.is_discarded())
     {
         fmt::print("ERROR: Unable to parse keys from {}\n", filename.string());
         return false;
@@ -59,314 +89,80 @@ bool CLI::loadJSON(const fs::path &filename, json *output)
     return true;
 }
 
-void CLI::showHelp(char *argv[])
+/**
+ *
+ * @return success
+ */
+BOOL CLI::processOptions()
 {
-    fmt::print("usage: {} \n", argv[0]);
-    fmt::print("\t-h --help\tshow this message\n");
-    fmt::print("\t-v --verbose\tenable verbose output\n");
-    fmt::print("\t-n --number\tnumber of keys to generate (defaults to 1)\n");
-    fmt::print("\t-f --file\tspecify which keys file to load\n");
-    fmt::print("\t-i --instid\tinstallation ID used to generate confirmation ID\n");
-    fmt::print("\t-m --mode\tproduct family to activate.\n\t\t\tvalid options are \"WINDOWS\", \"OFFICEXP\", "
-               "\"OFFICE2K3\", \"OFFICE2K7\" or \"PLUSDME\"\n\t\t\t(defaults to \"WINDOWS\")\n");
-    fmt::print("\t-p --productid\tthe product ID of the Program to activate. only required for Office 2K3 and Office "
-               "2K7 programs\n");
-    fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
-    fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
-    fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
-    fmt::print("\t-s --serial\tspecifies a serial to use in the product ID (defaults to random, BINK1998 only)\n");
-    fmt::print("\t-u --upgrade\tspecifies the Product Key will be an \"Upgrade\" version\n");
-    fmt::print("\t-V --validate\tproduct key to validate signature\n");
-    fmt::print("\t-N --nonewlines\tdisables newlines (for easier embedding in other apps)\n");
-    fmt::print("\n");
-}
-
-int CLI::parseCommandLine(int argc, char *argv[], Options *options)
-{
-    // set default options
-    *options = Options{"2E",   "",    "",    "",    "",    640,   0,     1,
-                       false,  false, false, false, false, false, false, MODE_BINK1998_GENERATE,
-                       WINDOWS};
-
-    for (int i = 1; i < argc; i++)
+    if (options.verbose)
     {
-        std::string arg = argv[i];
-        if (arg == "-v" || arg == "--verbose")
-        {
-            options->verbose = true;
-            UMSKT::setDebugOutput(stderr);
-        }
-        else if (arg == "-h" || arg == "--help")
-        {
-            options->help = true;
-        }
-        else if (arg == "-n" || arg == "--number")
-        {
-            if (i == argc - 1)
-            {
-                options->error = true;
-                break;
-            }
-
-            int nKeys;
-            if (!sscanf(argv[i + 1], "%d", &nKeys))
-            {
-                options->error = true;
-            }
-            else
-            {
-                options->numKeys = nKeys;
-            }
-            i++;
-        }
-        else if (arg == "-b" || arg == "--bink")
-        {
-            if (i == argc - 1)
-            {
-                options->error = true;
-                break;
-            }
-
-            options->binkid = argv[i + 1];
-            i++;
-        }
-        else if (arg == "-l" || arg == "--list")
-        {
-            options->list = true;
-        }
-        else if (arg == "-c" || arg == "--channelid")
-        {
-            if (i == argc - 1)
-            {
-                options->error = true;
-                break;
-            }
-
-            int siteID;
-            if (!sscanf(argv[i + 1], "%d", &siteID))
-            {
-                options->error = true;
-            }
-            else
-            {
-                options->channelID = siteID;
-            }
-            i++;
-        }
-        else if (arg == "-s" || arg == "--serial")
-        {
-            if (i == argc - 1)
-            {
-                options->error = true;
-                break;
-            }
-
-            int serial_val;
-            if (!sscanf(argv[i + 1], "%d", &serial_val))
-            {
-                options->error = true;
-            }
-            else
-            {
-                options->serialSet = true;
-                options->serial = serial_val;
-            }
-            i++;
-        }
-        else if (arg == "-u" || arg == "--upgrade")
-        {
-            options->upgrade = true;
-        }
-        else if (arg == "-f" || arg == "--file")
-        {
-            if (i == argc - 1)
-            {
-                options->error = true;
-                break;
-            }
-
-            options->keysFilename = argv[i + 1];
-            i++;
-        }
-        else if (arg == "-i" || arg == "--instid")
-        {
-            if (i == argc - 1)
-            {
-                options->error = true;
-                break;
-            }
-
-            options->instid = argv[i + 1];
-            options->applicationMode = MODE_CONFIRMATION_ID;
-            i++;
-        }
-        else if (arg == "-m" || arg == "--mode")
-        {
-            std::string mode = argv[i + 1];
-            char *p = &mode[0];
-            for (; *p; p++)
-            {
-                *p = toupper((unsigned char)*p);
-            }
-            p = &mode[0];
-            if (strcmp(p, "WINDOWS") == 0)
-            {
-                options->activationMode = WINDOWS;
-            }
-            else if (strcmp(p, "OFFICEXP") == 0)
-            {
-                options->activationMode = OFFICE_XP;
-            }
-            else if (strcmp(p, "OFFICE2K3") == 0)
-            {
-                options->activationMode = OFFICE_2K3;
-            }
-            else if (strcmp(p, "OFFICE2K7") == 0)
-            {
-                options->activationMode = OFFICE_2K7;
-            }
-            else if (strcmp(p, "PLUSDME") == 0)
-            {
-                options->activationMode = PLUS_DME;
-            }
-            i++;
-        }
-        else if (arg == "-p" || arg == "--productid")
-        {
-            if (i == argc - 1)
-            {
-                options->error = true;
-                break;
-            }
-            options->productid = argv[i + 1];
-            i++;
-        }
-        else if (arg == "-V" || arg == "--validate")
-        {
-            if (i == argc - 1)
-            {
-                options->error = true;
-                break;
-            }
-
-            options->keyToCheck = argv[i + 1];
-            options->applicationMode = MODE_BINK1998_VALIDATE;
-            i++;
-        }
-        else if (arg == "-N" || arg == "--nonewlines")
-        {
-            options->nonewlines = true;
-        }
-        else
-        {
-            options->error = true;
-        }
-    }
-
-    // make sure that a product id is entered for OFFICE_2K3 or OFFICE_2K7 IIDs
-    if ((options->activationMode == OFFICE_2K3 || options->activationMode == OFFICE_2K7) &&
-        (options->productid.empty() || options->instid.empty()))
-    {
-        return options->error = true;
-    }
-
-    return !options->error;
-}
-
-int CLI::validateCommandLine(Options *options, char *argv[], json *keys)
-{
-    if (options->help || options->error)
-    {
-        if (options->error)
-        {
-            fmt::print("error parsing command line options\n");
-        }
-        showHelp(argv);
-        return 1;
-    }
-
-    if (options->verbose)
-    {
-        if (options->keysFilename.empty())
+        if (options.keysFilename.empty())
         {
             fmt::print("Loading internal keys file\n");
         }
         else
         {
-            fmt::print("Loading keys file {}\n", options->keysFilename);
+            fmt::print("Loading keys file {}\n", options.keysFilename);
         }
     }
 
-    if (!loadJSON(options->keysFilename, keys))
+    if (!loadJSON(options.keysFilename))
     {
-        return 2;
+        options.error = true;
+        return false;
     }
 
-    if (options->verbose)
+    if (options.verbose)
     {
-        if (options->keysFilename.empty())
+        if (options.keysFilename.empty())
         {
             fmt::print("Loaded internal keys file successfully\n");
         }
         else
         {
-            fmt::print("Loaded keys from {} successfully\n", options->keysFilename);
+            fmt::print("Loaded keys from {} successfully\n", options.keysFilename);
         }
     }
 
-    if (options->list)
+    if (options.list)
     {
-        for (auto const el : (*keys)["Products"].items())
+        for (auto const &i : keys["Products"].items())
         {
+            auto el = i.value();
             int id;
-            sscanf((el.value()["BINK"][0]).get<std::string>().c_str(), "%x", &id);
-            std::cout << el.key() << ": " << el.value()["BINK"] << std::endl;
+            sscanf(&(el["BINK"][0]).get<std::string>()[0], "%x", &id);
+            fmt::print("{}\n\tName: {}\n\tBINKs: ", i.key(), el["Name"].get<std::string>());
+            std::cout << el["BINK"] << std::endl << std::endl;
         }
 
-        fmt::print("\n\n");
-        fmt::print("** Please note: any BINK ID other than 2E is considered experimental at this time **\n");
         fmt::print("\n");
-        return 1;
+        return false;
     }
 
-    int intBinkID;
-    sscanf(options->binkid.c_str(), "%x", &intBinkID);
+    DWORD intBinkID;
+    sscanf(&options.binkid[0], "%x", &intBinkID);
 
     // FE and FF are BINK 1998, but do not generate valid keys, so we throw an error
     if (intBinkID >= 0xFE)
     {
         fmt::print("ERROR: Terminal Services BINKs (FE and FF) are unsupported at this time\n");
-        return 1;
+        return false;
     }
 
     if (intBinkID >= 0x40)
     {
         // set bink2002 validate mode if in bink1998 validate mode, else set bink2002 generate mode
-        options->applicationMode =
-            (options->applicationMode == MODE_BINK1998_VALIDATE) ? MODE_BINK2002_VALIDATE : MODE_BINK2002_GENERATE;
+        options.state = (options.state == STATE_BINK1998_VALIDATE) ? STATE_BINK2002_VALIDATE : STATE_BINK2002_GENERATE;
     }
 
-    if (options->channelID > 999)
-    {
-        fmt::print("ERROR: refusing to create a key with a Channel ID greater than 999\n");
-        return 1;
-    }
-
-    // don't allow any serial not between 0 and 999999
-    if (options->serial > 999999 || options->serial < 0)
-    {
-        fmt::print("ERROR: refusing to create a key with a Serial not between 000000 and 999999\n");
-        return 1;
-    }
-
-    return 0;
+    return true;
 }
 
 void CLI::printID(DWORD *pid)
 {
-    char raw[12];
-    char b[6], c[8];
-    int i, digit = 0;
+    char raw[12], b[6], c[8];
+    char i, digit = 0;
 
     // Convert PID to ascii-number (=raw)
     snprintf(raw, sizeof(raw), "%09u", pid[0]);
@@ -392,23 +188,33 @@ void CLI::printID(DWORD *pid)
     c[6] = digit + '0';
     c[7] = 0;
 
-    fmt::print("> Product ID: PPPPP-{}-{}-23xxx\n", b, c);
+    fmt::print("> Product ID: PPPPP-{}-{}-BBxxx\n", b, c);
 }
 
-void CLI::printKey(char *pk)
+/**
+ *
+ * @param pk
+ */
+void CLI::printKey(std::string pk)
 {
-    assert(strlen(pk) >= PK_LENGTH);
+    assert(pk.length() >= PK_LENGTH);
 
-    std::string spk = pk;
-    fmt::print("{}-{}-{}-{}-{}", spk.substr(0, 5), spk.substr(5, 5), spk.substr(10, 5), spk.substr(15, 5),
-               spk.substr(20, 5));
+    fmt::print("{}-{}-{}-{}-{}", pk.substr(0, 5), pk.substr(5, 5), pk.substr(10, 5), pk.substr(15, 5),
+               pk.substr(20, 5));
 }
 
-bool CLI::stripKey(const char *in_key, char out_key[PK_LENGTH])
+/**
+ *
+ * @param in_key
+ * @param out_key
+ * @return
+ */
+BOOL CLI::stripKey(const std::string &in_key, std::string &out_key)
 {
     // copy out the product key stripping out extraneous characters
-    const char *p = in_key;
-    size_t i = 0;
+    const char *p = &in_key[0];
+    BYTE i = 0;
+
     for (; *p; p++)
     {
         // strip out space or dash
@@ -431,283 +237,388 @@ bool CLI::stripKey(const char *in_key, char out_key[PK_LENGTH])
             }
         }
     }
+
     // only return true if we've handled exactly PK_LENGTH chars
     return (i == PK_LENGTH);
 }
 
-CLI::CLI(Options options, json keys)
+/**
+ *
+ * @param pidgen3
+ * @return success
+ */
+BOOL CLI::InitPIDGEN3(PIDGEN3 *pidgen3)
 {
-    this->options = options;
-    this->keys = keys;
+    if (!options.productCode.empty())
+    {
+        const char *productCode = &options.productCode[0];
+        auto product = keys["Products"][productCode];
 
-    this->BINKID = options.binkid.c_str();
+        if (options.verbose)
+        {
+            fmt::print("Selecting product: {}\n", productCode);
+        }
 
-    // We cannot produce a valid key without knowing the private key k. The reason for this is that
-    // we need the result of the function K(x; y) = kG(x; y).
-    this->privateKey = BN_new();
+        if (options.oem)
+        {
+            options.binkid = product["BINK"][1].get<std::string>();
+        }
+        else
+        {
+            options.binkid = product["BINK"][0].get<std::string>();
+        }
 
-    // We can, however, validate any given key using the available public key: {p, a, b, G, K}.
-    // genOrder the order of the generator G, a value we have to reverse -> Schoof's Algorithm.
-    this->genOrder = BN_new();
+        if (options.verbose)
+        {
+            fmt::print("Selected BINK: {}\n", options.binkid);
+        }
 
-    /* Computed data */
-    BN_dec2bn(&this->genOrder, this->keys["BINK"][this->BINKID]["n"].get<std::string>().c_str());
-    BN_dec2bn(&this->privateKey, this->keys["BINK"][this->BINKID]["priv"].get<std::string>().c_str());
+        std::vector<json> filtered;
+
+        if (product.contains("DPC") && options.channelID == 0)
+        {
+            for (auto const &i : product["DPC"][options.binkid].items())
+            {
+                auto el = i.value();
+                if (!el["IsEvaluation"].get<bool>())
+                {
+                    filtered.push_back(el);
+                }
+            }
+
+            // roll a die to choose which DPC entry to pick
+            auto rand = UMSKT::getRandom<BYTE>();
+            auto dpc = filtered[rand % filtered.size()];
+            auto min = dpc["Min"].get<WORD>(), max = dpc["Max"].get<WORD>();
+            options.channelID = min + (rand % (max - min));
+            if (options.verbose)
+            {
+                fmt::print("Selected channel ID: {} (DPC entry {})\n", options.channelID, rand % filtered.size());
+            }
+        }
+
+        return false;
+    }
+
+    const char *BINKID = &options.binkid[0];
+    auto bink = keys["BINK"][BINKID];
 
     if (options.verbose)
     {
         fmt::print("----------------------------------------------------------- \n");
-        fmt::print("Loaded the following elliptic curve parameters: BINK[{}]\n", this->BINKID);
+        fmt::print("Loaded the following elliptic curve parameters: BINK[{}]\n", BINKID);
         fmt::print("----------------------------------------------------------- \n");
-        fmt::print(" P: {}\n", this->keys["BINK"][this->BINKID]["p"].get<std::string>());
-        fmt::print(" a: {}\n", this->keys["BINK"][this->BINKID]["a"].get<std::string>());
-        fmt::print(" b: {}\n", this->keys["BINK"][this->BINKID]["b"].get<std::string>());
-        fmt::print("Gx: {}\n", this->keys["BINK"][this->BINKID]["g"]["x"].get<std::string>());
-        fmt::print("Gy: {}\n", this->keys["BINK"][this->BINKID]["g"]["y"].get<std::string>());
-        fmt::print("Kx: {}\n", this->keys["BINK"][this->BINKID]["pub"]["x"].get<std::string>());
-        fmt::print("Ky: {}\n", this->keys["BINK"][this->BINKID]["pub"]["y"].get<std::string>());
-        fmt::print(" n: {}\n", this->keys["BINK"][this->BINKID]["n"].get<std::string>());
-        fmt::print(" k: {}\n", this->keys["BINK"][this->BINKID]["priv"].get<std::string>());
+        fmt::print(" P: {}\n", bink["p"].get<std::string>());
+        fmt::print(" a: {}\n", bink["a"].get<std::string>());
+        fmt::print(" b: {}\n", bink["b"].get<std::string>());
+        fmt::print("Gx: {}\n", bink["g"]["x"].get<std::string>());
+        fmt::print("Gy: {}\n", bink["g"]["y"].get<std::string>());
+        fmt::print("Kx: {}\n", bink["pub"]["x"].get<std::string>());
+        fmt::print("Ky: {}\n", bink["pub"]["y"].get<std::string>());
+        fmt::print(" n: {}\n", bink["n"].get<std::string>());
+        fmt::print(" k: {}\n", bink["priv"].get<std::string>());
         fmt::print("\n");
     }
 
-    eCurve = PIDGEN3::initializeEllipticCurve(this->keys["BINK"][this->BINKID]["p"].get<std::string>(),
-                                              this->keys["BINK"][this->BINKID]["a"].get<std::string>(),
-                                              this->keys["BINK"][this->BINKID]["b"].get<std::string>(),
-                                              this->keys["BINK"][this->BINKID]["g"]["x"].get<std::string>(),
-                                              this->keys["BINK"][this->BINKID]["g"]["y"].get<std::string>(),
-                                              this->keys["BINK"][this->BINKID]["pub"]["x"].get<std::string>(),
-                                              this->keys["BINK"][this->BINKID]["pub"]["y"].get<std::string>(),
-                                              this->genPoint, this->pubPoint);
+    pidgen3->LoadEllipticCurve(bink["p"].get<std::string>(), bink["a"].get<std::string>(), bink["b"].get<std::string>(),
+                               bink["g"]["x"].get<std::string>(), bink["g"]["y"].get<std::string>(),
+                               bink["pub"]["x"].get<std::string>(), bink["pub"]["y"].get<std::string>(),
+                               bink["n"].get<std::string>(), bink["priv"].get<std::string>());
 
-    this->count = 0;
-    this->total = this->options.numKeys;
+    pidgen3->setChannelID(options.channelID);
+    if (options.verbose)
+    {
+        fmt::print("> Channel ID: {:03d}\n", options.channelID);
+    }
+
+    if (options.serialSet)
+    {
+        pidgen3->setSerial(options.serial);
+        if (options.verbose)
+        {
+            fmt::print("> Serial {:#09d}\n", options.serial);
+        }
+    }
+
+    return true;
 }
 
-int CLI::BINK1998Generate()
+/**
+ *
+ * @param confid
+ * @return success
+ */
+BOOL CLI::InitConfirmationID(ConfirmationID *confid)
 {
+    return true;
+}
+
+/**
+ *
+ * @return success
+ */
+BOOL CLI::BINK1998Generate()
+{
+    auto bink1998 = BINK1998();
+    BOOL retval = InitPIDGEN3(&bink1998);
+    if (!retval)
+    {
+        return retval;
+    }
+
     // raw PID/serial value
-    DWORD nRaw = this->options.channelID * 1'000'000; /* <- change */
+    DWORD nRaw = options.channelID * 1'000'000;
 
     // using user-provided serial
-    if (this->options.serialSet)
+    if (options.serialSet)
     {
         // just in case, make sure it's less than 999999
-        int serialRnd = (this->options.serial % 999999);
+        int serialRnd = (options.serial % 999999);
         nRaw += serialRnd;
     }
     else
     {
         // generate a random number to use as a serial
-        BIGNUM *bnrand = BN_new();
-        BN_rand(bnrand, 19, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
-
-        int oRaw;
-        char *cRaw = BN_bn2dec(bnrand);
-
-        sscanf(cRaw, "%d", &oRaw);
+        auto oRaw = UMSKT::getRandom<DWORD>();
         nRaw += (oRaw % 999999); // ensure our serial is less than 999999
-        BN_free(bnrand);
     }
 
-    if (this->options.verbose)
+    if (options.verbose)
     {
         // print the resulting Product ID
         // PID value is printed in BINK1998::Generate
         printID(&nRaw);
     }
 
-    // generate a key
-    BN_sub(this->privateKey, this->genOrder, this->privateKey);
-
-    for (int i = 0; i < this->total; i++)
+    for (int i = 0; i < total; i++)
     {
-        PIDGEN3::BINK1998::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, nRaw,
-                                    options.upgrade, this->pKey);
+        bink1998.Generate(pKey);
 
-        bool isValid = PIDGEN3::BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
+        bool isValid = bink1998.Verify(pKey);
         if (isValid)
         {
-            CLI::printKey(this->pKey);
-            if (i < this->total - 1 || this->options.verbose)
+            CLI::printKey(pKey);
+            if (i < total - 1 || options.verbose)
             {
                 fmt::print("\n");
             }
-            this->count += isValid;
+            count += isValid;
         }
         else
         {
-            if (this->options.verbose)
+            if (options.verbose)
             {
-                CLI::printKey(this->pKey);
+                CLI::printKey(pKey);
                 fmt::print(" [Invalid]");
-                if (i < this->total - 1)
+                if (i < total - 1)
                 {
                     fmt::print("\n");
                 }
             }
-            this->total++; // queue a redo, basically
+            total++; // queue a redo, basically
         }
     }
 
-    if (this->options.verbose)
+    if (options.verbose)
     {
-        fmt::print("\nSuccess count: {}/{}", this->count, this->total);
+        fmt::print("\nSuccess count: {}/{}\n", count, total);
     }
 
-    if (!options.nonewlines)
-    {
-        fmt::print("\n");
-    }
-
-    return 0;
+    return true;
 }
 
-int CLI::BINK2002Generate()
+/**
+ *
+ * @return success
+ */
+BOOL CLI::BINK2002Generate()
 {
-    DWORD pChannelID = this->options.channelID;
-
-    if (this->options.verbose)
-    {
-        fmt::print("> Channel ID: {:03d}\n", this->options.channelID);
-    }
+    auto bink2002 = BINK2002();
+    InitPIDGEN3(&bink2002);
 
     // generate a key
-    for (int i = 0; i < this->total; i++)
+    for (int i = 0; i < total; i++)
     {
         DWORD pAuthInfo;
         RAND_bytes((BYTE *)&pAuthInfo, 4);
         pAuthInfo &= BITMASK(10);
 
-        if (this->options.verbose)
+        if (options.verbose)
         {
             fmt::print("> AuthInfo: {}\n", pAuthInfo);
         }
 
-        PIDGEN3::BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID,
-                                    pAuthInfo, options.upgrade, this->pKey);
+        bink2002.Generate(pKey);
 
-        bool isValid = PIDGEN3::BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
+        bool isValid = bink2002.Verify(pKey);
         if (isValid)
         {
-            CLI::printKey(this->pKey);
-            if (i < this->total - 1 || this->options.verbose)
+            CLI::printKey(pKey);
+            if (i < total - 1 || options.verbose)
             { // check if end of list or verbose
                 fmt::print("\n");
             }
-            this->count += isValid; // add to count
+            count += isValid; // add to count
         }
         else
         {
-            if (this->options.verbose)
+            if (options.verbose)
             {
-                CLI::printKey(this->pKey); // print the key
-                fmt::print(" [Invalid]");  // and add " [Invalid]" to the key
+                CLI::printKey(pKey);      // print the key
+                fmt::print(" [Invalid]"); // and add " [Invalid]" to the key
                 if (i < this->total - 1)
                 { // check if end of list
                     fmt::print("\n");
                 }
             }
-            this->total++; // queue a redo, basically
+            total++; // queue a redo, basically
         }
     }
 
-    if (this->options.verbose)
+    if (options.verbose)
     {
-        fmt::print("\nSuccess count: {}/{}", this->count, this->total);
+        fmt::print("\nSuccess count: {}/{}\n", count, total);
     }
 
-    if (!this->options.nonewlines)
-    {
-        fmt::print("\n");
-    }
-
-    return 0;
+    return true;
 }
 
-int CLI::BINK1998Validate()
+/**
+ *
+ * @return success
+ */
+BOOL CLI::BINK1998Validate()
 {
-    char product_key[PK_LENGTH]{};
+    auto bink1998 = BINK1998();
+    InitPIDGEN3(&bink1998);
 
-    if (!CLI::stripKey(this->options.keyToCheck.c_str(), product_key))
+    std::string product_key;
+
+    if (!CLI::stripKey(options.keyToCheck, product_key))
     {
         fmt::print("ERROR: Product key is in an incorrect format!\n");
-        return 1;
+        return false;
     }
 
     CLI::printKey(product_key);
     fmt::print("\n");
-    if (!PIDGEN3::BINK1998::Verify(this->eCurve, this->genPoint, this->pubPoint, product_key))
+    if (!bink1998.Verify(product_key))
     {
         fmt::print("ERROR: Product key is invalid! Wrong BINK ID?\n");
-        return 1;
+        return false;
     }
 
     fmt::print("Key validated successfully!\n");
-    return 0;
+    return true;
 }
 
-int CLI::BINK2002Validate()
+/**
+ *
+ * @return success
+ */
+BOOL CLI::BINK2002Validate()
 {
-    char product_key[PK_LENGTH]{};
+    auto bink2002 = BINK2002();
+    InitPIDGEN3(&bink2002);
 
-    if (!CLI::stripKey(this->options.keyToCheck.c_str(), product_key))
+    std::string product_key;
+
+    if (!CLI::stripKey(options.keyToCheck, product_key))
     {
         fmt::print("ERROR: Product key is in an incorrect format!\n");
-        return 1;
+        return false;
     }
 
     CLI::printKey(product_key);
     fmt::print("\n");
-    if (!PIDGEN3::BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, product_key))
+    if (!bink2002.Verify(product_key))
     {
         fmt::print("ERROR: Product key is invalid! Wrong BINK ID?\n");
-        return 1;
+        return false;
     }
 
     fmt::print("Key validated successfully!\n");
-    return 0;
+    return true;
 }
 
-int CLI::ConfirmationID()
+/**
+ *
+ * @return success
+ */
+BOOL CLI::ConfirmationIDGenerate()
 {
-    char confirmation_id[49];
+    std::string confirmation_id;
 
-    auto confid = new class ConfirmationID();
-    int err = confid->Generate(this->options.instid.c_str(), confirmation_id, options.productid);
+    auto confid = ConfirmationID();
+    int err = confid.Generate(options.instid, confirmation_id, options.productid);
 
     if (err == SUCCESS)
     {
-        fmt::print(confirmation_id);
-        if (!this->options.nonewlines)
-        {
-            fmt::print("\n");
-        }
-        return 0;
+        fmt::print("{}\n", confirmation_id);
+        return true;
     }
 
     switch (err)
     {
     case ERR_TOO_SHORT:
         fmt::print("ERROR: Installation ID is too short.\n");
+        break;
 
     case ERR_TOO_LARGE:
         fmt::print("ERROR: Installation ID is too long.\n");
+        break;
 
     case ERR_INVALID_CHARACTER:
         fmt::print("ERROR: Invalid character in installation ID.\n");
+        break;
 
     case ERR_INVALID_CHECK_DIGIT:
         fmt::print("ERROR: Installation ID checksum failed. Please check that it is typed correctly.\n");
+        break;
 
     case ERR_UNKNOWN_VERSION:
         fmt::print("ERROR: Unknown installation ID version.\n");
+        break;
 
     case ERR_UNLUCKY:
         fmt::print("ERROR: Unable to generate valid confirmation ID.\n");
+        break;
 
     default:
         fmt::print("Unknown error occurred during Confirmation ID generation: {}\n", err);
+        break;
     }
-    return 1;
+
+    return false;
+}
+/**
+ *
+ * @return application status code
+ */
+int CLI::Run()
+{
+    BINK1998Generate();
+    /*
+    switch (state)
+    {
+    case STATE_BINK1998_GENERATE:
+        return BINK1998Generate();
+
+    case STATE_BINK2002_GENERATE:
+        return BINK2002Generate();
+
+    case STATE_BINK1998_VALIDATE:
+        return BINK1998Validate();
+
+    case STATE_BINK2002_VALIDATE:
+        return BINK2002Validate();
+
+    case STATE_CONFIRMATION_ID:
+        return ConfirmationIDGenerate();
+
+    default:
+        return 1;
+    }
+     */
+    return 0;
 }
