@@ -98,10 +98,10 @@ BOOL BINK1998::Verify(std::string &pKey)
     Unpack(info, pRaw);
 
     fmt::print(UMSKT::debug, "Validation results:\n");
-    fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", info.isUpgrade);
-    fmt::print(UMSKT::debug, "    Serial: 0x{:08x}\n", info.Serial);
-    fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", info.Hash);
-    fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", info.Signature);
+    fmt::print(UMSKT::debug, "   Upgrade: {:#08x}\n", info.isUpgrade);
+    fmt::print(UMSKT::debug, "    Serial: {:#08x}\n", info.Serial);
+    fmt::print(UMSKT::debug, "      Hash: {:#08x}\n", info.Hash);
+    fmt::print(UMSKT::debug, " Signature: {:#08x}\n", info.Signature);
     fmt::print(UMSKT::debug, "\n");
 
     DWORD pData = info.Serial << 1 | info.isUpgrade;
@@ -122,7 +122,7 @@ BOOL BINK1998::Verify(std::string &pKey)
      */
 
     BIGNUM *e = BN_lebin2bn((BYTE *)&info.Hash, sizeof(info.Hash), nullptr),
-           *s = BN_lebin2bn((BYTE *)&info.Hash, sizeof(info.Hash), nullptr);
+           *s = BN_lebin2bn((BYTE *)&info.Signature, sizeof(info.Signature), nullptr);
 
     BIGNUM *x = BN_CTX_get(numContext), *y = BN_CTX_get(numContext);
 
@@ -130,10 +130,10 @@ BOOL BINK1998::Verify(std::string &pKey)
     EC_POINT *t = EC_POINT_new(eCurve), *p = EC_POINT_new(eCurve);
 
     // t = sG
-    EC_POINT_mul(eCurve, t, nullptr, basePoint, s, numContext);
+    EC_POINT_mul(eCurve, t, nullptr, genPoint, s, numContext);
 
     // P = eK
-    EC_POINT_mul(eCurve, p, nullptr, publicKey, e, numContext);
+    EC_POINT_mul(eCurve, p, nullptr, pubPoint, e, numContext);
 
     // P += t
     EC_POINT_add(eCurve, p, t, p, numContext);
@@ -185,10 +185,13 @@ BOOL BINK1998::Generate(KeyInfo &info, std::string &pKey)
     BIGNUM *c = BN_CTX_get(numContext), *s = BN_CTX_get(numContext), *x = BN_CTX_get(numContext),
            *y = BN_CTX_get(numContext);
 
-    QWORD pRaw[2]{};
+    QWORD pRaw[2];
 
     // Data segment of the RPK.
     DWORD pData = info.Serial << 1 | info.isUpgrade;
+
+    // prepare the private key for generation
+    BN_sub(privateKey, genOrder, privateKey);
 
     do
     {
@@ -199,14 +202,14 @@ BOOL BINK1998::Generate(KeyInfo &info, std::string &pKey)
 
         // Pick a random derivative of the base point on the elliptic curve.
         // R = cG;
-        EC_POINT_mul(eCurve, r, nullptr, basePoint, c, numContext);
+        EC_POINT_mul(eCurve, r, nullptr, genPoint, c, numContext);
 
         // Acquire its coordinates.
         // x = R.x; y = R.y;
         EC_POINT_get_affine_coordinates(eCurve, r, x, y, numContext);
 
-        BYTE msgDigest[SHA_DIGEST_LENGTH]{}, msgBuffer[SHA_MSG_LENGTH_XP]{};
-        BYTE xBin[FIELD_BYTES]{}, yBin[FIELD_BYTES]{};
+        BYTE msgDigest[SHA_DIGEST_LENGTH], msgBuffer[SHA_MSG_LENGTH_XP];
+        BYTE xBin[FIELD_BYTES], yBin[FIELD_BYTES];
 
         // Convert coordinates to bytes.
         BN_bn2lebin(x, xBin, FIELD_BYTES);
@@ -257,10 +260,10 @@ BOOL BINK1998::Generate(KeyInfo &info, std::string &pKey)
         Pack(info, pRaw);
 
         fmt::print(UMSKT::debug, "Generation results:\n");
-        fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", info.isUpgrade);
-        fmt::print(UMSKT::debug, "    Serial: 0x{:08x}\n", info.Serial);
-        fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", info.Hash);
-        fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", info.Signature);
+        fmt::print(UMSKT::debug, "   Upgrade: {:#08x}\n", info.isUpgrade);
+        fmt::print(UMSKT::debug, "    Serial: {:#08x}\n", info.Serial);
+        fmt::print(UMSKT::debug, "      Hash: {:#08x}\n", info.Hash);
+        fmt::print(UMSKT::debug, " Signature: {:#08x}\n", info.Signature);
         fmt::print(UMSKT::debug, "\n");
 
         EC_POINT_free(r);

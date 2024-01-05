@@ -76,10 +76,7 @@ class UMSKT
     template <typename T> static T getRandom()
     {
         T retval;
-        BIGNUM *bnrand = BN_new();
-        BN_rand(bnrand, sizeof(T) * 8, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
-        BN_bn2lebinpad(bnrand, (unsigned char *)&retval, sizeof(T));
-        BN_free(bnrand);
+        RAND_bytes((BYTE *)&retval, sizeof(retval));
         return retval;
     }
 };

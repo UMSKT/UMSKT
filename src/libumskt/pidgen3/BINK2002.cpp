@@ -86,7 +86,7 @@ BOOL BINK2002::Verify(std::string &pKey)
     QWORD bKey[2];
 
     // Convert Base24 CD-key to bytecode.
-    unbase24((BYTE *)bKey, pKey.c_str());
+    unbase24((BYTE *)bKey, &pKey[0]);
 
     // Extract product key segments from bytecode.
     Unpack(info, bKey);
@@ -101,8 +101,7 @@ BOOL BINK2002::Verify(std::string &pKey)
     fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", info.AuthInfo);
     fmt::print(UMSKT::debug, "\n");
 
-    BYTE msgDigest[SHA_DIGEST_LENGTH]{}, msgBuffer[SHA_MSG_LENGTH_2003]{}, xBin[FIELD_BYTES_2003]{},
-        yBin[FIELD_BYTES_2003]{};
+    BYTE msgDigest[SHA_DIGEST_LENGTH], msgBuffer[SHA_MSG_LENGTH_2003], xBin[FIELD_BYTES_2003], yBin[FIELD_BYTES_2003];
 
     // Assemble the first SHA message.
     msgBuffer[0x00] = 0x5D;
@@ -141,16 +140,17 @@ BOOL BINK2002::Verify(std::string &pKey)
      */
 
     BIGNUM *e = BN_lebin2bn((BYTE *)&iSignature, sizeof(iSignature), nullptr),
-           *s = BN_lebin2bn((BYTE *)&info.Signature, sizeof(info.Signature), nullptr), *x = BN_new(), *y = BN_new();
+           *s = BN_lebin2bn((BYTE *)&info.Signature, sizeof(info.Signature), nullptr);
+    BIGNUM *x = BN_CTX_get(context), *y = BN_CTX_get(context);
 
     // Create 2 points on the elliptic curve.
     EC_POINT *p = EC_POINT_new(eCurve), *t = EC_POINT_new(eCurve);
 
     // t = sG
-    EC_POINT_mul(eCurve, t, nullptr, basePoint, s, context);
+    EC_POINT_mul(eCurve, t, nullptr, genPoint, s, context);
 
     // p = eK
-    EC_POINT_mul(eCurve, p, nullptr, publicKey, e, context);
+    EC_POINT_mul(eCurve, p, nullptr, pubPoint, e, context);
 
     // p += t
     EC_POINT_add(eCurve, p, t, p, context);
@@ -182,13 +182,11 @@ BOOL BINK2002::Verify(std::string &pKey)
 
     BN_free(s);
     BN_free(e);
-    BN_free(x);
-    BN_free(y);
-
-    BN_CTX_free(context);
 
     EC_POINT_free(p);
     EC_POINT_free(t);
+
+    BN_CTX_free(context);
 
     // If the computed hash checks out, the key is valid.
     return compHash == info.Hash;
@@ -199,9 +197,10 @@ BOOL BINK2002::Generate(KeyInfo &info, std::string &pKey)
 {
     BN_CTX *numContext = BN_CTX_new();
 
-    BIGNUM *c = BN_new(), *e = BN_new(), *s = BN_new(), *x = BN_new(), *y = BN_new();
+    BIGNUM *c = BN_CTX_get(numContext), *e = BN_CTX_get(numContext), *s = BN_CTX_get(numContext),
+           *x = BN_CTX_get(numContext), *y = BN_CTX_get(numContext);
 
-    QWORD pRaw[2]{};
+    QWORD pRaw[2];
 
     // Data segment of the RPK.
     DWORD pData = info.ChannelID << 1 | info.isUpgrade;
@@ -216,14 +215,14 @@ BOOL BINK2002::Generate(KeyInfo &info, std::string &pKey)
         BN_rand(c, FIELD_BITS_2003, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
 
         // R = cG
-        EC_POINT_mul(eCurve, r, nullptr, basePoint, c, numContext);
+        EC_POINT_mul(eCurve, r, nullptr, genPoint, c, numContext);
 
         // Acquire its coordinates.
         // x = R.x; y = R.y;
         EC_POINT_get_affine_coordinates(eCurve, r, x, y, numContext);
 
-        BYTE msgDigest[SHA_DIGEST_LENGTH]{}, msgBuffer[SHA_MSG_LENGTH_2003]{}, xBin[FIELD_BYTES_2003]{},
-            yBin[FIELD_BYTES_2003]{};
+        BYTE msgDigest[SHA_DIGEST_LENGTH], msgBuffer[SHA_MSG_LENGTH_2003], xBin[FIELD_BYTES_2003],
+            yBin[FIELD_BYTES_2003];
 
         // Convert resulting point coordinates to bytes.
         BN_bn2lebin(x, xBin, FIELD_BYTES_2003);
@@ -234,24 +233,24 @@ BOOL BINK2002::Generate(KeyInfo &info, std::string &pKey)
         msgBuffer[0x01] = (pData & 0x00FF);
         msgBuffer[0x02] = (pData & 0xFF00) >> 8;
 
-        memcpy((void *)&msgBuffer[3], (void *)xBin, FIELD_BYTES_2003);
-        memcpy((void *)&msgBuffer[3 + FIELD_BYTES_2003], (void *)yBin, FIELD_BYTES_2003);
+        memcpy(&msgBuffer[3], xBin, FIELD_BYTES_2003);
+        memcpy(&msgBuffer[3 + FIELD_BYTES_2003], yBin, FIELD_BYTES_2003);
 
         // pHash = SHA1(79 || Channel ID || R.x || R.y)
         SHA1(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
 
         // Translate the byte digest into a 32-bit integer - this is our computed hash.
         // Truncate the hash to 31 bits.
-        DWORD pHash = BYDWORD(msgDigest) & BITMASK(31);
+        info.Hash = BYDWORD(msgDigest) & BITMASK(31);
 
         // Assemble the second SHA message.
         msgBuffer[0x00] = 0x5D;
         msgBuffer[0x01] = (pData & 0x00FF);
         msgBuffer[0x02] = (pData & 0xFF00) >> 8;
-        msgBuffer[0x03] = (pHash & 0x000000FF);
-        msgBuffer[0x04] = (pHash & 0x0000FF00) >> 8;
-        msgBuffer[0x05] = (pHash & 0x00FF0000) >> 16;
-        msgBuffer[0x06] = (pHash & 0xFF000000) >> 24;
+        msgBuffer[0x03] = (info.Hash & 0x000000FF);
+        msgBuffer[0x04] = (info.Hash & 0x0000FF00) >> 8;
+        msgBuffer[0x05] = (info.Hash & 0x00FF0000) >> 16;
+        msgBuffer[0x06] = (info.Hash & 0xFF000000) >> 24;
         msgBuffer[0x07] = (info.AuthInfo & 0x00FF);
         msgBuffer[0x08] = (info.AuthInfo & 0xFF00) >> 8;
         msgBuffer[0x09] = 0x00;
@@ -323,7 +322,6 @@ BOOL BINK2002::Generate(KeyInfo &info, std::string &pKey)
         // The order is a prime, so it can't be even.
         if (BN_is_odd(s))
         {
-
             // s = -ek + √((ek)² + 4c) + n
             BN_add(s, s, genOrder);
         }
@@ -338,11 +336,11 @@ BOOL BINK2002::Generate(KeyInfo &info, std::string &pKey)
         Pack(info, pRaw);
 
         fmt::print(UMSKT::debug, "Generation results:\n");
-        fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", info.isUpgrade);
-        fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", info.ChannelID);
-        fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", info.Hash);
-        fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", info.Signature);
-        fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", info.AuthInfo);
+        fmt::print(UMSKT::debug, "   Upgrade: {:#08x}\n", info.isUpgrade);
+        fmt::print(UMSKT::debug, "Channel ID: {:#08x}\n", info.ChannelID);
+        fmt::print(UMSKT::debug, "      Hash: {:#08x}\n", info.Hash);
+        fmt::print(UMSKT::debug, " Signature: {:#08x}\n", info.Signature);
+        fmt::print(UMSKT::debug, "  AuthInfo: {:#08x}\n", info.AuthInfo);
         fmt::print(UMSKT::debug, "\n");
 
         EC_POINT_free(r);
@@ -353,12 +351,6 @@ BOOL BINK2002::Generate(KeyInfo &info, std::string &pKey)
 
     // Convert bytecode to Base24 CD-key.
     base24(pKey, (BYTE *)pRaw);
-
-    BN_free(c);
-    BN_free(s);
-    BN_free(x);
-    BN_free(y);
-    BN_free(e);
 
     BN_CTX_free(numContext);
 

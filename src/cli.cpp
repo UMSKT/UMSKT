@@ -402,7 +402,7 @@ BOOL CLI::BINK1998Generate()
         if (isValid)
         {
             printKey(pKey);
-            if (i < total - 1 || options.verbose)
+            if (i <= total - 1 || options.verbose)
             {
                 fmt::print("\n");
             }
@@ -414,7 +414,7 @@ BOOL CLI::BINK1998Generate()
             {
                 printKey(pKey);
                 fmt::print(" [Invalid]");
-                if (i < total - 1)
+                if (i <= total - 1)
                 {
                     fmt::print("\n");
                 }
@@ -443,13 +443,11 @@ BOOL CLI::BINK2002Generate()
     // generate a key
     for (int i = 0; i < total; i++)
     {
-        DWORD pAuthInfo;
-        RAND_bytes((BYTE *)&pAuthInfo, 4);
-        pAuthInfo &= BITMASK(10);
+        options.info.AuthInfo = UMSKT::getRandom<DWORD>() & BITMASK(10);
 
         if (options.verbose)
         {
-            fmt::print("> AuthInfo: {}\n", pAuthInfo);
+            fmt::print("> AuthInfo: {:#08x}\n", options.info.AuthInfo);
         }
 
         bink2002.Generate(options.info, pKey);
@@ -458,7 +456,7 @@ BOOL CLI::BINK2002Generate()
         if (isValid)
         {
             CLI::printKey(pKey);
-            if (i < total - 1 || options.verbose)
+            if (i <= total - 1 || options.verbose)
             { // check if end of list or verbose
                 fmt::print("\n");
             }
@@ -470,7 +468,7 @@ BOOL CLI::BINK2002Generate()
             {
                 CLI::printKey(pKey);      // print the key
                 fmt::print(" [Invalid]"); // and add " [Invalid]" to the key
-                if (i < this->total - 1)
+                if (i <= total - 1)
                 { // check if end of list
                     fmt::print("\n");
                 }

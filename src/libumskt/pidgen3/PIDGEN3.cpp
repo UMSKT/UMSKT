@@ -92,7 +92,6 @@ BOOL PIDGEN3::LoadEllipticCurve(const std::string pSel, const std::string aSel, 
     /* Computed Data */
     BN_dec2bn(&genOrder, &genOrderSel[0]);
     BN_dec2bn(&privateKey, &privateKeySel[0]);
-    BN_sub(privateKey, genOrder, privateKey);
 
     /* Elliptic Curve calculations. */
     // The group is defined via Fp = all integers [0; p - 1], where p is prime.
@@ -249,4 +248,16 @@ void PIDGEN3::unbase24(BYTE *byteSeq, std::string cdKey)
 
     // Reverse the byte sequence.
     endian(byteSeq, n);
+}
+
+BOOL PIDGEN3::getIsBINK1998()
+{
+    BIGNUM *max = BN_new();
+    BN_hex2bn(&max, MAX_BINK1998);
+
+    int retval = BN_cmp(max, privateKey);
+
+    BN_free(max);
+
+    return retval == true;
 }

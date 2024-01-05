@@ -24,13 +24,16 @@
 #define UMSKT_PIDGEN3_H
 
 #include "../libumskt.h"
+#define MAX_BINK1998                                                                                                   \
+    "0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 
 class PIDGEN3
 {
   protected:
+    BIGNUM *privateKey, *genOrder;
+    EC_POINT *genPoint, *pubPoint;
     EC_GROUP *eCurve;
-    EC_POINT *basePoint, *publicKey, *genPoint, *pubPoint;
-    BIGNUM *genOrder, *privateKey;
+    BOOL isBINK1998;
 
   public:
     PIDGEN3()
@@ -42,8 +45,6 @@ class PIDGEN3
         EC_GROUP_free(eCurve);
         EC_POINT_free(genPoint);
         EC_POINT_free(pubPoint);
-        EC_POINT_free(basePoint);
-        EC_POINT_free(publicKey);
         BN_free(genOrder);
         BN_free(privateKey);
     }
@@ -88,6 +89,7 @@ class PIDGEN3
 
     void base24(std::string &cdKey, BYTE *byteSeq);
     void unbase24(BYTE *byteSeq, std::string cdKey);
+    BOOL getIsBINK1998();
 };
 
 #endif // UMSKT_PIDGEN3_H
