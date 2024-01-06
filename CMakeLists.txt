@@ -137,8 +137,14 @@ IF (NOT MUSL_STATIC)
     ENDIF ()
 ENDIF ()
 
-# initalize cpm.CMake
-INCLUDE(cmake/CPM.cmake)
+# initialize cpm.CMake
+FILE(
+        DOWNLOAD
+        https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.38.3/CPM.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake
+        EXPECTED_HASH SHA256=cc155ce02e7945e7b8967ddfaff0b050e958a723ef7aad3766d368940cb15494
+)
+INCLUDE(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
 
 # fetch cpm.CMake dependencies
 # Include JSON development library
