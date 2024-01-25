@@ -22,7 +22,12 @@
 
 #include "PIDGEN2.h"
 
-bool PIDGEN2::isNumericString(char *input)
+/**
+ *
+ * @param input
+ * @return
+ */
+BOOL PIDGEN2::isNumericString(char *input)
 {
     for (int i = 0; i < strlen(input); i++)
     {
@@ -35,6 +40,11 @@ bool PIDGEN2::isNumericString(char *input)
     return true;
 }
 
+/**
+ *
+ * @param input
+ * @return
+ */
 int PIDGEN2::addDigits(char *input)
 {
     int output = 0;
@@ -52,7 +62,12 @@ int PIDGEN2::addDigits(char *input)
     return output;
 }
 
-bool PIDGEN2::isValidChannelID(char *channelID)
+/**
+ *
+ * @param channelID
+ * @return
+ */
+BOOL PIDGEN2::isValidChannelID(char *channelID)
 {
     if (strlen(channelID) > 3)
     {
@@ -70,7 +85,12 @@ bool PIDGEN2::isValidChannelID(char *channelID)
     return true;
 }
 
-bool PIDGEN2::isValidOEMID(char *OEMID)
+/**
+ *
+ * @param OEMID
+ * @return
+ */
+BOOL PIDGEN2::isValidOEMID(char *OEMID)
 {
     if (!isNumericString(OEMID))
     {
@@ -90,7 +110,12 @@ bool PIDGEN2::isValidOEMID(char *OEMID)
     return (mod % 21 == 0);
 }
 
-bool PIDGEN2::isValidYear(char *year)
+/**
+ *
+ * @param year
+ * @return
+ */
+BOOL PIDGEN2::isValidYear(char *year)
 {
     for (int i = 0; i <= 7; i++)
     {
@@ -102,7 +127,12 @@ bool PIDGEN2::isValidYear(char *year)
     return true;
 }
 
-bool PIDGEN2::isValidDay(char *day)
+/**
+ *
+ * @param day
+ * @return
+ */
+BOOL PIDGEN2::isValidDay(char *day)
 {
     if (!isNumericString(day))
     {
@@ -117,11 +147,22 @@ bool PIDGEN2::isValidDay(char *day)
     return true;
 }
 
-bool PIDGEN2::isValidRetailProductID(char *productID)
+/**
+ *
+ * @param productID
+ * @return
+ */
+BOOL PIDGEN2::isValidRetailProductID(char *productID)
 {
     return true;
 }
 
+/**
+ *
+ * @param channelID
+ * @param keyout
+ * @return
+ */
 int PIDGEN2::GenerateRetail(char *channelID, char *&keyout)
 {
     if (!isValidChannelID(channelID))
@@ -132,6 +173,14 @@ int PIDGEN2::GenerateRetail(char *channelID, char *&keyout)
     return 0;
 }
 
+/**
+ *
+ * @param year
+ * @param day
+ * @param oem
+ * @param keyout
+ * @return
+ */
 int PIDGEN2::GenerateOEM(char *year, char *day, char *oem, char *&keyout)
 {
     if (!isValidOEMID(oem))
@@ -139,21 +188,21 @@ int PIDGEN2::GenerateOEM(char *year, char *day, char *oem, char *&keyout)
         int mod = addDigits(oem);
         mod += mod % 21;
 
-        strcpy(oem, fmt::format("{:07d}", mod).c_str());
+        snprintf(oem, 8, "%07u", mod);
     }
 
     if (!isValidYear(year))
     {
-        strcpy(year, validYears[0]);
+        _strncpy(year, 4, validYears[0], 4);
     }
 
     if (!isValidDay(day))
     {
-        int iday = std::stoi(day);
+        auto iday = UMSKT::getRandom<int>();
         iday = (iday + 1) % 365;
     }
 
-    strcpy(keyout, fmt::format("{}{}-OEM-{}-{}", year, day, oem, oem).c_str());
+    _strncpy(keyout, 32, &fmt::format("{}{}-OEM-{}-{}", year, day, oem, oem).c_str()[0], 32);
 
     return 0;
 }

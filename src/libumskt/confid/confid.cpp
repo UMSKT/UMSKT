@@ -29,6 +29,22 @@
 
 #include "confid.h"
 
+/**
+ *
+ * @param x0
+ * @param x1
+ * @param x2
+ * @param x3
+ * @param x4
+ * @param x5
+ * @param priv
+ * @param modulous
+ * @param nonresidue
+ * @param isOffice
+ * @param isXPBrand
+ * @param flagVersion
+ * @return
+ */
 BOOL ConfirmationID::LoadHyperellipticCurve(QWORD x0, QWORD x1, QWORD x2, QWORD x3, QWORD x4, QWORD x5, Q_OWORD priv,
                                             QWORD modulous, QWORD nonresidue, BOOL isOffice, BOOL isXPBrand,
                                             BYTE flagVersion)
@@ -51,6 +67,17 @@ BOOL ConfirmationID::LoadHyperellipticCurve(QWORD x0, QWORD x1, QWORD x2, QWORD 
     return true;
 }
 
+/**
+ *
+ * @param f
+ * @param priv
+ * @param modulous
+ * @param nonresidue
+ * @param isOffice
+ * @param isXPBrand
+ * @param flagVersion
+ * @return
+ */
 BOOL ConfirmationID::LoadHyperellipticCurve(QWORD *f, Q_OWORD priv, QWORD modulous, QWORD nonresidue, BOOL isOffice,
                                             BOOL isXPBrand, BYTE flagVersion)
 {
@@ -66,6 +93,20 @@ BOOL ConfirmationID::LoadHyperellipticCurve(QWORD *f, Q_OWORD priv, QWORD modulo
     return true;
 }
 
+BOOL LoadHyperellipticCurve(const std::string &x0, const std::string &x1, const std::string &x2, const std::string &x3,
+                            const std::string &x4, const std::string &x5, const std::string &priv,
+                            const std::string &modulous, const std::string &nonresidue, BOOL isOffice, BOOL isXPBrand,
+                            BYTE flagVersion)
+{
+
+    return true;
+}
+
+/**
+ *
+ * @param pid
+ * @return
+ */
 DWORD ConfirmationID::calculateCheckDigit(DWORD pid)
 {
     DWORD i = 0, j = 0, k = 0;
@@ -78,6 +119,12 @@ DWORD ConfirmationID::calculateCheckDigit(DWORD pid)
     return ((10 * pid) - (i % 7)) + 7;
 }
 
+/**
+ *
+ * @param iid
+ * @param hwid
+ * @param version
+ */
 void ConfirmationID::decode_iid_new_version(BYTE *iid, BYTE *hwid, DWORD *version)
 {
     QWORD buffer[5];
@@ -97,6 +144,13 @@ void ConfirmationID::decode_iid_new_version(BYTE *iid, BYTE *hwid, DWORD *versio
     *version = buffer[0] & 7;
 }
 
+/**
+ *
+ * @param buffer
+ * @param bufSize
+ * @param key
+ * @param keySize
+ */
 void ConfirmationID::Mix(BYTE *buffer, BYTE bufSize, const BYTE *key, BYTE keySize)
 {
     BYTE sha1_input[64], sha1_result[20];
@@ -143,6 +197,13 @@ void ConfirmationID::Mix(BYTE *buffer, BYTE bufSize, const BYTE *key, BYTE keySi
     }
 }
 
+/**
+ *
+ * @param buffer
+ * @param bufSize
+ * @param key
+ * @param keySize
+ */
 void ConfirmationID::Unmix(BYTE *buffer, BYTE bufSize, const BYTE key[4], BYTE keySize)
 {
     BYTE sha1_input[64], sha1_result[20];
@@ -194,8 +255,8 @@ void ConfirmationID::Unmix(BYTE *buffer, BYTE bufSize, const BYTE key[4], BYTE k
  * @param productIDIn
  * @return
  */
-DWORD ConfirmationID::Generate(const std::string &installationIDIn, std::string &confirmationIDOut,
-                               std::string &productIDIn)
+CONFIRMATION_ID_STATUS ConfirmationID::Generate(const std::string &installationIDIn, std::string &confirmationIDOut,
+                                                std::string &productIDIn)
 {
     DWORD version;
     BYTE hardwareID[8];
@@ -494,5 +555,5 @@ DWORD ConfirmationID::Generate(const std::string &installationIDIn, std::string 
         q += 6;
     }
 
-    return 0;
+    return SUCCESS;
 }

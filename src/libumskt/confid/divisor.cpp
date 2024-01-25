@@ -22,6 +22,11 @@
 
 #include "confid.h"
 
+/**
+ *
+ * @param d
+ * @return
+ */
 int ConfirmationID::ConfirmationID::Divisor::find_divisor_v(TDivisor *d)
 {
     // u | v^2 - curve
@@ -107,6 +112,13 @@ int ConfirmationID::ConfirmationID::Divisor::find_divisor_v(TDivisor *d)
     return 1;
 }
 
+/**
+ *
+ * @param src
+ * @param polyu
+ * @param polyv
+ * @return
+ */
 int ConfirmationID::ConfirmationID::Divisor::u2poly(const TDivisor *src, QWORD polyu[3], QWORD polyv[2])
 {
     if (src->u[1] != BAD)
@@ -138,6 +150,12 @@ int ConfirmationID::ConfirmationID::Divisor::u2poly(const TDivisor *src, QWORD p
     return 0;
 }
 
+/**
+ *
+ * @param src1
+ * @param src2
+ * @param dst
+ */
 void ConfirmationID::Divisor::add(const TDivisor *src1, const TDivisor *src2, TDivisor *dst)
 {
     QWORD u1[3], u2[3], v1[2], v2[2];
@@ -290,6 +308,12 @@ void ConfirmationID::Divisor::add(const TDivisor *src1, const TDivisor *src2, TD
 
 #define divisor_double(src, dst) add(src, src, dst)
 
+/**
+ *
+ * @param src
+ * @param mult
+ * @param dst
+ */
 void ConfirmationID::Divisor::mul(const TDivisor *src, QWORD mult, TDivisor *dst)
 {
     if (mult == 0)
@@ -319,6 +343,13 @@ void ConfirmationID::Divisor::mul(const TDivisor *src, QWORD mult, TDivisor *dst
     }
 }
 
+/**
+ *
+ * @param src
+ * @param mult_lo
+ * @param mult_hi
+ * @param dst
+ */
 void ConfirmationID::Divisor::mul128(const TDivisor *src, QWORD mult_lo, QWORD mult_hi, TDivisor *dst)
 {
     if (mult_lo == 0 && mult_hi == 0)

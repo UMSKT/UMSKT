@@ -20,20 +20,23 @@
  * @Maintainer Neo
  */
 
-#ifndef UMSKT_OPTIONS_H
-#define UMSKT_OPTIONS_H
+#ifndef UMSKT_HELP_H
+#define UMSKT_HELP_H
 
 typedef BOOL CLIHandlerFunc(int, char *);
 
 enum CLIHelpOptionIDs
 {
     OPTION_HELP,
+    OPTION_HELP2,
+    OPTION_VERSION,
     OPTION_VERBOSE,
     OPTION_DEBUG,
     OPTION_FILE,
     OPTION_LIST,
-    OPTION_NUMBER,
     OPTION_PRODUCT,
+    OPTION_FLAVOUR,
+    OPTION_NUMBER,
     OPTION_OEM,
     OPTION_UPGRADE,
     OPTION_ACTIVATIONID,
@@ -57,4 +60,4 @@ struct CLIHelpOptions
     CLIHandlerFunc *handler;
 };
 
-#endif // UMSKT_OPTIONS_H
+#endif // UMSKT_HELP_H

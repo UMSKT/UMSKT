@@ -24,23 +24,35 @@
 #define UMSKT_PIDGEN3_H
 
 #include "../libumskt.h"
-#define MAX_BINK1998                                                                                                   \
-    "0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 
-class PIDGEN3
+class BINK1998;
+class BINK2002;
+
+class EXPORT PIDGEN3
 {
+    friend class BINK1998;
+    friend class BINK2002;
+
   protected:
     BIGNUM *privateKey, *genOrder;
     EC_POINT *genPoint, *pubPoint;
     EC_GROUP *eCurve;
-    BOOL isBINK1998;
 
   public:
     PIDGEN3()
     {
     }
 
-    ~PIDGEN3()
+    PIDGEN3(PIDGEN3 &p3)
+    {
+        privateKey = p3.privateKey;
+        genOrder = p3.genOrder;
+        genPoint = p3.genPoint;
+        pubPoint = p3.pubPoint;
+        eCurve = p3.eCurve;
+    }
+
+    virtual ~PIDGEN3()
     {
         EC_GROUP_free(eCurve);
         EC_POINT_free(genPoint);
@@ -69,7 +81,7 @@ class PIDGEN3
         {
             ChannelID = ChannelIDIn;
         }
-    };
+    } info;
 
     static constexpr char pKeyCharset[] = "BCDFGHJKMPQRTVWXY2346789";
 
@@ -77,19 +89,16 @@ class PIDGEN3
                            std::string generatorYSel, std::string publicKeyXSel, std::string publicKeyYSel,
                            std::string genOrderSel, std::string privateKeySel);
 
-    virtual BOOL Unpack(KeyInfo &info, QWORD *pRaw) = 0;
-    virtual BOOL Pack(const KeyInfo &info, QWORD *pRaw) = 0;
-    virtual BOOL Verify(std::string &pKey) = 0;
-    virtual BOOL Generate(KeyInfo &info, std::string &pKey) = 0;
+    virtual BOOL Pack(QWORD *pRaw) = 0;
+    virtual BOOL Unpack(QWORD *pRaw) = 0;
+    virtual BOOL Generate(std::string &pKey);
+    virtual BOOL Validate(std::string &pKey);
 
     // PIDGEN3.cpp
-    // Hello OpenSSL developers, please tell me, where is this function at?
-    int BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen);
-    void endian(BYTE *data, int length);
-
     void base24(std::string &cdKey, BYTE *byteSeq);
     void unbase24(BYTE *byteSeq, std::string cdKey);
-    BOOL getIsBINK1998();
+    BOOL checkFieldIsBink1998();
+    static BOOL checkFieldStrIsBink1998(std::string keyin);
 };
 
 #endif // UMSKT_PIDGEN3_H

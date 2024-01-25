@@ -53,31 +53,86 @@
 #define NEXTSNBITS(field, n, offset) (((QWORD)(field) >> (offset)) & ((1ULL << (n)) - 1))
 #define FIRSTNBITS(field, n) NEXTSNBITS((field), (n), 0)
 
-#define HIBYTES(field, bytes) NEXTSNBITS((QWORD)(field), ((bytes)*8), ((bytes)*8))
-#define LOBYTES(field, bytes) FIRSTNBITS((QWORD)(field), ((bytes)*8))
+#define HIBYTES(field, bytes) NEXTSNBITS((QWORD)(field), ((bytes) * 8), ((bytes) * 8))
+#define LOBYTES(field, bytes) FIRSTNBITS((QWORD)(field), ((bytes) * 8))
 
 #define BYDWORD(n) (DWORD)(*((n) + 0) | *((n) + 1) << 8 | *((n) + 2) << 16 | *((n) + 3) << 24)
 #define BITMASK(n) ((1ULL << (n)) - 1)
 
-class UMSKT
+#ifndef LIBUMSKT_VERSION_STRING
+#define LIBUMSKT_VERSION_STRING "unknown version-dirty"
+#endif
+
+enum ValueType
+{
+    VALUE_BOOL,
+    VALUE_WORD,
+    VALUE_DWORD,
+    VALUE_QWORD,
+    VALUE_OWORD,
+    VALUE_CHARPTR
+};
+
+struct UMSKT_Value
+{
+    ValueType type;
+    union {
+        BOOL boolean;
+        WORD word;
+        DWORD dword;
+        QWORD qword;
+        OWORD oword;
+        char *chars;
+    };
+};
+
+enum UMSKT_TAG
+{
+    UMSKT_tag_isOEM,
+    UMSKT_tag_isUpgrade,
+    UMSKT_tag_Year,
+    UMSKT_tag_Day,
+    UMSKT_tag_OEMID,
+    UMSKT_tag_AuthData,
+    UMSKT_tag_Serial,
+    UMSKT_tag_ChannelID,
+    UMSKT_tag_InstallationID,
+    UMSKT_tag_ProductID
+};
+
+class EXPORT UMSKT
 {
   public:
     static std::FILE *debug;
     static BOOL VERBOSE;
     static BOOL DEBUG;
+    static std::map<UMSKT_TAG, UMSKT_Value> tags;
+
+    // Hello OpenSSL developers, please tell me, where is this function at?
+    static int BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen);
+    static void endian(BYTE *data, int length);
 
     static void DESTRUCT()
     {
-        std::fclose(debug);
+        if (debug != nullptr)
+        {
+            std::fclose(debug);
+        }
         debug = nullptr;
     }
 
     static void setDebugOutput(std::FILE *input);
+
     template <typename T> static T getRandom()
     {
         T retval;
         RAND_bytes((BYTE *)&retval, sizeof(retval));
         return retval;
+    }
+
+    static const char *VERSION()
+    {
+        return fmt::format("LIBUMSKT {} compiled on {} {}", LIBUMSKT_VERSION_STRING, __DATE__, __TIME__).c_str();
     }
 };
 

@@ -30,11 +30,25 @@
 #include "BINK2002.h"
 
 /**
+ * Packs a Windows Server 2003-like Product Key.
+ *
+ * @param pRaw *QWORD[2] raw product key output
+ **/
+BOOL BINK2002::Pack(QWORD *pRaw)
+{
+    // AuthInfo [113..104] <- Signature [103..42] <- Hash [41..11] <- Channel ID [10..1] <- Upgrade [0]
+    pRaw[0] = FIRSTNBITS(info.Signature, 22) << 42 | (QWORD)info.Hash << 11 | info.ChannelID << 1 | info.isUpgrade;
+    pRaw[1] = FIRSTNBITS(info.AuthInfo, 10) << 40 | NEXTSNBITS(info.Signature, 40, 22);
+
+    return true;
+}
+
+/**
  * Unpacks a Windows Server 2003-like Product Key.
  *
  * @param pRaw *QWORD[2] raw product key input
  **/
-BOOL BINK2002::Unpack(KeyInfo &info, QWORD *pRaw)
+BOOL BINK2002::Unpack(QWORD *pRaw)
 {
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
@@ -60,140 +74,13 @@ BOOL BINK2002::Unpack(KeyInfo &info, QWORD *pRaw)
 }
 
 /**
- * Packs a Windows Server 2003-like Product Key.
+ * Generates a Windows Server 2003-like Product Key.
  *
- * @param pRaw *QWORD[2] raw product key output
- **/
-BOOL BINK2002::Pack(const KeyInfo &info, QWORD *pRaw)
-{
-    // AuthInfo [113..104] <- Signature [103..42] <- Hash [41..11] <- Channel ID [10..1] <- Upgrade [0]
-    pRaw[0] = FIRSTNBITS(info.Signature, 22) << 42 | (QWORD)info.Hash << 11 | info.ChannelID << 1 | info.isUpgrade;
-    pRaw[1] = FIRSTNBITS(info.AuthInfo, 10) << 40 | NEXTSNBITS(info.Signature, 40, 22);
-
-    return true;
-}
-
-/**
- * Verifies a Windows Server 2003-like Product Key.
- *
+ * @param info
  * @param pKey
- **/
-BOOL BINK2002::Verify(std::string &pKey)
-{
-    BN_CTX *context = BN_CTX_new();
-    KeyInfo info;
-
-    QWORD bKey[2];
-
-    // Convert Base24 CD-key to bytecode.
-    unbase24((BYTE *)bKey, &pKey[0]);
-
-    // Extract product key segments from bytecode.
-    Unpack(info, bKey);
-
-    DWORD pData = info.ChannelID << 1 | info.isUpgrade;
-
-    fmt::print(UMSKT::debug, "Validation results:\n");
-    fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", info.isUpgrade);
-    fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", info.ChannelID);
-    fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", info.Hash);
-    fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", info.Signature);
-    fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", info.AuthInfo);
-    fmt::print(UMSKT::debug, "\n");
-
-    BYTE msgDigest[SHA_DIGEST_LENGTH], msgBuffer[SHA_MSG_LENGTH_2003], xBin[FIELD_BYTES_2003], yBin[FIELD_BYTES_2003];
-
-    // Assemble the first SHA message.
-    msgBuffer[0x00] = 0x5D;
-    msgBuffer[0x01] = (pData & 0x00FF);
-    msgBuffer[0x02] = (pData & 0xFF00) >> 8;
-    msgBuffer[0x03] = (info.Hash & 0x000000FF);
-    msgBuffer[0x04] = (info.Hash & 0x0000FF00) >> 8;
-    msgBuffer[0x05] = (info.Hash & 0x00FF0000) >> 16;
-    msgBuffer[0x06] = (info.Hash & 0xFF000000) >> 24;
-    msgBuffer[0x07] = (info.AuthInfo & 0x00FF);
-    msgBuffer[0x08] = (info.AuthInfo & 0xFF00) >> 8;
-    msgBuffer[0x09] = 0x00;
-    msgBuffer[0x0A] = 0x00;
-
-    // newSignature = SHA1(5D || Channel ID || Hash || AuthInfo || 00 00)
-    SHA1(msgBuffer, 11, msgDigest);
-
-    // Translate the byte digest into a 64-bit integer - this is our computed intermediate signature.
-    // As the signature is only 62 bits long at most, we have to truncate it by shifting the high DWORD right 2 bits
-    // (per spec).
-    QWORD iSignature = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
-
-    /*
-     *
-     * Scalars:
-     *  e = Hash
-     *  s = Schnorr Signature
-     *
-     * Points:
-     *  G(x, y) = Generator (Base Point)
-     *  K(x, y) = Public Key
-     *
-     * Equation:
-     *  P = s(sG + eK)
-     *
-     */
-
-    BIGNUM *e = BN_lebin2bn((BYTE *)&iSignature, sizeof(iSignature), nullptr),
-           *s = BN_lebin2bn((BYTE *)&info.Signature, sizeof(info.Signature), nullptr);
-    BIGNUM *x = BN_CTX_get(context), *y = BN_CTX_get(context);
-
-    // Create 2 points on the elliptic curve.
-    EC_POINT *p = EC_POINT_new(eCurve), *t = EC_POINT_new(eCurve);
-
-    // t = sG
-    EC_POINT_mul(eCurve, t, nullptr, genPoint, s, context);
-
-    // p = eK
-    EC_POINT_mul(eCurve, p, nullptr, pubPoint, e, context);
-
-    // p += t
-    EC_POINT_add(eCurve, p, t, p, context);
-
-    // p *= s
-    EC_POINT_mul(eCurve, p, nullptr, p, s, context);
-
-    // x = p.x; y = p.y;
-    EC_POINT_get_affine_coordinates(eCurve, p, x, y, context);
-
-    // Convert resulting point coordinates to bytes.
-    BN_bn2lebin(x, xBin, FIELD_BYTES_2003);
-    BN_bn2lebin(y, yBin, FIELD_BYTES_2003);
-
-    // Assemble the second SHA message.
-    msgBuffer[0x00] = 0x79;
-    msgBuffer[0x01] = (pData & 0x00FF);
-    msgBuffer[0x02] = (pData & 0xFF00) >> 8;
-
-    memcpy((void *)&msgBuffer[3], (void *)xBin, FIELD_BYTES_2003);
-    memcpy((void *)&msgBuffer[3 + FIELD_BYTES_2003], (void *)yBin, FIELD_BYTES_2003);
-
-    // compHash = SHA1(79 || Channel ID || p.x || p.y)
-    SHA1(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
-
-    // Translate the byte digest into a 32-bit integer - this is our computed hash.
-    // Truncate the hash to 31 bits.
-    DWORD compHash = BYDWORD(msgDigest) & BITMASK(31);
-
-    BN_free(s);
-    BN_free(e);
-
-    EC_POINT_free(p);
-    EC_POINT_free(t);
-
-    BN_CTX_free(context);
-
-    // If the computed hash checks out, the key is valid.
-    return compHash == info.Hash;
-}
-
-/* Generates a Windows Server 2003-like Product Key. */
-BOOL BINK2002::Generate(KeyInfo &info, std::string &pKey)
+ * @return
+ */
+BOOL BINK2002::Generate(std::string &pKey)
 {
     BN_CTX *numContext = BN_CTX_new();
 
@@ -225,8 +112,8 @@ BOOL BINK2002::Generate(KeyInfo &info, std::string &pKey)
             yBin[FIELD_BYTES_2003];
 
         // Convert resulting point coordinates to bytes.
-        BN_bn2lebin(x, xBin, FIELD_BYTES_2003);
-        BN_bn2lebin(y, yBin, FIELD_BYTES_2003);
+        UMSKT::BN_bn2lebin(x, xBin, FIELD_BYTES_2003);
+        UMSKT::BN_bn2lebin(y, yBin, FIELD_BYTES_2003);
 
         // Assemble the first SHA message.
         msgBuffer[0x00] = 0x79;
@@ -333,14 +220,14 @@ BOOL BINK2002::Generate(KeyInfo &info, std::string &pKey)
         BN_bn2lebinpad(s, (BYTE *)&info.Signature, BN_num_bytes(s));
 
         // Pack product key.
-        Pack(info, pRaw);
+        Pack(pRaw);
 
         fmt::print(UMSKT::debug, "Generation results:\n");
-        fmt::print(UMSKT::debug, "   Upgrade: {:#08x}\n", info.isUpgrade);
-        fmt::print(UMSKT::debug, "Channel ID: {:#08x}\n", info.ChannelID);
-        fmt::print(UMSKT::debug, "      Hash: {:#08x}\n", info.Hash);
-        fmt::print(UMSKT::debug, " Signature: {:#08x}\n", info.Signature);
-        fmt::print(UMSKT::debug, "  AuthInfo: {:#08x}\n", info.AuthInfo);
+        fmt::print(UMSKT::debug, "{:>10}: {:b}\n", "Upgrade", (bool)info.isUpgrade);
+        fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "Channel ID", info.ChannelID);
+        fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "Hash", info.Hash);
+        fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "Signature", info.Signature);
+        fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "AuthInfo", info.AuthInfo);
         fmt::print(UMSKT::debug, "\n");
 
         EC_POINT_free(r);
@@ -355,4 +242,122 @@ BOOL BINK2002::Generate(KeyInfo &info, std::string &pKey)
     BN_CTX_free(numContext);
 
     return true;
+}
+
+/**
+ * Validates a Windows Server 2003-like Product Key.
+ *
+ * @param pKey
+ **/
+BOOL BINK2002::Validate(std::string &pKey)
+{
+    BN_CTX *context = BN_CTX_new();
+
+    QWORD bKey[2];
+
+    // Convert Base24 CD-key to bytecode.
+    unbase24((BYTE *)bKey, &pKey[0]);
+
+    // Extract product key segments from bytecode.
+    Unpack(bKey);
+
+    DWORD pData = info.ChannelID << 1 | info.isUpgrade;
+
+    fmt::print(UMSKT::debug, "Validation results:\n");
+    fmt::print(UMSKT::debug, "{:>10}: {:b}\n", "Upgrade", (bool)info.isUpgrade);
+    fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "Channel ID", info.ChannelID);
+    fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "Hash", info.Hash);
+    fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "Signature", info.Signature);
+    fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "AuthInfo", info.AuthInfo);
+    fmt::print(UMSKT::debug, "\n");
+
+    BYTE msgDigest[SHA_DIGEST_LENGTH], msgBuffer[SHA_MSG_LENGTH_2003], xBin[FIELD_BYTES_2003], yBin[FIELD_BYTES_2003];
+
+    // Assemble the first SHA message.
+    msgBuffer[0x00] = 0x5D;
+    msgBuffer[0x01] = (pData & 0x00FF);
+    msgBuffer[0x02] = (pData & 0xFF00) >> 8;
+    msgBuffer[0x03] = (info.Hash & 0x000000FF);
+    msgBuffer[0x04] = (info.Hash & 0x0000FF00) >> 8;
+    msgBuffer[0x05] = (info.Hash & 0x00FF0000) >> 16;
+    msgBuffer[0x06] = (info.Hash & 0xFF000000) >> 24;
+    msgBuffer[0x07] = (info.AuthInfo & 0x00FF);
+    msgBuffer[0x08] = (info.AuthInfo & 0xFF00) >> 8;
+    msgBuffer[0x09] = 0x00;
+    msgBuffer[0x0A] = 0x00;
+
+    // newSignature = SHA1(5D || Channel ID || Hash || AuthInfo || 00 00)
+    SHA1(msgBuffer, 11, msgDigest);
+
+    // Translate the byte digest into a 64-bit integer - this is our computed intermediate signature.
+    // As the signature is only 62 bits long at most, we have to truncate it by shifting the high DWORD right 2 bits
+    // (per spec).
+    QWORD iSignature = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
+
+    /*
+     *
+     * Scalars:
+     *  e = Hash
+     *  s = Schnorr Signature
+     *
+     * Points:
+     *  G(x, y) = Generator (Base Point)
+     *  K(x, y) = Public Key
+     *
+     * Equation:
+     *  P = s(sG + eK)
+     *
+     */
+
+    BIGNUM *e = BN_lebin2bn((BYTE *)&iSignature, sizeof(iSignature), nullptr),
+           *s = BN_lebin2bn((BYTE *)&info.Signature, sizeof(info.Signature), nullptr);
+    BIGNUM *x = BN_CTX_get(context), *y = BN_CTX_get(context);
+
+    // Create 2 points on the elliptic curve.
+    EC_POINT *p = EC_POINT_new(eCurve), *t = EC_POINT_new(eCurve);
+
+    // t = sG
+    EC_POINT_mul(eCurve, t, nullptr, genPoint, s, context);
+
+    // p = eK
+    EC_POINT_mul(eCurve, p, nullptr, pubPoint, e, context);
+
+    // p += t
+    EC_POINT_add(eCurve, p, t, p, context);
+
+    // p *= s
+    EC_POINT_mul(eCurve, p, nullptr, p, s, context);
+
+    // x = p.x; y = p.y;
+    EC_POINT_get_affine_coordinates(eCurve, p, x, y, context);
+
+    // Convert resulting point coordinates to bytes.
+    UMSKT::BN_bn2lebin(x, xBin, FIELD_BYTES_2003);
+    UMSKT::BN_bn2lebin(y, yBin, FIELD_BYTES_2003);
+
+    // Assemble the second SHA message.
+    msgBuffer[0x00] = 0x79;
+    msgBuffer[0x01] = (pData & 0x00FF);
+    msgBuffer[0x02] = (pData & 0xFF00) >> 8;
+
+    memcpy((void *)&msgBuffer[3], (void *)xBin, FIELD_BYTES_2003);
+    memcpy((void *)&msgBuffer[3 + FIELD_BYTES_2003], (void *)yBin, FIELD_BYTES_2003);
+
+    // compHash = SHA1(79 || Channel ID || p.x || p.y)
+    SHA1(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
+
+    // Translate the byte digest into a 32-bit integer - this is our computed hash.
+    // Truncate the hash to 31 bits.
+    DWORD compHash = BYDWORD(msgDigest) & BITMASK(31);
+
+    BN_free(s);
+    BN_free(e);
+
+    EC_POINT_free(p);
+    EC_POINT_free(t);
+
+    BN_CTX_free(context);
+
+    // If the computed hash checks out, the key is valid.
+    return compHash == info.Hash;
 }

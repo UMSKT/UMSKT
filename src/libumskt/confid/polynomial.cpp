@@ -22,7 +22,17 @@
 
 #include "confid.h"
 
-// generic short slow code
+/**
+ * generic short slow code
+ *
+ * @param adeg
+ * @param a
+ * @param bdeg
+ * @param b
+ * @param resultprevdeg
+ * @param result
+ * @return
+ */
 int ConfirmationID::Polynomial::mul(int adeg, const QWORD a[], int bdeg, const QWORD b[], int resultprevdeg,
                                     QWORD result[])
 {
@@ -56,6 +66,15 @@ int ConfirmationID::Polynomial::mul(int adeg, const QWORD a[], int bdeg, const Q
     return resultprevdeg;
 }
 
+/**
+ *
+ * @param adeg
+ * @param a
+ * @param bdeg
+ * @param b
+ * @param quotient
+ * @return
+ */
 int ConfirmationID::Polynomial::div_monic(int adeg, QWORD a[], int bdeg, const QWORD b[], QWORD *quotient)
 {
     assert(bdeg >= 0);
@@ -85,6 +104,19 @@ int ConfirmationID::Polynomial::div_monic(int adeg, QWORD a[], int bdeg, const Q
     return i;
 }
 
+/**
+ *
+ * @param adeg
+ * @param a
+ * @param bdeg
+ * @param b
+ * @param pgcddeg
+ * @param gcd
+ * @param pmult1deg
+ * @param mult1
+ * @param pmult2deg
+ * @param mult2
+ */
 void ConfirmationID::Polynomial::xgcd(int adeg, const QWORD a[3], int bdeg, const QWORD b[3], int *pgcddeg,
                                       QWORD gcd[3], int *pmult1deg, QWORD mult1[3], int *pmult2deg, QWORD mult2[3])
 {

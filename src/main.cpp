@@ -25,7 +25,7 @@
 int main(int argc, char *argv[])
 {
     int status;
-    if (status = CLI::Init(argc, argv); status > 0)
+    if (status = CLI::Init(argc, argv); status != 0)
     {
         return status;
     }

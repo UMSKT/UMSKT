@@ -30,11 +30,29 @@
 #include "BINK1998.h"
 
 /**
+ * Packs a Windows XP-like Product Key.
+ *
+ * @param pRaw [in] *QWORD[2] raw product key input
+ **/
+BOOL BINK1998::Pack(QWORD *pRaw)
+{
+    // The quantity of information the key provides is 114 bits.
+    // We're storing it in 2 64-bit quad-words with 14 trailing bits.
+    // 64 * 2 = 128
+
+    // Signature [114..59] <- Hash [58..31] <- Serial [30..1] <- Upgrade [0]
+    pRaw[0] = FIRSTNBITS(info.Signature, 5) << 59 | FIRSTNBITS(info.Hash, 28) << 31 | info.Serial << 1 | info.isUpgrade;
+    pRaw[1] = NEXTSNBITS(info.Signature, 51, 5);
+
+    return true;
+}
+
+/**
  * Unpacks a Windows XP-like Product Key.
  *
  * @param pRaw [out] *QWORD[2] raw product key output
  **/
-BOOL BINK1998::Unpack(KeyInfo &info, QWORD *pRaw)
+BOOL BINK1998::Unpack(QWORD *pRaw)
 {
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
@@ -55,130 +73,13 @@ BOOL BINK1998::Unpack(KeyInfo &info, QWORD *pRaw)
 }
 
 /**
- * Packs a Windows XP-like Product Key.
- *
- * @param pRaw [in] *QWORD[2] raw product key input
- **/
-BOOL BINK1998::Pack(const KeyInfo &info, QWORD *pRaw)
-{
-    // The quantity of information the key provides is 114 bits.
-    // We're storing it in 2 64-bit quad-words with 14 trailing bits.
-    // 64 * 2 = 128
-
-    // Signature [114..59] <- Hash [58..31] <- Serial [30..1] <- Upgrade [0]
-    pRaw[0] = FIRSTNBITS(info.Signature, 5) << 59 | FIRSTNBITS(info.Hash, 28) << 31 | info.Serial << 1 | info.isUpgrade;
-    pRaw[1] = NEXTSNBITS(info.Signature, 51, 5);
-
-    return true;
-}
-
-/**
- * Verifies a Windows XP-like Product Key.
- *
- * @param pKey [in]
- *
- * @return true if provided key validates against loaded curve
- */
-BOOL BINK1998::Verify(std::string &pKey)
-{
-    if (pKey.length() != 25)
-    {
-        return false;
-    }
-
-    BN_CTX *numContext = BN_CTX_new();
-    KeyInfo info;
-
-    QWORD pRaw[2];
-
-    // Convert Base24 CD-key to bytecode.
-    unbase24((BYTE *)pRaw, pKey);
-
-    // Extract RPK, hash and signature from bytecode.
-    Unpack(info, pRaw);
-
-    fmt::print(UMSKT::debug, "Validation results:\n");
-    fmt::print(UMSKT::debug, "   Upgrade: {:#08x}\n", info.isUpgrade);
-    fmt::print(UMSKT::debug, "    Serial: {:#08x}\n", info.Serial);
-    fmt::print(UMSKT::debug, "      Hash: {:#08x}\n", info.Hash);
-    fmt::print(UMSKT::debug, " Signature: {:#08x}\n", info.Signature);
-    fmt::print(UMSKT::debug, "\n");
-
-    DWORD pData = info.Serial << 1 | info.isUpgrade;
-
-    /*
-     *
-     * Scalars:
-     *  e = Hash
-     *  s = Schnorr Signature
-     *
-     * Points:
-     *  G(x, y) = Generator (Base Point)
-     *  K(x, y) = Public Key
-     *
-     * Equation:
-     *  P = sG + eK
-     *
-     */
-
-    BIGNUM *e = BN_lebin2bn((BYTE *)&info.Hash, sizeof(info.Hash), nullptr),
-           *s = BN_lebin2bn((BYTE *)&info.Signature, sizeof(info.Signature), nullptr);
-
-    BIGNUM *x = BN_CTX_get(numContext), *y = BN_CTX_get(numContext);
-
-    // Create 2 points on the elliptic curve.
-    EC_POINT *t = EC_POINT_new(eCurve), *p = EC_POINT_new(eCurve);
-
-    // t = sG
-    EC_POINT_mul(eCurve, t, nullptr, genPoint, s, numContext);
-
-    // P = eK
-    EC_POINT_mul(eCurve, p, nullptr, pubPoint, e, numContext);
-
-    // P += t
-    EC_POINT_add(eCurve, p, t, p, numContext);
-
-    // x = P.x; y = P.y;
-    EC_POINT_get_affine_coordinates(eCurve, p, x, y, numContext);
-
-    BYTE msgDigest[SHA_DIGEST_LENGTH], msgBuffer[SHA_MSG_LENGTH_XP], xBin[FIELD_BYTES], yBin[FIELD_BYTES];
-
-    // Convert resulting point coordinates to bytes.
-    BN_bn2lebin(x, xBin, FIELD_BYTES);
-    BN_bn2lebin(y, yBin, FIELD_BYTES);
-
-    // Assemble the SHA message.
-    memcpy(&msgBuffer[0], &pData, 4);
-    memcpy(&msgBuffer[4], xBin, FIELD_BYTES);
-    memcpy(&msgBuffer[4 + FIELD_BYTES], yBin, FIELD_BYTES);
-
-    // compHash = SHA1(pSerial || P.x || P.y)
-    SHA1(msgBuffer, SHA_MSG_LENGTH_XP, msgDigest);
-
-    // Translate the byte digest into a 32-bit integer - this is our computed hash.
-    // Truncate the hash to 28 bits.
-    DWORD compHash = BYDWORD(msgDigest) >> 4 & BITMASK(28);
-
-    BN_free(e);
-    BN_free(s);
-
-    BN_CTX_free(numContext);
-
-    EC_POINT_free(t);
-    EC_POINT_free(p);
-
-    // If the computed hash checks out, the key is valid.
-    return compHash == info.Hash;
-}
-
-/**
  * Generates a Windows XP-like Product Key.
  *
  * @param pKey [out]
  *
  * @return true on success, false on fail
  */
-BOOL BINK1998::Generate(KeyInfo &info, std::string &pKey)
+BOOL BINK1998::Generate(std::string &pKey)
 {
     BN_CTX *numContext = BN_CTX_new();
 
@@ -212,8 +113,8 @@ BOOL BINK1998::Generate(KeyInfo &info, std::string &pKey)
         BYTE xBin[FIELD_BYTES], yBin[FIELD_BYTES];
 
         // Convert coordinates to bytes.
-        BN_bn2lebin(x, xBin, FIELD_BYTES);
-        BN_bn2lebin(y, yBin, FIELD_BYTES);
+        UMSKT::BN_bn2lebin(x, xBin, FIELD_BYTES);
+        UMSKT::BN_bn2lebin(y, yBin, FIELD_BYTES);
 
         // Assemble the SHA message.
         memcpy(&msgBuffer[0], &pData, 4);
@@ -257,13 +158,15 @@ BOOL BINK1998::Generate(KeyInfo &info, std::string &pKey)
         BN_bn2lebinpad(s, (BYTE *)&info.Signature, BN_num_bytes(s));
 
         // Pack product key.
-        Pack(info, pRaw);
+        Pack(pRaw);
 
+        auto serial = fmt::format("{:d}", info.Serial);
         fmt::print(UMSKT::debug, "Generation results:\n");
-        fmt::print(UMSKT::debug, "   Upgrade: {:#08x}\n", info.isUpgrade);
-        fmt::print(UMSKT::debug, "    Serial: {:#08x}\n", info.Serial);
-        fmt::print(UMSKT::debug, "      Hash: {:#08x}\n", info.Hash);
-        fmt::print(UMSKT::debug, " Signature: {:#08x}\n", info.Signature);
+        fmt::print(UMSKT::debug, "{:>10}: {:b}\n", "Upgrade", (bool)info.isUpgrade);
+        fmt::print(UMSKT::debug, "{:>10}: {}\n", "Channel ID", serial.substr(0, 3));
+        fmt::print(UMSKT::debug, "{:>10}: {}\n", "Sequence", serial.substr(3));
+        fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "Hash", info.Hash);
+        fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "Signature", info.Signature);
         fmt::print(UMSKT::debug, "\n");
 
         EC_POINT_free(r);
@@ -278,4 +181,104 @@ BOOL BINK1998::Generate(KeyInfo &info, std::string &pKey)
     BN_CTX_free(numContext);
 
     return true;
+}
+
+/**
+ * Validate a Windows XP-like Product Key.
+ *
+ * @param pKey [in]
+ *
+ * @return true if provided key validates against loaded curve
+ */
+BOOL BINK1998::Validate(std::string &pKey)
+{
+    if (pKey.length() != 25)
+    {
+        return false;
+    }
+
+    BN_CTX *numContext = BN_CTX_new();
+
+    QWORD pRaw[2];
+
+    // Convert Base24 CD-key to bytecode.
+    unbase24((BYTE *)pRaw, pKey);
+
+    // Extract RPK, hash and signature from bytecode.
+    Unpack(pRaw);
+
+    auto serial = fmt::format("{:d}", info.Serial);
+    fmt::print(UMSKT::debug, "Validation results:\n");
+    fmt::print(UMSKT::debug, "{:>10}: {}\n", "Upgrade", (bool)info.isUpgrade);
+    fmt::print(UMSKT::debug, "{:>10}: {}\n", "Channel ID", serial.substr(0, 3));
+    fmt::print(UMSKT::debug, "{:>10}: {}\n", "Sequence", serial.substr(3));
+    fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "Hash", info.Hash);
+    fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "Signature", info.Signature);
+    fmt::print(UMSKT::debug, "\n");
+
+    DWORD pData = info.Serial << 1 | info.isUpgrade;
+
+    /*
+     *
+     * Scalars:
+     *  e = Hash
+     *  s = Schnorr Signature
+     *
+     * Points:
+     *  G(x, y) = Generator (Base Point)
+     *  K(x, y) = Public Key
+     *
+     * Equation:
+     *  P = sG + eK
+     *
+     */
+
+    BIGNUM *e = BN_lebin2bn((BYTE *)&info.Hash, sizeof(info.Hash), nullptr),
+           *s = BN_lebin2bn((BYTE *)&info.Signature, sizeof(info.Signature), nullptr);
+
+    BIGNUM *x = BN_CTX_get(numContext), *y = BN_CTX_get(numContext);
+
+    // Create 2 points on the elliptic curve.
+    EC_POINT *t = EC_POINT_new(eCurve), *p = EC_POINT_new(eCurve);
+
+    // t = sG
+    EC_POINT_mul(eCurve, t, nullptr, genPoint, s, numContext);
+
+    // P = eK
+    EC_POINT_mul(eCurve, p, nullptr, pubPoint, e, numContext);
+
+    // P += t
+    EC_POINT_add(eCurve, p, t, p, numContext);
+
+    // x = P.x; y = P.y;
+    EC_POINT_get_affine_coordinates(eCurve, p, x, y, numContext);
+
+    BYTE msgDigest[SHA_DIGEST_LENGTH], msgBuffer[SHA_MSG_LENGTH_XP], xBin[FIELD_BYTES], yBin[FIELD_BYTES];
+
+    // Convert resulting point coordinates to bytes.
+    UMSKT::BN_bn2lebin(x, xBin, FIELD_BYTES);
+    UMSKT::BN_bn2lebin(y, yBin, FIELD_BYTES);
+
+    // Assemble the SHA message.
+    memcpy(&msgBuffer[0], &pData, 4);
+    memcpy(&msgBuffer[4], xBin, FIELD_BYTES);
+    memcpy(&msgBuffer[4 + FIELD_BYTES], yBin, FIELD_BYTES);
+
+    // compHash = SHA1(pSerial || P.x || P.y)
+    SHA1(msgBuffer, SHA_MSG_LENGTH_XP, msgDigest);
+
+    // Translate the byte digest into a 32-bit integer - this is our computed hash.
+    // Truncate the hash to 28 bits.
+    DWORD compHash = BYDWORD(msgDigest) >> 4 & BITMASK(28);
+
+    BN_free(e);
+    BN_free(s);
+
+    BN_CTX_free(numContext);
+
+    EC_POINT_free(t);
+    EC_POINT_free(p);
+
+    // If the computed hash checks out, the key is valid.
+    return compHash == info.Hash;
 }

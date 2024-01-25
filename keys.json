@@ -1,750 +1,1007 @@
 {
-  "Products": {
-    "WINCEPB3": {
-      "Name": "Windows CE Platform Builder 3",
-      "BINK": [
-        "00",
-        "01",
-        "0E",
-        "0D",
-        "0F"
-      ]
+  "products": {
+    "WINCEPB": {
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "windows",
+          "devtool"
+        ]
+      },
+      "name": "Windows CE Platform Builder",
+      "flavours": {
+        "3": {
+          "name": "3",
+          "BINK": [
+            "00",
+            "01",
+            "0E",
+            "0D",
+            "0F"
+          ]
+        },
+        "NET4": {
+          "name": ".Net 4",
+          "BINK": [
+            "00",
+            "01"
+          ]
+        },
+        "NET5": {
+          "name": ".Net 5",
+          "BINK": [
+            "0D",
+            "0D"
+          ]
+        }
+      }
     },
-    "WINCEPB4": {
-      "Name": "Windows CE .Net Platform Builder 4",
-      "BINK": [
-        "00",
-        "01"
-      ]
+    "WIN95": {
+      "meta": {
+        "type": "PIDGEN2",
+        "tags": "windows"
+      },
+      "name": "Windows 95 (all)"
+    },
+    "WINNT": {
+      "meta": {
+        "type": "PIDGEN2",
+        "tags": "windows"
+      },
+      "name": "Windows NT (all)"
     },
     "WIN98": {
-      "Name": "Windows 98 (all types)",
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "windows"
+        ]
+      },
+      "name": "Windows 98 (all versions)",
       "BINK": [
         "02",
         "03"
       ]
     },
     "OFFICE2K": {
-      "Name": "Office 2000 (all variants)",
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "office"
+        ]
+      },
+      "name": "Office 2000 (all versions)",
       "BINK": [
         "04",
         "05"
       ]
     },
     "ISA2K4": {
-      "Name": "Internet Security and Acceleration (ISA) Server 2004",
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "server"
+        ]
+      },
+      "name": "Internet Security and Acceleration (ISA) Server 2004",
       "BINK": [
         "06",
         "07"
       ]
     },
     "PLUSXP": {
-      "Name": "PLUS! for Windows XP",
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "xpbrand",
+          "plus"
+        ]
+      },
+      "name": "PLUS! for Windows XP",
       "BINK": [
         "08",
         "09"
       ]
     },
-    "WIN2KSVR": {
-      "Name": "Windows 2000 Server (all types)",
-      "BINK": [
-        "0A",
-        "13"
-      ]
-    },
-    "OFFICEC2007": {
-      "Name": "Office Communicator 2007",
-      "BINK": [
-        "0C",
-        "0D"
-      ]
-    },
-    "POS2009": {
-      "Name": "Windows Embedded POSReady 2009",
-      "BINK": [
-        "0D",
-        "0D"
-      ],
-      "DPC": {
-        "0D": [
-          {
-            "Min": 100,
-            "Max": 199,
-            "IsEvaluation": true,
-            "EvaluationDays": 125
-          },
-          {
-            "Min": 200,
-            "Max": 619,
-            "IsEvaluation": false
-          },
-          {
-            "Min": 940,
-            "Max": 960,
-            "IsEvaluation": false
-          },
-          {
-            "Min": 963,
-            "Max": 979,
-            "IsEvaluation": false
-          },
-          {
-            "Min": 985,
-            "Max": 986,
-            "IsEvaluation": false
-          },
-          {
-            "Min": 996,
-            "Max": 996,
-            "IsEvaluation": true,
-            "EvaluationDays": 125
-          },
-          {
-            "Min": 997,
-            "Max": 997,
-            "IsEvaluation": true,
-            "EvaluationDays": 370
-          },
-          {
-            "Min": 998,
-            "Max": 998,
-            "IsEvaluation": false
-          },
-          {
-            "Min": 620,
-            "Max": 620,
-            "IsEvaluation": false
-          },
-          {
-            "Min": 621,
-            "Max": 621,
-            "IsEvaluation": false
-          },
-          {
-            "Min": 622,
-            "Max": 622,
-            "IsEvaluation": true,
-            "EvaluationDays": 125
-          },
-          {
-            "Min": 623,
-            "Max": 623,
-            "IsEvaluation": true,
-            "EvaluationDays": 370
-          }
-        ]
-      }
-    },
-    "WINCDPB5": {
-      "Name": "Windows CE .Net Platform Builder 5",
-      "BINK": [
-        "0D",
-        "0D"
-      ]
-    },
     "CSERV2K2": {
-      "Name": "Commerce Server 2002",
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "server"
+        ]
+      },
+      "name": "Commerce Server 2002",
       "BINK": [
         "0E",
         "0F"
       ]
     },
     "WIN2K": {
-      "Name": "Windows 2000 Professional",
-      "BINK": [
-        "12",
-        "13"
-      ]
+      "meta": {
+        "type": "PIDGEN3",
+        "default": "PRO",
+        "tags": [
+          "windows"
+        ]
+      },
+      "name": "Windows 2000",
+      "flavours": {
+        "PRO": {
+          "name": "Professional",
+          "BINK": [
+            "12",
+            "13"
+          ]
+        },
+        "SERVER": {
+          "name": "Server (all versions)",
+          "BINK": [
+            "0A",
+            "13"
+          ]
+        }
+      }
     },
     "OFFICEMAC2KX": {
-      "Name": "Office for Mac 2004 / 2008",
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "office"
+        ]
+      },
+      "name": "Office for Mac 2004 / 2008",
       "BINK": [
         "18",
         "19"
       ]
     },
     "WINME": {
-      "Name": "Windows ME",
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "windows"
+        ]
+      },
+      "name": "Windows ME",
       "BINK": [
         "1C",
         "1D"
       ]
     },
-    "OFFICEXPA": {
-      "Name": "Office XP Applications",
-      "BINK": [
-        "20",
-        "21"
-      ]
-    },
-    "WORKS2K3X": {
-      "Name": "Works Suite 2003 and 2004",
+    "WORKS2KX": {
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "office"
+        ]
+      },
+      "name": "Works Suite 2003 and 2004",
       "BINK": [
         "20",
         "21"
       ]
     },
     "OFFICEXP": {
-      "Name": "Office XP",
-      "BINK": [
-        "22",
-        "23"
-      ],
-      "Activation": "OFFICEXP"
-    },
-    "VSNET2KX": {
-      "Name": "Visual Studio .Net / .Net 2003",
-      "BINK": [
-        "24",
-        "25"
-      ]
-    },
-    "WINXPPEVAL": {
-      "Name": "Windows XP Professional Evaluation",
-      "BINK": [
-        "28",
-        "29"
-      ],
-      "Activation": "WINXP"
-    },
-    "WINXPH": {
-      "Name": "Windows XP Home",
-      "BINK": [
-        "2A",
-        "2B"
-      ],
-      "DPC": {
-        "2A": [
-          {
-            "Min": 5,
-            "Max": 85,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 337,
-            "Max": 359,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "60"
-          },
-          {
-            "Min": 755,
-            "Max": 779,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 106,
-            "Max": 106,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 187,
-            "Max": 187,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "60"
-          },
-          {
-            "Min": 188,
-            "Max": 188,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "60"
-          },
-          {
-            "Min": 362,
-            "Max": 376,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 377,
-            "Max": 377,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 984,
-            "Max": 984,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          }
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "xpbrand",
+          "office"
         ],
-        "2B": [
-          {
-            "Min": 119,
-            "Max": 119,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 120,
-            "Max": 169,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 400,
-            "Max": 665,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 667,
-            "Max": 699,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 700,
-            "Max": 754,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 85,
-            "Max": 85,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 86,
-            "Max": 95,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 96,
-            "Max": 105,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 170,
-            "Max": 186,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 189,
-            "Max": 189,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 190,
-            "Max": 190,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 191,
-            "Max": 191,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 107,
-            "Max": 118,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 192,
-            "Max": 336,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 755,
-            "Max": 899,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 921,
-            "Max": 979,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          }
+        "activation": {
+          "flavour": "OFFICE",
+          "version": 1
+        },
+        "default": "BASE"
+      },
+      "name": "Office XP",
+      "flavours": {
+        "APPS": {
+          "name": "Applications",
+          "BINK": [
+            "20",
+            "21"
+          ]
+        },
+        "BASE": {
+          "name": "",
+          "BINK": [
+            "22",
+            "23"
+          ]
+        }
+      }
+    },
+    "VS": {
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "devtool"
         ]
       },
-      "Activation": "WINXP"
-    },
-    "WINXPP": {
-      "Name": "Windows XP Pro",
-      "BINK": [
-        "2C",
-        "2D"
-      ],
-      "Activation": "WINXP"
-    },
-    "WINXPPIA64": {
-      "Name": "Windows XP Pro IA-64",
-      "BINK": [
-        "2C",
-        "2D"
-      ]
-    },
-    "WINXPPVLK": {
-      "Name": "Windows XP Pro VLK",
-      "BINK": [
-        "2E",
-        "2F"
-      ],
-      "DPC": {
-        "2E": [
-          {
-            "Min": 640,
-            "Max": 699,
-            "IsEvaluation": false
-          },
-          {
-            "Min": 700,
-            "Max": 701,
-            "IsEvaluation": false
-          },
-          {
-            "Min": 704,
-            "Max": 705,
-            "IsEvaluation": false
+      "name": "Visual Studio",
+      "flavours": {
+        "97": {
+          "name": "97 (5.0)",
+          "meta": {
+            "type": "PIDGEN2"
           }
-        ]
+        },
+        "6": {
+          "name": "6.0",
+          "meta": {
+            "type": "PIDGEN2"
+          }
+        },
+        "NET": {
+          "name": ".Net",
+          "BINK": [
+            "24",
+            "25"
+          ]
+        },
+        "NET2K3": {
+          "name": ".Net 2003",
+          "BINK": [
+            "24",
+            "25"
+          ]
+        },
+        "2005": {
+          "name": "2005",
+          "BINK": [
+            "52",
+            "53"
+          ]
+        },
+        "2008": {
+          "name": "2008",
+          "BINK": [
+            "78",
+            "79"
+          ]
+        }
+      }
+    },
+    "WHISTLER": {
+      "name": "Windows Whistler betas",
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "windows"
+        ],
+        "activation": {
+          "flavour": "WHISTLER",
+          "version": 1
+        }
       },
-      "Exclusions": [
-        "640200176",
-        "640000035"
+      "BINK": [
+        "00",
+        "01"
       ]
     },
-    "WINXPFLPC": {
-      "Name": "Windows XP Fundamentals for Legacy PCs",
-      "BINK": [
-        "2E",
-        "2F"
-      ],
-      "Activation": "WINXP"
+    "WINXP": {
+      "meta": {
+        "type": "PIDGEN3",
+        "default": "PROVLK",
+        "tags": [
+          "windows",
+          "xpbrand"
+        ],
+        "activation": {
+          "flavour": "WINXP",
+          "version": 0
+        }
+      },
+      "name": "Windows XP",
+      "flavours": {
+        "HOME": {
+          "name": "Home",
+          "BINK": [
+            "2A",
+            "2B"
+          ],
+          "DPC": {
+            "2A": [
+              {
+                "min": 5,
+                "max": 85,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 337,
+                "max": 359,
+                "isEvaluation": false,
+                "activationGraceDays": "60"
+              },
+              {
+                "min": 755,
+                "max": 779,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 106,
+                "max": 106,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 187,
+                "max": 187,
+                "isEvaluation": false,
+                "activationGraceDays": "60"
+              },
+              {
+                "min": 188,
+                "max": 188,
+                "isEvaluation": false,
+                "activationGraceDays": "60"
+              },
+              {
+                "min": 362,
+                "max": 376,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 377,
+                "max": 377,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 984,
+                "max": 984,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              }
+            ],
+            "2B": [
+              {
+                "min": 119,
+                "max": 119,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 120,
+                "max": 169,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 400,
+                "max": 665,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 667,
+                "max": 699,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 700,
+                "max": 754,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 85,
+                "max": 85,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 86,
+                "max": 95,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 96,
+                "max": 105,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 170,
+                "max": 186,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 189,
+                "max": 189,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 190,
+                "max": 190,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 191,
+                "max": 191,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 107,
+                "max": 118,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 192,
+                "max": 336,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 755,
+                "max": 899,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 921,
+                "max": 979,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              }
+            ]
+          }
+        },
+        "PRO": {
+          "name": "Professional",
+          "BINK": [
+            "2C",
+            "2D"
+          ]
+        },
+        "PROK": {
+          "name": "Professional K",
+          "BINK": [
+            "30",
+            "31"
+          ]
+        },
+        "PROVLK": {
+          "name": "Professional VLK",
+          "BINK": [
+            "2E",
+            "2F"
+          ],
+          "DPC": {
+            "2E": [
+              {
+                "min": 640,
+                "max": 699,
+                "isEvaluation": false
+              },
+              {
+                "min": 700,
+                "max": 701,
+                "isEvaluation": false
+              },
+              {
+                "min": 704,
+                "max": 705,
+                "isEvaluation": false
+              }
+            ]
+          },
+          "exclusions": [
+            "640200176",
+            "640000035"
+          ]
+        },
+        "64BIT": {
+          "name": "Professional 64 Bit Edition",
+          "BINK": [
+            "66",
+            "67"
+          ],
+          "DPC": {
+            "66": [
+              {
+                "min": 306,
+                "max": 370,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 371,
+                "max": 410,
+                "isEvaluation": false,
+                "activationGraceDays": "60"
+              }
+            ],
+            "67": [
+              {
+                "min": 5,
+                "max": 118,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 119,
+                "max": 119,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              }
+            ]
+          }
+        },
+        "64BITVLK": {
+          "name": "Professional 64 Bit Edition VLK",
+          "BINK": [
+            "64",
+            "65"
+          ],
+          "DPC": {
+            "64": [
+              {
+                "min": 1,
+                "max": 2,
+                "isEvaluation": true,
+                "activationGraceDays": "14"
+              },
+              {
+                "min": 640,
+                "max": 649,
+                "isEvaluation": false
+              },
+              {
+                "min": 652,
+                "max": 657,
+                "isEvaluation": false
+              }
+            ]
+          },
+          "exclusions": [
+            "640200176",
+            "640000035"
+          ]
+        },
+        "IA64": {
+          "name": "Professional IA-64",
+          "BINK": [
+            "2C",
+            "2D"
+          ]
+        },
+        "STARTER": {
+          "name": "Starter Edition",
+          "BINK": [
+            "32",
+            "33"
+          ]
+        },
+        "FLP": {
+          "name": "Fundamentals for Legacy PCs",
+          "BINK": [
+            "2E",
+            "2F"
+          ]
+        },
+        "EVAL": {
+          "name": "Professional Evaluation",
+          "BINK": [
+            "28",
+            "29"
+          ]
+        },
+        "POS2009": {
+          "name": "Embedded POS Ready 2009",
+          "BINK": [
+            "0D",
+            "0D"
+          ],
+          "DPC": {
+            "0D": [
+              {
+                "min": 100,
+                "max": 199,
+                "isEvaluation": true,
+                "evaluationDays": 125
+              },
+              {
+                "min": 200,
+                "max": 619,
+                "isEvaluation": false
+              },
+              {
+                "min": 940,
+                "max": 960,
+                "isEvaluation": false
+              },
+              {
+                "min": 963,
+                "max": 979,
+                "isEvaluation": false
+              },
+              {
+                "min": 985,
+                "max": 986,
+                "isEvaluation": false
+              },
+              {
+                "min": 996,
+                "max": 996,
+                "isEvaluation": true,
+                "evaluationDays": 125
+              },
+              {
+                "min": 997,
+                "max": 997,
+                "isEvaluation": true,
+                "evaluationDays": 370
+              },
+              {
+                "min": 998,
+                "max": 998,
+                "isEvaluation": false
+              },
+              {
+                "min": 620,
+                "max": 620,
+                "isEvaluation": false
+              },
+              {
+                "min": 621,
+                "max": 621,
+                "isEvaluation": false
+              },
+              {
+                "min": 622,
+                "max": 622,
+                "isEvaluation": true,
+                "evaluationDays": 125
+              },
+              {
+                "min": 623,
+                "max": 623,
+                "isEvaluation": true,
+                "evaluationDays": 370
+              }
+            ]
+          }
+        }
+      }
     },
-    "WINXPK": {
-      "Name": "Windows XP Professional K",
-      "BINK": [
-        "30",
-        "31"
-      ],
-      "Activation": "WINXP"
-    },
-    "WINXPSE": {
-      "Name": "Windows XP Starter Edition",
-      "BINK": [
-        "32",
-        "33"
-      ],
-      "Activation": "WINXP"
-    },
-    "WINLH4029": {
-      "Name": "Windows Longhorn (6.0.3683.0 -> 6.0.4029.0)",
-      "BINK": [
-        "40",
-        "41"
-      ]
+    "LONGHORN": {
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "windows",
+          "beta"
+        ],
+        "activation": {
+          "flavour": "WINXP",
+          "version": 0
+        }
+      },
+      "name": "Windows Longhorn",
+      "flavours": {
+        "4029": {
+          "name": "(6.0.3683.0 -> 6.0.4029.0)",
+          "BINK": [
+            "40",
+            "41"
+          ]
+        },
+        "4033": {
+          "name": "(6.0.4033.0)",
+          "BINK": [
+            "54",
+            "55"
+          ]
+        },
+        "5112": {
+          "name": "(6.0.4039.0 -> 6.0.5112.0)",
+          "BINK": [
+            "74",
+            "75"
+          ]
+        }
+      }
     },
     "HALOCE": {
-      "Name": "Halo: Combat Evolved/Custom Edition",
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "game"
+        ]
+      },
+      "name": "Halo Combat Evolved/Custom Edition",
       "BINK": [
         "50",
         "51"
       ]
     },
-    "VS2K5": {
-      "Name": "Visual Studio 2005",
+    "WINXPDME": {
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "xpbrand",
+          "plus"
+        ],
+        "activation": {
+          "flavour": "PLUSDME",
+          "version": 4
+        }
+      },
+      "name": "Plus! Digital Media Edition for Windows XP",
       "BINK": [
         "52",
         "53"
       ]
-    },
-    "WINXPDME": {
-      "Name": "Plus! Digital Media Edition for Windows XP",
-      "BINK": [
-        "52",
-        "53"
-      ],
-      "Activation": "PLUSDME"
     },
     "RONROL": {
-      "Name": "Rise of Nations - Rise of Legends",
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "game"
+        ]
+      },
+      "name": "Rise of Nations - Rise of Legends",
       "BINK": [
         "52",
         "53"
       ]
     },
-    "WINLH4033": {
-      "Name": "Windows Longhorn (6.0.4033.0)",
-      "BINK": [
-        "54",
-        "55"
-      ]
-    },
-    "WINSVR2K3": {
-      "Name": "Windows Server 2003",
-      "BINK": [
-        "54",
-        "55",
-        "58",
-        "59"
-      ],
-      "Activation": "WINSVR2K3",
-      "DPC": {
-        "54": [
-          {
-            "Min": 5,
-            "Max": 84,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 337,
-            "Max": 369,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "60"
-          },
-          {
-            "Min": 755,
-            "Max": 780,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 781,
-            "Max": 789,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          }
+    "WINSERV2K3": {
+      "meta": {
+        "type": "PIDGEN3",
+        "default": "BASE",
+        "tags": [
+          "windows",
+          "server"
         ],
-        "55": [
-          {
-            "Min": 119,
-            "Max": 119,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 120,
-            "Max": 169,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 170,
-            "Max": 269,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 400,
-            "Max": 699,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 700,
-            "Max": 754,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
+        "activation": {
+          "flavour": "WINXP",
+          "version": 0
+        }
+      },
+      "name": "Windows Server 2003",
+      "flavours": {
+        "BASE": {
+          "name": "",
+          "BINK": [
+            "54",
+            "55",
+            "58",
+            "59"
+          ],
+          "DPC": {
+            "54": [
+              {
+                "min": 5,
+                "max": 84,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 337,
+                "max": 369,
+                "isEvaluation": false,
+                "activationGraceDays": "60"
+              },
+              {
+                "min": 755,
+                "max": 780,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 781,
+                "max": 789,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              }
+            ],
+            "55": [
+              {
+                "min": 119,
+                "max": 119,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 120,
+                "max": 169,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 170,
+                "max": 269,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 400,
+                "max": 699,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              },
+              {
+                "min": 700,
+                "max": 754,
+                "isEvaluation": false,
+                "activationGraceDays": "30"
+              }
+            ]
           }
-        ]
+        },
+        "VLK": {
+          "name": "VLK",
+          "BINK": [
+            "5A",
+            "5B"
+          ],
+          "DPC": {
+            "5A": [
+              {
+                "min": 640,
+                "max": 642,
+                "isEvaluation": false
+              }
+            ]
+          },
+          "exclusions": [
+            "640200176",
+            "640000035"
+          ]
+        },
+        "64BIT": {
+          "name": "64 Bit Edition",
+          "BINK": [
+            "68",
+            "69",
+            "6C",
+            "6D"
+          ],
+          "DPC": {}
+        },
+        "64BITVLK": {
+          "name": "64 Bit Edition VLK",
+          "BINK": [
+            "68",
+            "69",
+            "6C",
+            "6D"
+          ],
+          "DPC": {}
+        }
       }
     },
-    "WINSVR2K3VLK": {
-      "Name": "Windows Server 2003 VLK",
-      "BINK": [
-        "5A",
-        "5B"
-      ],
-      "DPC": {
-        "5A": [
-          {
-            "Min": 640,
-            "Max": 642,
-            "IsEvaluation": false
-          }
-        ]
-      },
-      "Exclusions": [
-        "640200176",
-        "640000035"
-      ]
-    },
-    "WINXPP64BVLK": {
-      "Name": "Windows XP Pro 64 Bit Edition VLK",
-      "BINK": [
-        "64",
-        "65"
-      ],
-      "DPC": {
-        "64": [
-          {
-            "Min": 1,
-            "Max": 2,
-            "IsEvaluation": true,
-            "ActivationGraceDays": "14"
-          },
-          {
-            "Min": 640,
-            "Max": 649,
-            "IsEvaluation": false
-          },
-          {
-            "Min": 652,
-            "Max": 657,
-            "IsEvaluation": false
-          }
+    "OFFICE2K3": {
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": [
+          "office"
         ],
-        "Exclusions": [
-          "640200176",
-          "640000035"
-        ]
+        "default": "PRO",
+        "activation": {
+          "flavour": "OFFICE",
+          "version": 3
+        }
+      },
+      "name": "Office 2003",
+      "flavours": {
+        "APPS": {
+          "name": "Applications",
+          "BINK": [
+            "6E",
+            "6F"
+          ]
+        },
+        "SB": {
+          "name": "Small Business",
+          "BINK": [
+            "70",
+            "71"
+          ]
+        },
+        "ST": {
+          "name": "Student and Teacher",
+          "BINK": [
+            "70",
+            "71"
+          ]
+        },
+        "PRO": {
+          "name": "Professional",
+          "BINK": [
+            "72",
+            "73"
+          ]
+        }
       }
     },
-    "WINXPP64B": {
-      "Name": "Windows XP Pro 64 Bit Edition",
+    "OFFICEC2K5": {
+      "name": "Office Communicator 2005",
       "BINK": [
-        "66",
-        "67"
-      ],
-      "DPC": {
-        "66": [
-          {
-            "Min": 306,
-            "Max": 370,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 371,
-            "Max": 410,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "60"
-          }
-        ],
-        "67": [
-          {
-            "Min": 5,
-            "Max": 118,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          },
-          {
-            "Min": 119,
-            "Max": 119,
-            "IsEvaluation": false,
-            "ActivationGraceDays": "30"
-          }
-        ]
-      },
-      "Activation": "WINXP"
-    },
-    "WINSVR2K364B": {
-      "Name": "Windows Server 2003 64 Bit",
-      "BINK": [
-        "68",
-        "69",
-        "6C",
-        "6D"
-      ],
-      "Activation": "WINSVR2K3"
-    },
-    "WINSVR2K3BVLK": {
-      "Name": "Windows Server 2003 64 Bit VLK",
-      "BINK": [
-        "68",
-        "69",
-        "6C",
-        "6D"
-      ]
-    },
-    "OFFICE2K3A": {
-      "Name": "Office 2003 Applications",
-      "BINK": [
-        "6E",
-        "6F"
-      ],
-      "Activation": "OFFICE2K3"
-    },
-    "OFFICE2K3SB": {
-      "Name": "Office 2003 Small Business",
-      "BINK": [
-        "70",
-        "71"
-      ],
-      "Activation": "OFFICE2K3"
-    },
-    "OFFICE2K3ST": {
-      "Name": "Office 2003 Student and Teacher",
-      "BINK": [
-        "70",
-        "71"
-      ],
-      "Activation": "OFFICE2K3"
-    },
-    "OFFICE2K3PRO": {
-      "Name": "Office 2003 Professional",
-      "BINK": [
-        "72",
-        "73"
-      ],
-      "Activation": "OFFICE2K3"
-    },
-    "WINLHPREPX": {
-      "Name": "Windows Longhorn (6.0.4039.0 -> Pre PIDGENX)",
-      "BINK": [
-        "74",
-        "75"
+        "00",
+        "01"
       ]
     },
     "ILM2K7": {
-      "Name": "Identity Lifecycle Manager 2007",
+      "meta": {
+        "type": "PIDGEN3",
+        "tags": []
+      },
+      "name": "Identity Lifecycle Manager 2007",
       "BINK": [
         "78",
         "79"
       ]
-    },
-    "VS2K8": {
-      "Name": "Visual Studio 2008",
-      "BINK": [
-        "78",
-        "79"
-      ]
-    },
-    "OFFICE2K7A": {
-      "Name": "Office 2007 Applications",
-      "BINK": [
-        "7E",
-        "7F"
-      ],
-      "Activation": "OFFICE2K7"
-    },
-    "OFFICE2K7SB": {
-      "Name": "Office 2007 Basic / Small Business",
-      "BINK": [
-        "80",
-        "81"
-      ],
-      "Activation": "OFFICE2K7"
     },
     "OFFICE2K7": {
-      "Name": "Office 2007 Standard / Professional / Ultimate / Enterprise",
-      "BINK": [
-        "82",
-        "83"
-      ],
-      "Activation": "OFFICE2K7"
+      "meta": {
+        "type": "PIDGEN3",
+        "default": "PRO",
+        "tags": [
+          "office"
+        ],
+        "activation": {
+          "flavour": "OFFICE",
+          "version": 4
+        }
+      },
+      "name": "Office 2007",
+      "flavours": {
+        "APPS": {
+          "name": "Applications",
+          "BINK": [
+            "7E",
+            "7F"
+          ]
+        },
+        "BASIC": {
+          "name": "Basic / Small Business",
+          "BINK": [
+            "80",
+            "81"
+          ]
+        },
+        "PRO": {
+          "name": "Standard / Professional / Ultimate / Enterprise",
+          "BINK": [
+            "82",
+            "83"
+          ]
+        },
+        "HOME": {
+          "name": "Home / Student",
+          "BINK": [
+            "88",
+            "89"
+          ]
+        },
+        "COM": {
+          "name": "Communicator",
+          "BINK": [
+            "0C",
+            "0D"
+          ]
+        }
+      }
     },
-    "OFFICE2K7HS": {
-      "Name": "Office 2007 Home & Student",
-      "BINK": [
-        "88",
-        "89"
-      ],
-      "Activation": "OFFICE2K7"
+    "FLIGHTSIM": {
+      "meta": {
+        "type": "PIDGEN2",
+        "tags": "game"
+      },
+      "name": "Flight Simulator 95"
     }
   },
   "BINK": {
@@ -2098,7 +2355,7 @@
         "y": "6907491873002602436260770112009167552099295226221829271071772648575964850189443824766022140586160426909373840561095003562834548795561414117018465995425960"
       }
     },
-    "FE": {
+    "TS00": {
       "a": "1",
       "b": "0",
       "g": {
@@ -2113,7 +2370,7 @@
         "y": "8858262671783403684463979458475735219807686373661776500155868309933327116988404547349319879900761946444470688332645"
       }
     },
-    "FF": {
+    "TS01": {
       "a": "1",
       "b": "0",
       "g": {
@@ -2129,14 +2386,9 @@
       }
     }
   },
-  "Activation": {
+  "activation": {
     "WINXP": {
-      "Name": "Windows XP",
-      "flags": {
-        "XPBrand": true,
-        "Office": false,
-        "version": 0
-      },
+      "name": "Windows XP",
       "p": "102011604035381881",
       "x": {
         "0": "0",
@@ -2147,57 +2399,13 @@
         "5": "1"
       },
       "priv": "1315384396487572637498562978064321",
-      "iid_key": "6AC85ED4",
-      "non_residue": "43",
-      "quotient": "14670661154467966223547127731350151"
-    },
-    "WINSVR2K3": {
-      "Name": "Windows Server 2003",
-      "flags": {
-        "XPBrand": true,
-        "Office": false,
-        "version": 0
-      },
-      "p": "102011604035381881",
-      "x": {
-        "0": "0",
-        "1": "9433814980383617",
-        "2": "19168316694801104",
-        "3": "90078616228674308",
-        "4": "90078616228674308",
-        "5": "1"
-      },
-      "priv": "1315384396487572637498562978064321",
-      "iid_key": "6AC85ED4",
-      "non_residue": "43",
-      "quotient": "14670661154467966223547127731350151"
-    },
-    "WINLH": {
-      "Name": "Windows Longhorn - (pre-reset)",
-      "flags": {
-        "XPBrand": true,
-        "Office": false,
-        "version": 0
-      },
-      "p": "102011604035381881",
-      "x": {
-        "0": "0",
-        "1": "9433814980383617",
-        "2": "19168316694801104",
-        "3": "90078616228674308",
-        "4": "90078616228674308",
-        "5": "1"
-      },
-      "priv": "1315384396487572637498562978064321",
-      "iid_key": "6AC85ED4",
+      "iid_key": "1791516372",
       "non_residue": "43",
       "quotient": "14670661154467966223547127731350151"
     },
     "WINWH": {
-      "Name": "Windows Whistler",
+      "name": "Windows Whistler",
       "flags": {
-        "XPBrand": false,
-        "Office": false,
         "version": 1
       },
       "p": "102413083413401507",
@@ -2210,17 +2418,12 @@
         "5": "1"
       },
       "priv": "4420101814959421052277784766820305",
-      "iid_key": "6AC85ED4",
+      "iid_key": "1791516372",
       "non_residue": "2",
       "quotient": "14613149284703660878250367809118961"
     },
-    "OFFICEXP": {
-      "Name": "Office XP",
-      "flags": {
-        "XPBrand": true,
-        "Office": true,
-        "version": 1
-      },
+    "OFFICE": {
+      "name": "Office XP/2003/2007",
       "p": "103099955908255721",
       "x": {
         "0": "0",
@@ -2231,59 +2434,12 @@
         "5": "1"
       },
       "priv": "10294349293510589382098112327865153",
-      "iid_key": "5A30B9F3",
-      "non_residue": "3",
-      "quotient": "14515793565989355059134123881456714"
-    },
-    "OFFICE2K3": {
-      "Name": "Office 2003",
-      "flags": {
-        "XPBrand": false,
-        "Office": true,
-        "version": 3
-      },
-      "p": "103099955908255721",
-      "x": {
-        "0": "0",
-        "1": "64728167274549202",
-        "2": "4488766805843809",
-        "3": "70698430483539942",
-        "4": "64728167274549202",
-        "5": "1"
-      },
-      "priv": "10294349293510589382098112327865153",
-      "iid_key": "5A30B9F3",
-      "non_residue": "3",
-      "quotient": "14515793565989355059134123881456714"
-    },
-    "OFFICE2K7": {
-      "Name": "Office 2007",
-      "flags": {
-        "XPBrand": false,
-        "Office": true,
-        "version": 4
-      },
-      "p": "103099955908255721",
-      "x": {
-        "0": "0",
-        "1": "64728167274549202",
-        "2": "4488766805843809",
-        "3": "70698430483539942",
-        "4": "64728167274549202",
-        "5": "1"
-      },
-      "priv": "10294349293510589382098112327865153",
-      "iid_key": "5A30B9F3",
+      "iid_key": "1513142771",
       "non_residue": "3",
       "quotient": "14515793565989355059134123881456714"
     },
     "PLUSDME": {
-      "Name": "Plus! Digital Media Edition for Windows XP",
-      "flags": {
-        "XPBrand": true,
-        "Office": false,
-        "version": 4
-      },
+      "name": "Plus! Digital Media Edition for Windows XP",
       "p": "101996933280717187",
       "x": {
         "0": "14442243999705614",
@@ -2294,7 +2450,7 @@
         "5": "1"
       },
       "priv": "2752030625102368166730185283969067",
-      "iid_key": "6AC85ED4",
+      "iid_key": "1791516372",
       "non_residue": "2",
       "quotient": "14672771312721192311137265743402224"
     }

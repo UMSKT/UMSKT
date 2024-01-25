@@ -47,7 +47,7 @@ The procedure for SLP 2.0 verification is as follows:
 
 4. If the OEM product ID is detected, the OEM verification process starts, and it will check the installed OEM certificate <!-- "product certificate" ? --> is valid. It mainly uses the SLIC public key from BIOS which is loaded into the RAM, to verify the digital signature of product certificate <!-- Yes, this "product certificate" came from nowhere, so I guess this the OEM certificate that installed while installing the Windows Vista by OEM. -->. If validation failed, it is considered as inactivated.
 
-5. Verify the OEM ID field between SLIC and RSDT (Root System Description Table), and compare the OEM ID field and OEM Table ID fields between SLIC and XSDT (Extended System Description Table). If they didn't match, it is considered as inactivated.
+5. Validate the OEM ID field between SLIC and RSDT (Root System Description Table), and compare the OEM ID field and OEM Table ID fields between SLIC and XSDT (Extended System Description Table). If they didn't match, it is considered as inactivated.
 
 6. After the above hurdles, the OEM license will be considered as activated. If not then fallback to inactivated and continue with normal procedure, like require user to activate the Windows.
 
@@ -65,9 +65,9 @@ Here is more detailed verification process:
 
 4. Use OEM public key verify against the digital signature of the Marker inside SLIC. if verified (this means the Message in the Marker is correct. <!-- There is no where talked about what is that Message and Marker. -->) then continue on OEM activation process, otherwise continue on WPA activation process.
 
-5. Verify the Windows Logo <!-- I guess? "Windows Logo" part can be directly translate to "Windows Flag Mark", and this "Flag" means that actual waving thing, not a digital bit. I guess this approach is similar as the Nintendo logo bitmap inside Game Boy game cartridge ROM thing. --> inside the Marker. If the Windows Logo is present, then continue on OEM activation process, otherwise continue on WPA activation process.
+5. Validate the Windows Logo <!-- I guess? "Windows Logo" part can be directly translate to "Windows Flag Mark", and this "Flag" means that actual waving thing, not a digital bit. I guess this approach is similar as the Nintendo logo bitmap inside Game Boy game cartridge ROM thing. --> inside the Marker. If the Windows Logo is present, then continue on OEM activation process, otherwise continue on WPA activation process.
 
-6. Verify the version of Marker. If it's at least `0x20001` then continue on OEM activation process, otherwise OEM activation failed, and continue on WPA activation process.
+6. Validate the version of Marker. If it's at least `0x20001` then continue on OEM activation process, otherwise OEM activation failed, and continue on WPA activation process.
 
 7. Compare the OEM ID and OEM Table ID against all corresponding ACPI table headers. If they match, then OEM activation completed successfully, otherwise continue on WPA activation process.
 

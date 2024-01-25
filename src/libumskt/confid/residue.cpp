@@ -24,20 +24,27 @@
 
 #if defined(__x86_64__) || defined(_M_AMD64) || defined(__aarch64__) || (defined(__arm64__) && defined(__APPLE__))
 #ifdef __GNUC__
-inline QWORD ConfirmationID::Residue::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi)
+QWORD ConfirmationID::Residue::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi)
 {
     OWORD r = (OWORD)multiplier * (OWORD)multiplicand;
     *product_hi = r >> 64;
     return (QWORD)r;
 }
-#else
-inline QWORD ConfirmationID::Residue::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi)
+#else // basically msvc
+/**
+ *
+ * @param multiplier
+ * @param multiplicand
+ * @param product_hi
+ * @return
+ */
+QWORD ConfirmationID::Residue::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi)
 {
     return _umul128(multiplier, multiplicand, product_hi);
 }
 #endif
 #elif defined(__i386__) || defined(_M_IX86) || defined(__arm__) || defined(__EMSCRIPTEN__)
-inline QWORD ConfirmationID::Residue::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi)
+QWORD ConfirmationID::Residue::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi)
 {
     // multiplier   = ab = a * 2^32 + b
     // multiplicand = cd = c * 2^32 + d
@@ -66,6 +73,12 @@ inline QWORD ConfirmationID::Residue::__umul128(QWORD multiplier, QWORD multipli
 #error Unknown architecture detected - please edit confid.cpp to tailor __umul128() your architecture
 #endif
 
+/**
+ *
+ * @param lo
+ * @param hi
+ * @return
+ */
 QWORD ConfirmationID::Residue::ui128_quotient_mod(QWORD lo, QWORD hi)
 {
     // hi:lo * ceil(2**170/MOD) >> (64 + 64 + 42)
@@ -88,6 +101,12 @@ QWORD ConfirmationID::Residue::ui128_quotient_mod(QWORD lo, QWORD hi)
     return (prod3lo >> 42) | (prod3hi << 22);
 }
 
+/**
+ *
+ * @param x
+ * @param y
+ * @return
+ */
 QWORD ConfirmationID::Residue::mul(QWORD x, QWORD y)
 {
     // * ceil(2**170/MOD) = 0x2d351 c6d04f8b|604fa6a1 c6346a87 for (p-1)*(p-1) max
@@ -96,6 +115,12 @@ QWORD ConfirmationID::Residue::mul(QWORD x, QWORD y)
     return lo - quotient * parent->MOD;
 }
 
+/**
+ *
+ * @param x
+ * @param y
+ * @return
+ */
 QWORD ConfirmationID::Residue::pow(QWORD x, QWORD y)
 {
     if (y == 0)
@@ -123,6 +148,12 @@ QWORD ConfirmationID::Residue::pow(QWORD x, QWORD y)
     return res;
 }
 
+/**
+ *
+ * @param x
+ * @param y
+ * @return
+ */
 QWORD ConfirmationID::Residue::add(QWORD x, QWORD y)
 {
     QWORD z = x + y;
@@ -134,6 +165,12 @@ QWORD ConfirmationID::Residue::add(QWORD x, QWORD y)
     return z;
 }
 
+/**
+ *
+ * @param x
+ * @param y
+ * @return
+ */
 QWORD ConfirmationID::Residue::sub(QWORD x, QWORD y)
 {
     QWORD z = x - y;
@@ -145,6 +182,12 @@ QWORD ConfirmationID::Residue::sub(QWORD x, QWORD y)
     return z;
 }
 
+/**
+ *
+ * @param u
+ * @param v
+ * @return
+ */
 QWORD ConfirmationID::Residue::inverse(QWORD u, QWORD v)
 {
     // assert(u);
@@ -166,12 +209,22 @@ QWORD ConfirmationID::Residue::inverse(QWORD u, QWORD v)
     return xu;
 }
 
+/**
+ *
+ * @param x
+ * @return
+ */
 QWORD ConfirmationID::Residue::inv(QWORD x)
 {
     return inverse(x, parent->MOD);
     // return residue_pow(x, MOD - 2);
 }
 
+/**
+ *
+ * @param what
+ * @return
+ */
 QWORD ConfirmationID::Residue::sqrt(QWORD what)
 {
     if (!what)

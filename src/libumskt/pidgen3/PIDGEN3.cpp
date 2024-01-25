@@ -21,6 +21,8 @@
  */
 
 #include "PIDGEN3.h"
+#include "BINK1998.h"
+#include "BINK2002.h"
 
 /**
  * https://xkcd.com/221/
@@ -118,49 +120,40 @@ BOOL PIDGEN3::LoadEllipticCurve(const std::string pSel, const std::string aSel, 
     return true;
 }
 
-/**
- * Convert data between endianness types.
- *
- * @param data   [in]
- * @param length [in]
- **/
-inline void PIDGEN3::endian(BYTE *data, int length)
+BOOL PIDGEN3::Generate(std::string &pKey)
 {
-    for (int i = 0; i < length / 2; i++)
+    BOOL retval;
+
+    if (checkFieldIsBink1998())
     {
-        BYTE temp = data[i];
-        data[i] = data[length - i - 1];
-        data[length - i - 1] = temp;
+        auto p3 = BINK1998();
+        retval = p3.Generate(pKey);
     }
+    else
+    {
+        auto p3 = BINK2002();
+        retval = p3.Generate(pKey);
+    }
+
+    return retval;
 }
 
-/**
- * Converts an OpenSSL BigNumber to it's Little Endian binary equivalent
- *
- * @param a     [in] BigNumber to convert
- * @param to    [out] char* binary representation
- * @param tolen [in] length of the char* array
- *
- * @return length of number in to
- **/
-int PIDGEN3::BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen)
+BOOL PIDGEN3::Validate(std::string &pKey)
 {
-    if (a == nullptr || to == nullptr)
+    BOOL retval;
+
+    if (checkFieldIsBink1998())
     {
-        return 0;
+        auto p3 = BINK1998(this);
+        retval = p3.Validate(pKey);
+    }
+    else
+    {
+        auto p3 = BINK2002(this);
+        retval = p3.Validate(pKey);
     }
 
-    int len = BN_bn2bin(a, to);
-
-    if (len > tolen)
-    {
-        return -1;
-    }
-
-    // Choke point inside BN_bn2lebinpad: OpenSSL uses len instead of tolen.
-    endian(to, tolen);
-
-    return len;
+    return retval;
 }
 
 /**
@@ -185,7 +178,7 @@ void PIDGEN3::base24(std::string &cdKey, BYTE *byteSeq)
         ; // do nothing, just counting
     }
 
-    endian(rbyteSeq, ++length);
+    UMSKT::endian(rbyteSeq, ++length);
 
     // Convert reversed byte sequence to BigNum z.
     z = BN_bin2bn(rbyteSeq, length, nullptr);
@@ -213,8 +206,6 @@ void PIDGEN3::unbase24(BYTE *byteSeq, std::string cdKey)
 {
     BYTE pDecodedKey[PK_LENGTH + NULL_TERMINATOR]{};
     BIGNUM *y = BN_new();
-
-    BN_zero(y);
 
     // Remove dashes from the CD-key and put it into a Base24 byte array.
     for (int i = 0, k = 0; i < cdKey.length() && k < PK_LENGTH; i++)
@@ -247,17 +238,40 @@ void PIDGEN3::unbase24(BYTE *byteSeq, std::string cdKey)
     BN_free(y);
 
     // Reverse the byte sequence.
-    endian(byteSeq, n);
+    UMSKT::endian(byteSeq, n);
 }
 
-BOOL PIDGEN3::getIsBINK1998()
+BOOL PIDGEN3::checkFieldIsBink1998()
 {
-    BIGNUM *max = BN_new();
-    BN_hex2bn(&max, MAX_BINK1998);
+    auto *max = BN_new();
 
+    // 1 << 385 (or max size of BINK1998 field in bits + 1)
+    BN_set_bit(max, (12 * 4 * 8) + 1);
+
+    // retval is -1 when (max < privateKey)
     int retval = BN_cmp(max, privateKey);
 
     BN_free(max);
 
-    return retval == true;
+    // is max > privateKey?
+    return retval == 1;
+}
+
+BOOL PIDGEN3::checkFieldStrIsBink1998(std::string keyin)
+{
+    auto *context = BN_CTX_new();
+    auto max = BN_CTX_get(context), input = BN_CTX_get(context);
+
+    BN_dec2bn(&input, &keyin[0]);
+
+    // 1 << 385 (or max size of BINK1998 field in bits + 1)
+    BN_set_bit(max, (12 * 4 * 8) + 1);
+
+    // retval is -1 when (max < privateKey)
+    int retval = BN_cmp(max, input);
+
+    BN_CTX_free(context);
+
+    // is max > privateKey?
+    return retval == 1;
 }

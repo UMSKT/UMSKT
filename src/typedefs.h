@@ -23,8 +23,19 @@
 #ifndef UMSKT_TYPEDEFS_H
 #define UMSKT_TYPEDEFS_H
 
+#if defined(_MSC_VER)
+
+#define WIN32_LEAN_AND_MEAN
+#include <intrin.h>
+#include <windows.h>
+
+#endif // defined(WIN32)
+
+#include <algorithm>
 #include <cstdbool>
 #include <cstdint>
+#include <map>
+#include <vector>
 
 #ifdef DEBUG
 #include <cassert>
@@ -32,53 +43,76 @@
 #define assert(x) /* do nothing */
 #endif
 
-#ifdef _MSC_VER
-#define EXPORT extern "C" __declspec(dllexport)
-#define INLINE __forceinline
+#if defined(_MSC_VER)
+#define FNEXPORT __declspec(dllexport)
+#define FNIMPORT __declspec(dllimport)
+#define FNINLINE __forceinline
 #elif defined(__GNUC__)
-#define EXPORT extern "C" __attribute__((visibility("default")))
-#define INLINE __attribute__((always_inline))
+#define FNEXPORT __attribute__((visibility("default")))
+#define FNIMPORT __attribute__((visibility("default")))
+#define FNINLINE inline __attribute__((__always_inline__))
+#elif defined(__CLANG__)
+#if __has_attribute(__always_inline__)
+#define forceinline inline __attribute__((__always_inline__))
 #else
-#define EXPORT extern "C"
-#define INLINE
+#define forceinline inline
+#endif // __has_attribute(__always_inline__)
+#else
+#define FNEXPORT
+#define FNINLINE
 #warning "function inlining not handled"
-#endif
+#endif // defined(_MSC_VER)
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
-#define FNEXPORT EMSCRIPTEN_KEEPALIVE EXPORT
+#define EXPORT EMSCRIPTEN_KEEPALIVE FNEXPORT
+#define INLINE FNINLINE
 #else
-#define FNEXPORT EXPORT
-#endif
+#ifdef UMSKT_IMPORT_LIB
+#define EXPORT FNIMPORT
+#else
+#define EXPORT FNEXPORT
+#endif // ifdef UMSKT_IMPORT_LIB
+#define INLINE FNINLINE
+#endif // ifdef  __EMSCRIPTEN__
 
+// POSIX <-> Windows compatability layer, because MS just *had* to be different
 #ifdef _MSC_VER
-#ifndef strncasecmp
-#define strncasecmp _strnicmp
+#ifndef _sscanf
+#define _sscanf sscanf_s
 #endif
-#ifndef strcasecmp
-#define strcasecmp _stricmp
+#ifndef _strncpy
+#define _strncpy strncpy_s
 #endif
-#ifndef strcmp
-#define strcmp strcmp_s
+#ifndef _strcpy
+#define _strcpy strcpy_s
 #endif
-#ifndef sscanf
-#define sscanf sscanf_s
-#endif
+#else
+#define _sscanf sscanf
+#define _strncpy(x, y, z, w) strncpy(x, z, w)
+#define _strcpy strcpy
+#endif // ifdef _MSC_VER
+
+// Type definitions now with more windows compatability (unfortunately)
+using BOOL = int32_t;
+using BYTE = uint8_t;
+using WORD = uint16_t;
+using DWORD = unsigned long;
+using QWORD = uint64_t;
+
+#if defined(_M_ARM) // for Windows on ARM ??
+using __m128 = __n128;
 #endif
 
-// Type definitions
-typedef bool BOOL;
-typedef uint8_t BYTE;
-typedef uint16_t WORD;
-typedef uint32_t DWORD;
-typedef uint64_t QWORD;
-
-#ifdef __SIZEOF_INT128__
-typedef unsigned __int128 OWORD;
+#if defined(__SIZEOF_INT128__) || defined(__int128)
+using uint128_t = unsigned __int128;
+#else // use the intel-supplied __m128 intrisic
+using uint128_t = __m128;
 #endif
+using OWORD = uint128_t;
 
 typedef union {
-    // OWORD oword;
+    OWORD oword;
     QWORD qword[2];
     DWORD dword[4];
     WORD word[8];

@@ -25,13 +25,30 @@
 
 #include "PIDGEN3.h"
 
-class BINK1998 : public PIDGEN3
+class EXPORT BINK1998 : public PIDGEN3
 {
   public:
-    BOOL Unpack(KeyInfo &info, QWORD *pRaw) override;
-    BOOL Pack(const KeyInfo &info, QWORD *pRaw) override;
-    BOOL Verify(std::string &pKey) override;
-    BOOL Generate(KeyInfo &info, std::string &pKey) override;
+    using PIDGEN3::PIDGEN3;
+    explicit BINK1998(PIDGEN3 *p3)
+    {
+        privateKey = p3->privateKey;
+        genOrder = p3->genOrder;
+        genPoint = p3->genPoint;
+        pubPoint = p3->pubPoint;
+        eCurve = p3->eCurve;
+    }
+
+    using PIDGEN3::Pack;
+    BOOL Pack(QWORD *pRaw) override;
+
+    using PIDGEN3::Unpack;
+    BOOL Unpack(QWORD *pRaw) override;
+
+    using PIDGEN3::Generate;
+    BOOL Generate(std::string &pKey) override;
+
+    using PIDGEN3::Validate;
+    BOOL Validate(std::string &pKey) override;
 };
 
 #endif // UMSKT_BINK1998_H

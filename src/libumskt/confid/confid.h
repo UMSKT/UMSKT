@@ -45,7 +45,7 @@ typedef struct
     QWORD v[2];
 } TDivisor;
 
-class ConfirmationID
+class EXPORT ConfirmationID
 {
     QWORD MOD = 0, NON_RESIDUE = 0;
     QWORD curve[6] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
@@ -130,13 +130,19 @@ class ConfirmationID
         privateKey.qword[0] = privateKey.qword[1] = 0x00;
     }
 
+    BOOL LoadHyperellipticCurve(const std::string &x0, const std::string &x1, const std::string &x2,
+                                const std::string &x3, const std::string &x4, const std::string &x5,
+                                const std::string &priv, const std::string &modulous, const std::string &nonresidue,
+                                BOOL isOffice, BOOL isXPBrand, BYTE flagVersion);
+
     BOOL LoadHyperellipticCurve(QWORD x0, QWORD x1, QWORD x2, QWORD x3, QWORD x4, QWORD x5, Q_OWORD priv,
                                 QWORD modulous, QWORD nonresidue, BOOL isOffice, BOOL isXPBrand, BYTE flagVersion);
 
     BOOL LoadHyperellipticCurve(QWORD *f, Q_OWORD priv, QWORD modulous, QWORD nonresidue, BOOL isOffice, BOOL isXPBrand,
                                 BYTE flagVersion);
 
-    DWORD Generate(const std::string &installation_id_str, std::string &confirmation_id, std::string &productid);
+    CONFIRMATION_ID_STATUS Generate(const std::string &installation_id_str, std::string &confirmation_id,
+                                    std::string &productid);
 
     ~ConfirmationID()
     {

@@ -25,7 +25,7 @@
 
 #include "../libumskt.h"
 
-class PIDGEN2
+class EXPORT PIDGEN2
 {
     DWORD year;
     DWORD day;

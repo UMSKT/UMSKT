@@ -37,6 +37,11 @@ std::FILE *UMSKT::debug = std::fopen("/dev/null", "w");
 BOOL UMSKT::VERBOSE = false;
 BOOL UMSKT::DEBUG = false;
 
+/**
+ * sets the filestream used for debugging
+ *
+ * @param input std::FILE
+ */
 void UMSKT::setDebugOutput(std::FILE *input)
 {
     debug = input;
