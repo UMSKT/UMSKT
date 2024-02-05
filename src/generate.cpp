@@ -46,39 +46,56 @@ BOOL CLI::PIDGEN2Validate(PIDGEN2 &pidgen2)
  *
  * @return success
  */
-BOOL CLI::BINK1998Generate(PIDGEN3 &pidgen3)
+BOOL CLI::PIDGEN3Generate(PIDGEN3 *p3)
 {
     // raw PID/serial value
-    DWORD nRaw = options.channelID * 1'000'000;
-    DWORD serialRnd;
+    DWORD32 nRaw = options.channelID * 1'000'000;
+    DWORD32 serialRnd;
 
-    if (options.serialSet)
+    if (p3->checkFieldIsBink1998())
     {
-        // using user-provided serial
-        serialRnd = options.serial;
+        if (options.serialSet)
+        {
+            // using user-provided serial
+            serialRnd = options.serial;
+        }
+        else
+        {
+            // generate a random number to use as a serial
+            serialRnd = UMSKT::getRandom<DWORD32>();
+        }
+
+        // make sure it's less than 999999
+        nRaw += (serialRnd % 999999);
+
+        if (options.verbose)
+        {
+            // print the resulting Product ID
+            // PID value is printed in BINK1998::Generate
+            printID(&nRaw);
+        }
     }
-    else
+
+    for (DWORD32 i = 0; i < total; i++)
     {
-        // generate a random number to use as a serial
-        serialRnd = UMSKT::getRandom<DWORD>();
-    }
+        if (!p3->checkFieldIsBink1998())
+        {
+            auto authvalue = UMSKT::getRandom<DWORD32>() & BITMASK(10);
+            p3->info.AuthInfo.Decode((BYTE *)&authvalue, sizeof(DWORD32));
 
-    // make sure it's less than 999999
-    nRaw += (serialRnd % 999999);
+            if (options.verbose)
+            {
+                fmt::print("> AuthInfo: {:#08x}\n", p3->info.AuthInfo);
+            }
+        }
+        else
+        {
+            p3->info.setSerial(nRaw);
+        }
 
-    if (options.verbose)
-    {
-        // print the resulting Product ID
-        // PID value is printed in BINK1998::Generate
-        printID(&nRaw);
-    }
+        p3->Generate(pKey);
 
-    for (int i = 0; i < total; i++)
-    {
-        pidgen3.info.setSerial(nRaw);
-        pidgen3.Generate(pKey);
-
-        bool isValid = pidgen3.Validate(pKey);
+        bool isValid = p3->Validate(pKey);
         if (isValid)
         {
             printKey(pKey);
@@ -115,7 +132,7 @@ BOOL CLI::BINK1998Generate(PIDGEN3 &pidgen3)
  *
  * @return success
  */
-BOOL CLI::BINK1998Validate(PIDGEN3 &bink1998)
+BOOL CLI::PIDGEN3Validate(PIDGEN3 *p3)
 {
     std::string product_key;
 
@@ -127,84 +144,7 @@ BOOL CLI::BINK1998Validate(PIDGEN3 &bink1998)
 
     CLI::printKey(product_key);
     fmt::print("\n");
-    if (!bink1998.Validate(product_key))
-    {
-        fmt::print("ERROR: Product key is invalid! Wrong BINK ID?\n");
-        return false;
-    }
-
-    fmt::print("Key validated successfully!\n");
-    return true;
-}
-
-/**
- *
- * @return success
- */
-BOOL CLI::BINK2002Generate(PIDGEN3 &pidgen3)
-{
-    // generate a key
-    for (int i = 0; i < total; i++)
-    {
-        pidgen3.info.AuthInfo = UMSKT::getRandom<DWORD>() & BITMASK(10);
-
-        if (options.verbose)
-        {
-            fmt::print("> AuthInfo: {:#08x}\n", pidgen3.info.AuthInfo);
-        }
-
-        pidgen3.Generate(pKey);
-
-        bool isValid = pidgen3.Validate(pKey);
-        if (isValid)
-        {
-            CLI::printKey(pKey);
-            if (i <= total - 1 || options.verbose)
-            { // check if end of list or verbose
-                fmt::print("\n");
-            }
-            count += isValid; // add to count
-        }
-        else
-        {
-            if (options.verbose)
-            {
-                CLI::printKey(pKey);      // print the key
-                fmt::print(" [Invalid]"); // and add " [Invalid]" to the key
-                if (i <= total - 1)
-                { // check if end of list
-                    fmt::print("\n");
-                }
-            }
-            total++; // queue a redo, basically
-        }
-    }
-
-    if (options.verbose)
-    {
-        fmt::print("\nSuccess count: {}/{}\n", count, total);
-    }
-
-    return true;
-}
-
-/**
- *
- * @return success
- */
-BOOL CLI::BINK2002Validate(PIDGEN3 &pidgen3)
-{
-    std::string product_key;
-
-    if (!CLI::stripKey(options.keyToCheck, product_key))
-    {
-        fmt::print("ERROR: Product key is in an incorrect format!\n");
-        return false;
-    }
-
-    CLI::printKey(product_key);
-    fmt::print("\n");
-    if (!pidgen3.Validate(product_key))
+    if (!p3->Validate(product_key))
     {
         fmt::print("ERROR: Product key is invalid! Wrong BINK ID?\n");
         return false;
@@ -228,7 +168,7 @@ BOOL CLI::ConfirmationIDGenerate()
         return false;
     }
 
-    DWORD err = confid.Generate(options.installationID, confirmation_id, options.productID);
+    DWORD32 err = confid.Generate(options.installationID, confirmation_id, options.productID);
 
     if (err == SUCCESS)
     {

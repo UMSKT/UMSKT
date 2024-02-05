@@ -41,8 +41,7 @@ enum CONFIRMATION_ID_STATUS
 
 typedef struct
 {
-    QWORD u[2];
-    QWORD v[2];
+    Q_OWORD u, v;
 } TDivisor;
 
 class EXPORT ConfirmationID
@@ -55,8 +54,8 @@ class EXPORT ConfirmationID
     BOOL isOffice = false, isXPBrand = false;
     unsigned flagVersion = 0;
 
-    DWORD calculateCheckDigit(DWORD pid);
-    void decode_iid_new_version(BYTE *iid, BYTE *hwid, DWORD *version);
+    DWORD32 calculateCheckDigit(DWORD32 pid);
+    void decode_iid_new_version(BYTE *iid, BYTE *hwid, DWORD32 *version);
     void Mix(BYTE *buffer, BYTE bufSize, const BYTE *key, BYTE keySize);
     void Unmix(BYTE *buffer, BYTE bufSize, const BYTE *key, BYTE keySize);
 
@@ -127,26 +126,31 @@ class EXPORT ConfirmationID
         residue = new Residue(this);
         polynomial = new Polynomial(this);
         divisor = new Divisor(this);
-        privateKey.qword[0] = privateKey.qword[1] = 0x00;
     }
+
+    BOOL LoadHyperellipticCurve(const std::string *f, const std::string &priv, const std::string &modulus,
+                                const std::string &nonresidue, const std::string &iidkey, BOOL isOffice, BOOL isXPBrand,
+                                BYTE flagVersion);
 
     BOOL LoadHyperellipticCurve(const std::string &x0, const std::string &x1, const std::string &x2,
                                 const std::string &x3, const std::string &x4, const std::string &x5,
-                                const std::string &priv, const std::string &modulous, const std::string &nonresidue,
-                                BOOL isOffice, BOOL isXPBrand, BYTE flagVersion);
+                                const std::string &priv, const std::string &modulus, const std::string &nonresidue,
+                                const std::string &iidkey, BOOL isOffice, BOOL isXPBrand, BYTE flagVersion);
 
-    BOOL LoadHyperellipticCurve(QWORD x0, QWORD x1, QWORD x2, QWORD x3, QWORD x4, QWORD x5, Q_OWORD priv,
-                                QWORD modulous, QWORD nonresidue, BOOL isOffice, BOOL isXPBrand, BYTE flagVersion);
+    BOOL LoadHyperellipticCurve(QWORD x0, QWORD x1, QWORD x2, QWORD x3, QWORD x4, QWORD x5, Q_OWORD priv, QWORD modulus,
+                                QWORD nonresidue, DWORD32 iidkey, BOOL isOffice, BOOL isXPBrand, BYTE flagVersion);
 
-    BOOL LoadHyperellipticCurve(QWORD *f, Q_OWORD priv, QWORD modulous, QWORD nonresidue, BOOL isOffice, BOOL isXPBrand,
-                                BYTE flagVersion);
+    BOOL LoadHyperellipticCurve(QWORD *f, Q_OWORD priv, QWORD modulus, QWORD nonresidue, DWORD32 iidkey, BOOL isOffice,
+                                BOOL isXPBrand, BYTE flagVersion);
 
     CONFIRMATION_ID_STATUS Generate(const std::string &installation_id_str, std::string &confirmation_id,
                                     std::string &productid);
 
     ~ConfirmationID()
     {
-        delete residue, polynomial, divisor;
+        delete residue;
+        delete polynomial;
+        delete divisor;
     }
 };
 

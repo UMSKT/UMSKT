@@ -39,7 +39,7 @@ int ConfirmationID::ConfirmationID::Divisor::find_divisor_v(TDivisor *d)
         f2[i] = parent->curve[i];
     }
 
-    const QWORD u0 = d->u[0], u1 = d->u[1];
+    const QWORD u0 = d->u.qword[0], u1 = d->u.qword[1];
     for (BYTE j = 4; j--;)
     {
         f2[j] = parent->residue->sub(f2[j], parent->residue->mul(u0, f2[j + 2]));
@@ -106,8 +106,8 @@ int ConfirmationID::ConfirmationID::Divisor::find_divisor_v(TDivisor *d)
 
     QWORD v0 = parent->residue->mul(parent->residue->add(f1, parent->residue->mul(u1, parent->residue->mul(v1, v1))),
                                     parent->residue->inv(parent->residue->add(v1, v1)));
-    d->v[0] = v0;
-    d->v[1] = v1;
+    d->v.qword[0] = v0;
+    d->v.qword[1] = v1;
 
     return 1;
 }
@@ -121,24 +121,24 @@ int ConfirmationID::ConfirmationID::Divisor::find_divisor_v(TDivisor *d)
  */
 int ConfirmationID::ConfirmationID::Divisor::u2poly(const TDivisor *src, QWORD polyu[3], QWORD polyv[2])
 {
-    if (src->u[1] != BAD)
+    if (src->u.qword[1] != BAD)
     {
-        polyu[0] = src->u[0];
-        polyu[1] = src->u[1];
+        polyu[0] = src->u.qword[0];
+        polyu[1] = src->u.qword[1];
         polyu[2] = 1;
 
-        polyv[0] = src->v[0];
-        polyv[1] = src->v[1];
+        polyv[0] = src->v.qword[0];
+        polyv[1] = src->v.qword[1];
 
         return 2;
     }
 
-    if (src->u[0] != BAD)
+    if (src->u.qword[0] != BAD)
     {
-        polyu[0] = src->u[0];
+        polyu[0] = src->u.qword[0];
         polyu[1] = 1;
 
-        polyv[0] = src->v[0];
+        polyv[0] = src->v.qword[0];
         polyv[1] = 0;
 
         return 1;
@@ -237,7 +237,7 @@ void ConfirmationID::Divisor::add(const TDivisor *src1, const TDivisor *src2, TD
         }
     }
 
-    vdeg = parent->polynomial->div_monic(vdeg, v, udeg, u, NULL);
+    vdeg = parent->polynomial->div_monic(vdeg, v, udeg, u, nullptr);
 
     while (udeg > 2)
     {
@@ -279,30 +279,30 @@ void ConfirmationID::Divisor::add(const TDivisor *src1, const TDivisor *src2, TD
             v[i] = parent->residue->sub(0, v[i]);
         }
 
-        vdeg = parent->polynomial->div_monic(vdeg, v, udeg, u, NULL);
+        vdeg = parent->polynomial->div_monic(vdeg, v, udeg, u, nullptr);
     }
 
     if (udeg == 2)
     {
-        dst->u[0] = u[0];
-        dst->u[1] = u[1];
-        dst->v[0] = (vdeg >= 0 ? v[0] : 0);
-        dst->v[1] = (vdeg >= 1 ? v[1] : 0);
+        dst->u.qword[0] = u[0];
+        dst->u.qword[1] = u[1];
+        dst->v.qword[0] = (vdeg >= 0 ? v[0] : 0);
+        dst->v.qword[1] = (vdeg >= 1 ? v[1] : 0);
     }
     else if (udeg == 1)
     {
-        dst->u[0] = u[0];
-        dst->u[1] = BAD;
-        dst->v[0] = (vdeg >= 0 ? v[0] : 0);
-        dst->v[1] = BAD;
+        dst->u.qword[0] = u[0];
+        dst->u.qword[1] = BAD;
+        dst->v.qword[0] = (vdeg >= 0 ? v[0] : 0);
+        dst->v.qword[1] = BAD;
     }
     else
     {
         assert(udeg == 0);
-        dst->u[0] = BAD;
-        dst->u[1] = BAD;
-        dst->v[0] = BAD;
-        dst->v[1] = BAD;
+        dst->u.qword[0] = BAD;
+        dst->u.qword[1] = BAD;
+        dst->v.qword[0] = BAD;
+        dst->v.qword[1] = BAD;
     }
 }
 
@@ -318,10 +318,10 @@ void ConfirmationID::Divisor::mul(const TDivisor *src, QWORD mult, TDivisor *dst
 {
     if (mult == 0)
     {
-        dst->u[0] = BAD;
-        dst->u[1] = BAD;
-        dst->v[0] = BAD;
-        dst->v[1] = BAD;
+        dst->u.qword[0] = BAD;
+        dst->u.qword[1] = BAD;
+        dst->v.qword[0] = BAD;
+        dst->v.qword[1] = BAD;
         return;
     }
 
@@ -354,10 +354,10 @@ void ConfirmationID::Divisor::mul128(const TDivisor *src, QWORD mult_lo, QWORD m
 {
     if (mult_lo == 0 && mult_hi == 0)
     {
-        dst->u[0] = BAD;
-        dst->u[1] = BAD;
-        dst->v[0] = BAD;
-        dst->v[1] = BAD;
+        dst->u.qword[0] = BAD;
+        dst->u.qword[1] = BAD;
+        dst->v.qword[0] = BAD;
+        dst->v.qword[1] = BAD;
         return;
     }
 

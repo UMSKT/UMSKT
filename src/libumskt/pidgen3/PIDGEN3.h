@@ -34,14 +34,12 @@ class EXPORT PIDGEN3
     friend class BINK2002;
 
   protected:
-    BIGNUM *privateKey, *genOrder;
-    EC_POINT *genPoint, *pubPoint;
-    EC_GROUP *eCurve;
+    Integer privateKey, genOrder;
+    ECP::Point genPoint, pubPoint;
+    ECP eCurve;
 
   public:
-    PIDGEN3()
-    {
-    }
+    PIDGEN3() = default;
 
     PIDGEN3(PIDGEN3 &p3)
     {
@@ -54,43 +52,38 @@ class EXPORT PIDGEN3
 
     virtual ~PIDGEN3()
     {
-        EC_GROUP_free(eCurve);
-        EC_POINT_free(genPoint);
-        EC_POINT_free(pubPoint);
-        BN_free(genOrder);
-        BN_free(privateKey);
     }
 
     struct KeyInfo
     {
-        DWORD Serial = 0, AuthInfo = 0, ChannelID = 0, Hash = 0;
-        QWORD Signature = 0;
+        Integer Serial = 0, AuthInfo = 0, ChannelID = 0, Hash = 0, Signature = 0;
         BOOL isUpgrade = false;
 
-        void setSerial(DWORD serialIn)
+        void setSerial(DWORD32 serialIn)
         {
-            Serial = serialIn;
+            Serial.Decode((BYTE *)&serialIn, sizeof(serialIn));
         }
 
-        void setAuthInfo(DWORD AuthInfoIn)
+        void setAuthInfo(DWORD32 AuthInfoIn)
         {
-            AuthInfo = AuthInfoIn;
+            AuthInfo.Decode((BYTE *)&AuthInfoIn, sizeof(AuthInfoIn));
         }
 
-        void setChannelID(DWORD ChannelIDIn)
+        void setChannelID(DWORD32 ChannelIDIn)
         {
-            ChannelID = ChannelIDIn;
+            ChannelID.Decode((BYTE *)&ChannelIDIn, sizeof(ChannelIDIn));
         }
     } info;
 
     static constexpr char pKeyCharset[] = "BCDFGHJKMPQRTVWXY2346789";
+    static const Integer MaxSizeBINK1998;
 
     BOOL LoadEllipticCurve(std::string pSel, std::string aSel, std::string bSel, std::string generatorXSel,
                            std::string generatorYSel, std::string publicKeyXSel, std::string publicKeyYSel,
                            std::string genOrderSel, std::string privateKeySel);
 
-    virtual BOOL Pack(QWORD *pRaw) = 0;
-    virtual BOOL Unpack(QWORD *pRaw) = 0;
+    virtual BOOL Pack(Q_OWORD *pRaw) = 0;
+    virtual BOOL Unpack(Q_OWORD *pRaw) = 0;
     virtual BOOL Generate(std::string &pKey);
     virtual BOOL Validate(std::string &pKey);
 
@@ -99,6 +92,7 @@ class EXPORT PIDGEN3
     void unbase24(BYTE *byteSeq, std::string cdKey);
     BOOL checkFieldIsBink1998();
     static BOOL checkFieldStrIsBink1998(std::string keyin);
+    static PIDGEN3 *Factory(const std::string &field);
 };
 
 #endif // UMSKT_PIDGEN3_H

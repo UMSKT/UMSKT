@@ -463,17 +463,56 @@
           "BINK": [
             "2C",
             "2D"
-          ]
+          ],
+          "DPC": {
+            "2C": [
+              {
+                "min": 5,
+                "max": 85,
+                "isEvaluation": false
+              },
+              {
+                "min": 337,
+                "max": 359,
+                "isEvaluation": false
+              },
+              {
+                "min": 755,
+                "max": 779,
+                "isEvaluation": false
+              },
+              {
+                "min": 785,
+                "max": 789,
+                "isEvaluation": false
+              }
+            ],
+            "2D": [
+              {
+                "min": 119,
+                "max": 119,
+                "isEvaluation": false
+              },
+              {
+                "min": 120,
+                "max": 169,
+                "isEvaluation": false
+              },
+              {
+                "min": 400,
+                "max": 699,
+                "isEvaluation": false
+              },
+              {
+                "min": 170,
+                "max": 269,
+                "isEvaluation": false
+              }
+            ]
+          }
         },
-        "PROK": {
-          "name": "Professional K",
-          "BINK": [
-            "30",
-            "31"
-          ]
-        },
-        "PROVLK": {
-          "name": "Professional VLK",
+        "VLK": {
+          "name": "Home/Professional VLK",
           "BINK": [
             "2E",
             "2F"
@@ -483,16 +522,6 @@
               {
                 "min": 640,
                 "max": 699,
-                "isEvaluation": false
-              },
-              {
-                "min": 700,
-                "max": 701,
-                "isEvaluation": false
-              },
-              {
-                "min": 704,
-                "max": 705,
                 "isEvaluation": false
               }
             ]
@@ -673,6 +702,20 @@
               }
             ]
           }
+        },
+        "CNOEMHOME": {
+          "name": "[CN] OEM Home",
+          "BINK": [
+            "30",
+            "31"
+          ]
+        },
+        "CNOEMPRO": {
+          "name": "[CN] OEM Professional",
+          "BINK": [
+            "32",
+            "33"
+          ]
         }
       }
     },

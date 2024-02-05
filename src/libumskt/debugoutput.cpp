@@ -22,17 +22,7 @@
 
 #include "libumskt.h"
 
-#ifdef _WIN32
-// this seems janky but it works, and doesn't use storage that would otherwise get clobbered
-std::FILE *getFileStreamToNul()
-{
-    fopen_s(&UMSKT::debug, "nul", "w");
-    return UMSKT::debug;
-}
-std::FILE *UMSKT::debug = getFileStreamToNul();
-#else
-std::FILE *UMSKT::debug = std::fopen("/dev/null", "w");
-#endif
+std::FILE *UMSKT::debug;
 
 BOOL UMSKT::VERBOSE = false;
 BOOL UMSKT::DEBUG = false;

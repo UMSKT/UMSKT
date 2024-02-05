@@ -199,10 +199,10 @@ int PIDGEN2::GenerateOEM(char *year, char *day, char *oem, char *&keyout)
     if (!isValidDay(day))
     {
         auto iday = UMSKT::getRandom<int>();
-        iday = (iday + 1) % 365;
+        iday = (iday + NULL_TERMINATOR) % 365;
     }
 
-    _strncpy(keyout, 32, &fmt::format("{}{}-OEM-{}-{}", year, day, oem, oem).c_str()[0], 32);
+    _strncpy(keyout, 32, fmt::format("{}{}-OEM-{}-{}", year, day, oem, oem).c_str(), 32);
 
     return 0;
 }

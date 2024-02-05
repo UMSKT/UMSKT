@@ -38,7 +38,7 @@
  * @param x4
  * @param x5
  * @param priv
- * @param modulous
+ * @param modulus
  * @param nonresidue
  * @param isOffice
  * @param isXPBrand
@@ -46,58 +46,74 @@
  * @return
  */
 BOOL ConfirmationID::LoadHyperellipticCurve(QWORD x0, QWORD x1, QWORD x2, QWORD x3, QWORD x4, QWORD x5, Q_OWORD priv,
-                                            QWORD modulous, QWORD nonresidue, BOOL isOffice, BOOL isXPBrand,
-                                            BYTE flagVersion)
+                                            QWORD modulus, QWORD nonresidue, DWORD32 iidkey, BOOL isOffice,
+                                            BOOL isXPBrand, BYTE flagVersion)
 {
-    curve[0] = x0;
-    curve[1] = x1;
-    curve[2] = x2;
-    curve[3] = x3;
-    curve[4] = x4;
-    curve[5] = x5;
+    QWORD fvals[6] = {x0, x1, x2, x3, x4, x5};
 
-    memcpy(&privateKey, &priv, sizeof(Q_OWORD));
-
-    MOD = modulous;
-    NON_RESIDUE = nonresidue;
-    this->isOffice = isOffice;
-    this->isXPBrand = isXPBrand;
-    this->flagVersion = flagVersion;
-
-    return true;
+    return LoadHyperellipticCurve(fvals, priv, modulus, nonresidue, iidkey, isOffice, isXPBrand, flagVersion);
 }
 
 /**
  *
  * @param f
  * @param priv
- * @param modulous
+ * @param modulus
  * @param nonresidue
  * @param isOffice
  * @param isXPBrand
  * @param flagVersion
  * @return
  */
-BOOL ConfirmationID::LoadHyperellipticCurve(QWORD *f, Q_OWORD priv, QWORD modulous, QWORD nonresidue, BOOL isOffice,
-                                            BOOL isXPBrand, BYTE flagVersion)
+BOOL ConfirmationID::LoadHyperellipticCurve(QWORD *f, Q_OWORD priv, QWORD modulus, QWORD nonresidue, DWORD32 iidkey,
+                                            BOOL isOffice, BOOL isXPBrand, BYTE flagVersion)
 {
     memcpy(&curve, f, sizeof(curve));
     memcpy(&privateKey, &priv, sizeof(Q_OWORD));
 
-    MOD = modulous;
+    MOD = modulus;
     NON_RESIDUE = nonresidue;
     this->isOffice = isOffice;
     this->isXPBrand = isXPBrand;
     this->flagVersion = flagVersion;
-
     return true;
 }
 
-BOOL LoadHyperellipticCurve(const std::string &x0, const std::string &x1, const std::string &x2, const std::string &x3,
-                            const std::string &x4, const std::string &x5, const std::string &priv,
-                            const std::string &modulous, const std::string &nonresidue, BOOL isOffice, BOOL isXPBrand,
-                            BYTE flagVersion)
+BOOL ConfirmationID::LoadHyperellipticCurve(const std::string &x0, const std::string &x1, const std::string &x2,
+                                            const std::string &x3, const std::string &x4, const std::string &x5,
+                                            const std::string &priv, const std::string &modulus,
+                                            const std::string &nonresidue, const std::string &iidkey, BOOL isOffice,
+                                            BOOL isXPBrand, BYTE flagVersion)
 {
+    std::string f[6];
+    f[0] = x0;
+    f[1] = x1;
+    f[2] = x2;
+    f[3] = x3;
+    f[4] = x4;
+    f[5] = x5;
+
+    return LoadHyperellipticCurve(f, priv, modulus, nonresidue, iidkey, isOffice, isXPBrand, flagVersion);
+}
+
+BOOL ConfirmationID::LoadHyperellipticCurve(const std::string *f, const std::string &priv, const std::string &modulus,
+                                            const std::string &nonresidue, const std::string &iidkey, BOOL isOffice,
+                                            BOOL isXPBrand, BYTE flagVersion)
+{
+    for (int i = 0; i < 6; i++)
+    {
+        Integer(&f[i][0]).Encode((BYTE *)curve[i], sizeof(QWORD));
+    }
+
+    Integer(&priv[0]).Encode(privateKey.byte, sizeof(Q_OWORD));
+
+    Integer(&modulus[0]).Encode((BYTE *)&MOD, sizeof(QWORD));
+
+    Integer(&nonresidue[0]).Encode((BYTE *)NON_RESIDUE, sizeof(QWORD));
+
+    this->isOffice = isOffice;
+    this->isXPBrand = isXPBrand;
+    this->flagVersion = flagVersion;
 
     return true;
 }
@@ -107,9 +123,9 @@ BOOL LoadHyperellipticCurve(const std::string &x0, const std::string &x1, const 
  * @param pid
  * @return
  */
-DWORD ConfirmationID::calculateCheckDigit(DWORD pid)
+DWORD32 ConfirmationID::calculateCheckDigit(DWORD32 pid)
 {
-    DWORD i = 0, j = 0, k = 0;
+    DWORD32 i = 0, j = 0, k = 0;
     for (j = pid; j; i += k)
     {
         k = j % 10;
@@ -125,7 +141,7 @@ DWORD ConfirmationID::calculateCheckDigit(DWORD pid)
  * @param hwid
  * @param version
  */
-void ConfirmationID::decode_iid_new_version(BYTE *iid, BYTE *hwid, DWORD *version)
+void ConfirmationID::decode_iid_new_version(BYTE *iid, BYTE *hwid, DWORD32 *version)
 {
     QWORD buffer[5];
     for (BYTE i = 0; i < 5; i++)
@@ -133,8 +149,8 @@ void ConfirmationID::decode_iid_new_version(BYTE *iid, BYTE *hwid, DWORD *versio
         memcpy(&buffer[i], (iid + (4 * i)), 4);
     }
 
-    DWORD v1 = (buffer[3] & 0xFFFFFFF8) | 2;
-    DWORD v2 = ((buffer[3] & 7) << 29) | (buffer[2] >> 3);
+    DWORD32 v1 = (buffer[3] & 0xFFFFFFF8) | 2;
+    DWORD32 v2 = ((buffer[3] & 7) << 29) | (buffer[2] >> 3);
     QWORD hardwareIDVal = ((QWORD)v1 << 32) | v2;
     for (BYTE i = 0; i < 8; ++i)
     {
@@ -153,8 +169,9 @@ void ConfirmationID::decode_iid_new_version(BYTE *iid, BYTE *hwid, DWORD *versio
  */
 void ConfirmationID::Mix(BYTE *buffer, BYTE bufSize, const BYTE *key, BYTE keySize)
 {
-    BYTE sha1_input[64], sha1_result[20];
+    BYTE sha1_input[64], sha1_result[SHA::DIGESTSIZE];
     BYTE half = bufSize / 2;
+    auto digest = SHA();
 
     // assert(half <= sizeof(sha1_result) && half + keySize <= sizeof(sha1_input) - 9);
     for (BYTE external_counter = 0; external_counter < 4; external_counter++)
@@ -181,7 +198,8 @@ void ConfirmationID::Mix(BYTE *buffer, BYTE bufSize, const BYTE *key, BYTE keySi
             sha1_input[sizeof(sha1_input) - 2] = (1 + half + keySize) * 8 / 0x100;
         }
 
-        SHA1(sha1_input, sizeof(sha1_input), sha1_result);
+        digest.Update(sha1_input, sizeof(sha1_input));
+        digest.Final(sha1_result);
 
         for (BYTE i = half & ~3; i < half; i++)
         {
@@ -206,8 +224,9 @@ void ConfirmationID::Mix(BYTE *buffer, BYTE bufSize, const BYTE *key, BYTE keySi
  */
 void ConfirmationID::Unmix(BYTE *buffer, BYTE bufSize, const BYTE key[4], BYTE keySize)
 {
-    BYTE sha1_input[64], sha1_result[20];
+    BYTE sha1_input[64], sha1_result[SHA::DIGESTSIZE];
     BYTE half = bufSize / 2;
+    auto digest = SHA();
     // assert(half <= sizeof(sha1_result) && half + keySize <= sizeof(sha1_input) - 9);
 
     for (BYTE external_counter = 0; external_counter < 4; external_counter++)
@@ -232,7 +251,8 @@ void ConfirmationID::Unmix(BYTE *buffer, BYTE bufSize, const BYTE key[4], BYTE k
             sha1_input[sizeof(sha1_input) - 2] = (1 + half + keySize) * 8 / 0x100;
         }
 
-        SHA1(sha1_input, sizeof(sha1_input), sha1_result);
+        digest.Update(sha1_input, sizeof(sha1_input));
+        digest.Final(sha1_result);
 
         for (BYTE i = half & ~3; i < half; i++)
         {
@@ -258,13 +278,13 @@ void ConfirmationID::Unmix(BYTE *buffer, BYTE bufSize, const BYTE key[4], BYTE k
 CONFIRMATION_ID_STATUS ConfirmationID::Generate(const std::string &installationIDIn, std::string &confirmationIDOut,
                                                 std::string &productIDIn)
 {
-    DWORD version;
+    DWORD32 version;
     BYTE hardwareID[8];
     BYTE installation_id[19]; // 10**45 < 256**19
     BYTE productID[4];
 
     BYTE installation_id_len = 0;
-    auto pid = installationIDIn.c_str();
+    auto pid = &installationIDIn[0];
 
     BYTE count = 0, totalCount = 0;
     unsigned check = 0;
@@ -441,8 +461,8 @@ CONFIRMATION_ID_STATUS ConfirmationID::Generate(const std::string &installationI
         QWORD x1 = ulowhi.qword[0] - x2 * MOD;
         x2++;
 
-        d.u[0] = residue->sub(residue->mul(x1, x1), residue->mul(NON_RESIDUE, residue->mul(x2, x2)));
-        d.u[1] = residue->add(x1, x1);
+        d.u.qword[0] = residue->sub(residue->mul(x1, x1), residue->mul(NON_RESIDUE, residue->mul(x2, x2)));
+        d.u.qword[1] = residue->add(x1, x1);
         if (divisor->find_divisor_v(&d))
         {
             break;
@@ -462,23 +482,23 @@ CONFIRMATION_ID_STATUS ConfirmationID::Generate(const std::string &installationI
     Q_OWORD e;
     memset(&e, 0, sizeof(e));
 
-    if (d.u[0] == BAD)
+    if (d.u.qword[0] == BAD)
     {
         // we can not get the zero divisor, actually...
         e.qword[0] = residue->__umul128(MOD + 2, MOD, &e.qword[1]);
     }
-    else if (d.u[1] == BAD)
+    else if (d.u.qword[1] == BAD)
     {
         // O(1/MOD) chance
         // encoded = (unsigned __int128)(MOD + 1) * d.u[0] + MOD; // * MOD + d.u[0] is fine too
-        e.qword[0] = residue->__umul128(MOD + 1, d.u[0], &e.qword[1]);
+        e.qword[0] = residue->__umul128(MOD + 1, d.u.qword[0], &e.qword[1]);
         e.qword[0] += MOD;
         e.qword[1] += (e.qword[0] < MOD);
     }
     else
     {
-        QWORD x1 = (d.u[1] % 2 ? d.u[1] + MOD : d.u[1]) / 2;
-        QWORD x2sqr = residue->sub(residue->mul(x1, x1), d.u[0]);
+        QWORD x1 = (d.u.qword[1] % 2 ? d.u.qword[1] + MOD : d.u.qword[1]) / 2;
+        QWORD x2sqr = residue->sub(residue->mul(x1, x1), d.u.qword[0]);
         QWORD x2 = residue->sqrt(x2sqr);
 
         if (x2 == BAD)
@@ -493,9 +513,9 @@ CONFIRMATION_ID_STATUS ConfirmationID::Generate(const std::string &installationI
         {
             // points (-x1+x2, v(-x1+x2)) and (-x1-x2, v(-x1-x2))
             QWORD x1a = residue->sub(x1, x2);
-            QWORD y1 = residue->sub(d.v[0], residue->mul(d.v[1], x1a));
+            QWORD y1 = residue->sub(d.v.qword[0], residue->mul(d.v.qword[1], x1a));
             QWORD x2a = residue->add(x1, x2);
-            QWORD y2 = residue->sub(d.v[0], residue->mul(d.v[1], x2a));
+            QWORD y2 = residue->sub(d.v.qword[0], residue->mul(d.v.qword[1], x2a));
             if (x1a > x2a)
             {
                 QWORD tmp = x1a;

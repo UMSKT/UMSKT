@@ -98,9 +98,10 @@ using BOOL = int32_t;
 using BYTE = uint8_t;
 using WORD = uint16_t;
 using DWORD = unsigned long;
+using DWORD32 = uint32_t;
 using QWORD = uint64_t;
 
-#if defined(_M_ARM) // for Windows on ARM ??
+#if defined(_MSC_VER) && defined(_M_ARM) // for Windows on ARM ??
 using __m128 = __n128;
 #endif
 
@@ -114,7 +115,7 @@ using OWORD = uint128_t;
 typedef union {
     OWORD oword;
     QWORD qword[2];
-    DWORD dword[4];
+    DWORD32 dword32[4];
     WORD word[8];
     BYTE byte[16];
 } Q_OWORD;

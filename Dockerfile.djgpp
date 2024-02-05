@@ -84,21 +84,8 @@ RUN git clone https://github.com/gvanem/Watt-32.git watt32 \
     && make -f djgpp.mak \
     && ln -s /djgpp/watt32/lib/libwatt.a /djgpp/lib
 
-# Stage 4: compile OpenSSL for djgpp-i386/watt32
-FROM watt32 as openssl
-WORKDIR /tmp
-SHELL ["/bin/bash", "-c"]
-RUN git clone https://github.com/openssl/openssl.git openssl \
-    && cd openssl \
-    && git checkout openssl-3.1.1 \
-    && source /djgpp/setenv \
-    && wget https://gist.github.com/Neo-Desktop/ad26e888d64b22a59c743ab4e21ac186/raw/c9a73e1eb75ba8857883ac5c08691d2fe5b82594/50-djgpp.conf.patch -O Configurations/50-djgpp.conf.patch \
-    && git apply Configurations/50-djgpp.conf.patch \
-    && ./Configure no-threads -DOPENSSL_DEV_NO_ATOMICS --prefix=/djgpp DJGPP \
-    && make && make install
-
 # Stage 5: compile UMSKT
-FROM openssl as build
+FROM watt32 as build
 
 WORKDIR /src
 COPY . /src

@@ -40,14 +40,15 @@ COPY . /src
 
 # Build UMSKT from the local directory
 RUN mkdir /src/build \
-  && cd /src/build \
-  && cmake -DMUSL_STATIC=ON .. \
-  && make
+  && cmake -B /src/build -DMUSL_STATIC=ON \
+  && cmake --build /src/build -j 10
 
 # Stage 3: Output
 FROM scratch as output
 
 COPY --from=builder /src/build/umskt /umskt
+COPY --from=builder /src/build/libumskt.a /umskt
+COPY --from=builder /src/build/libumskt.so /umskt
 
 # invoke via
 # docker build -o type=tar,dest=umskt.tar .

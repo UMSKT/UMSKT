@@ -29,6 +29,7 @@ class EXPORT BINK1998 : public PIDGEN3
 {
   public:
     using PIDGEN3::PIDGEN3;
+    BINK1998() = default;
     explicit BINK1998(PIDGEN3 *p3)
     {
         privateKey = p3->privateKey;
@@ -38,11 +39,15 @@ class EXPORT BINK1998 : public PIDGEN3
         eCurve = p3->eCurve;
     }
 
+    static constexpr DWORD32 FieldBits = 384;
+    static constexpr DWORD32 FieldBytes = FieldBits / 8;
+    static constexpr DWORD32 SHAMessageLength = (4 + 2 * FieldBytes);
+
     using PIDGEN3::Pack;
-    BOOL Pack(QWORD *pRaw) override;
+    BOOL Pack(Q_OWORD *pRaw) override;
 
     using PIDGEN3::Unpack;
-    BOOL Unpack(QWORD *pRaw) override;
+    BOOL Unpack(Q_OWORD *pRaw) override;
 
     using PIDGEN3::Generate;
     BOOL Generate(std::string &pKey) override;

@@ -23,6 +23,7 @@
 #ifndef UMSKT_CLI_H
 #define UMSKT_CLI_H
 
+#include "libumskt/libumskt.h"
 #include "typedefs.h"
 
 #include <filesystem>
@@ -96,9 +97,9 @@ struct Options
     std::string productCode;
     std::string productFlavour;
 
-    DWORD channelID;
-    DWORD serial;
-    DWORD numKeys;
+    DWORD32 channelID;
+    DWORD32 serial;
+    DWORD32 numKeys;
 
     BOOL oem;
     BOOL upgrade;
@@ -128,7 +129,7 @@ struct Options
 class CLI
 {
     std::string pKey;
-    DWORD count, total, iBinkID;
+    DWORD32 count, total, iBinkID;
 
     static Options options;
 
@@ -168,23 +169,21 @@ class CLI
 
     static BOOL parseCommandLine();
     static BOOL processOptions();
-    static void printID(DWORD *pid);
+    static void printID(DWORD32 *pid);
     static void printKey(std::string &pk);
     static BOOL stripKey(const std::string &in_key, std::string &out_key);
     static std::string validateInputKeyCharset(std::string &accumulator, char currentChar);
 
-    BOOL InitPIDGEN3(PIDGEN3 &pidgen3);
+    BOOL InitPIDGEN3(PIDGEN3 *p3);
     BOOL InitConfirmationID(ConfirmationID &confid);
 
-    BOOL PIDGENGenerate();
-    BOOL PIDGENValidate();
+    BOOL PIDGenerate();
+    BOOL PIDValidate();
 
-    BOOL PIDGEN2Generate(PIDGEN2 &pidgen2);
-    BOOL PIDGEN2Validate(PIDGEN2 &pidgen2);
-    BOOL BINK1998Generate(PIDGEN3 &pidgen3);
-    BOOL BINK1998Validate(PIDGEN3 &pidgen3);
-    BOOL BINK2002Generate(PIDGEN3 &pidgen3);
-    BOOL BINK2002Validate(PIDGEN3 &pidgen3);
+    BOOL PIDGEN2Generate(PIDGEN2 &p2);
+    BOOL PIDGEN2Validate(PIDGEN2 &p2);
+    BOOL PIDGEN3Generate(PIDGEN3 *p3);
+    BOOL PIDGEN3Validate(PIDGEN3 *p3);
     BOOL ConfirmationIDGenerate();
 
     INLINE static std::string strtolower(std::string &in)

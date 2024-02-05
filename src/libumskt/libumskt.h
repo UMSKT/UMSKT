@@ -29,26 +29,60 @@
 #include <sstream>
 #include <string>
 
-#include <openssl/bn.h>
-#include <openssl/ec.h>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
-#include <openssl/sha.h>
+#include <cryptopp/cryptlib.h>
+#include <cryptopp/ecp.h>
+#include <cryptopp/filters.h>
+#include <cryptopp/hex.h>
+#include <cryptopp/integer.h>
+#include <cryptopp/nbtheory.h>
+#include <cryptopp/osrng.h>
+#include <cryptopp/randpool.h>
+#include <cryptopp/rng.h>
+#include <cryptopp/sha.h>
+
+using Integer = CryptoPP::Integer;
+using ECP = CryptoPP::ECP;
+using SHA = CryptoPP::SHA1;
 
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <fmt/ostream.h>
+
+class HexInteger : public Integer
+{
+};
+
+// fmt <-> CryptoPP linkage
+template <> struct fmt::formatter<HexInteger> : fmt::formatter<std::string_view>
+{
+    auto format(const HexInteger &i, format_context &ctx) const
+    {
+        size_t size = i.MinEncodedSize();
+        CryptoPP::SecByteBlock encoded;
+        encoded.resize(size);
+        i.Encode(encoded, size);
+
+        std::string hexString;
+
+        CryptoPP::HexEncoder encoder(new CryptoPP::StringSink(hexString), false);
+        encoder.Put(encoded, size);
+        encoder.MessageEnd();
+
+        return fmt::formatter<std::string_view>::format(hexString, ctx);
+    }
+};
+
+template <> struct fmt::formatter<Integer> : ostream_formatter
+{
+    auto format(const Integer &i, format_context &ctx) const
+    {
+        return basic_ostream_formatter<char>::format(i, ctx);
+    }
+};
 
 // Algorithm macros
 #define PK_LENGTH 25
 #define NULL_TERMINATOR 1
-
-#define FIELD_BITS 384
-#define FIELD_BYTES 48
-#define FIELD_BITS_2003 512
-#define FIELD_BYTES_2003 64
-
-#define SHA_MSG_LENGTH_XP (4 + 2 * FIELD_BYTES)
-#define SHA_MSG_LENGTH_2003 (3 + 2 * FIELD_BYTES_2003)
 
 #define NEXTSNBITS(field, n, offset) (((QWORD)(field) >> (offset)) & ((1ULL << (n)) - 1))
 #define FIRSTNBITS(field, n) NEXTSNBITS((field), (n), 0)
@@ -56,7 +90,7 @@
 #define HIBYTES(field, bytes) NEXTSNBITS((QWORD)(field), ((bytes) * 8), ((bytes) * 8))
 #define LOBYTES(field, bytes) FIRSTNBITS((QWORD)(field), ((bytes) * 8))
 
-#define BYDWORD(n) (DWORD)(*((n) + 0) | *((n) + 1) << 8 | *((n) + 2) << 16 | *((n) + 3) << 24)
+#define BYDWORD(n) (DWORD32)(*((n) + 0) | *((n) + 1) << 8 | *((n) + 2) << 16 | *((n) + 3) << 24)
 #define BITMASK(n) ((1ULL << (n)) - 1)
 
 #ifndef LIBUMSKT_VERSION_STRING
@@ -79,7 +113,7 @@ struct UMSKT_Value
     union {
         BOOL boolean;
         WORD word;
-        DWORD dword;
+        DWORD32 dword;
         QWORD qword;
         OWORD oword;
         char *chars;
@@ -107,10 +141,7 @@ class EXPORT UMSKT
     static BOOL VERBOSE;
     static BOOL DEBUG;
     static std::map<UMSKT_TAG, UMSKT_Value> tags;
-
-    // Hello OpenSSL developers, please tell me, where is this function at?
-    static int BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen);
-    static void endian(BYTE *data, int length);
+    static CryptoPP::DefaultAutoSeededRNG rng;
 
     static void DESTRUCT()
     {
@@ -126,7 +157,7 @@ class EXPORT UMSKT
     template <typename T> static T getRandom()
     {
         T retval;
-        RAND_bytes((BYTE *)&retval, sizeof(retval));
+        rng.GenerateBlock((BYTE *)&retval, sizeof(retval));
         return retval;
     }
 

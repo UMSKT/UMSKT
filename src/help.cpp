@@ -89,7 +89,7 @@ void CLI::SetHelpText()
  */
 BOOL CLI::parseCommandLine()
 {
-    for (DWORD i = 1; i < options.argc; i++)
+    for (DWORD32 i = 1; i < options.argc; i++)
     {
         std::string arg = options.argv[i];
 
@@ -436,7 +436,7 @@ BOOL CLI::SetOEMOption(int, char *)
 {
     if (options.verbose)
     {
-        fmt::print("Setting oem option\n");
+        fmt::print("Setting OEM option\n");
     }
     options.oem = true;
     return true;
@@ -523,12 +523,13 @@ BOOL CLI::SetBINKOption(int count, char *bink)
 
 BOOL CLI::SetFlavourOption(int count, char *flavour)
 {
+    auto strflavour = std::string(flavour);
+    options.productFlavour = strtoupper(strflavour);
+
     if (options.verbose)
     {
-        fmt::print("Setting flavour option to {}\n", flavour);
+        fmt::print("Setting flavour option to {}\n", strflavour);
     }
-
-    options.productFlavour = flavour;
     return true;
 }
 
@@ -584,12 +585,12 @@ BOOL CLI::SetValidateOption(int count, char *productID)
 
 BOOL CLI::SetProductCodeOption(int, char *product)
 {
-    if (options.verbose)
-    {
-        fmt::print("Setting product code to {}\n", product);
-    }
-
     auto strProduct = std::string(product);
     options.productCode = strtoupper(strProduct);
+
+    if (options.verbose)
+    {
+        fmt::print("Setting product code to {}\n", strProduct);
+    }
     return true;
 }

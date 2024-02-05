@@ -27,8 +27,8 @@
 
 class EXPORT PIDGEN2
 {
-    DWORD year;
-    DWORD day;
+    DWORD32 year;
+    DWORD32 day;
     BOOL isOEM;
     BOOL isOffice;
 

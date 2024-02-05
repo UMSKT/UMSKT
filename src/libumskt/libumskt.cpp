@@ -28,10 +28,10 @@
 #include "pidgen3/PIDGEN3.h"
 
 std::map<UMSKT_TAG, UMSKT_Value> UMSKT::tags;
+CryptoPP::DefaultAutoSeededRNG UMSKT::rng;
 
 extern "C"
 {
-
     /**
      * Sets debug output to a given C++ File stream
      * if the memory allocated at filestream is "STDOUT" or "STDERR"
@@ -195,7 +195,7 @@ extern "C"
         std::string str;
         BOOL retval = p3->Generate(str);
 
-        assert(pKeySizeIn >= str.length() + 1);
+        assert(pKeySizeIn >= str.length() + NULL_TERMINATOR);
 
         memcpy(pKeyOut, &str[0], str.length());
         pKeyOut[str.length()] = 0;
@@ -245,48 +245,3 @@ extern "C"
     }
 
 } // extern "C"
-
-/**
- * Convert data between endianness types.
- *
- * @param data   [in]
- * @param length [in]
- **/
-void UMSKT::endian(BYTE *data, int length)
-{
-    for (int i = 0; i < length / 2; i++)
-    {
-        BYTE temp = data[i];
-        data[i] = data[length - i - 1];
-        data[length - i - 1] = temp;
-    }
-}
-
-/**
- * Converts an OpenSSL BigNumber to it's Little Endian binary equivalent
- *
- * @param a     [in] BigNumber to convert
- * @param to    [out] char* binary representation
- * @param tolen [in] length of the char* array
- *
- * @return length of number in to
- **/
-int UMSKT::BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen)
-{
-    if (a == nullptr || to == nullptr)
-    {
-        return 0;
-    }
-
-    int len = BN_bn2bin(a, to);
-
-    if (len > tolen)
-    {
-        return -1;
-    }
-
-    // Choke point inside BN_bn2lebinpad: OpenSSL uses len instead of tolen.
-    endian(to, tolen);
-
-    return len;
-}

@@ -129,13 +129,13 @@ BOOL CLI::loadJSON(const fs::path &filename)
  *
  * @param pid
  */
-void CLI::printID(DWORD *pid)
+void CLI::printID(DWORD32 *pid)
 {
     char raw[12], b[6], c[8];
     char i, digit = 0;
 
     // Convert PID to ascii-number (=raw)
-    snprintf(raw, sizeof(raw), "%09lu", pid[0]);
+    snprintf(raw, sizeof(raw), "%09u", pid[0]);
 
     // Make b-part {640-....}
     _strncpy(b, 6, &raw[0], 3);
@@ -160,8 +160,8 @@ void CLI::printID(DWORD *pid)
     c[6] = digit + '0';
     c[7] = 0;
 
-    DWORD binkid;
-    _sscanf(options.binkID.c_str(), "%lx", &binkid);
+    DWORD32 binkid;
+    _sscanf(&options.binkID[0], "%x", &binkid);
     binkid /= 2;
 
     fmt::print("> Product ID: PPPPP-{}-{}-{}xxx\n", b, c, binkid);
@@ -172,7 +172,7 @@ void CLI::printID(DWORD *pid)
  * @param pidgen3
  * @return success
  */
-BOOL CLI::InitPIDGEN3(PIDGEN3 &pidgen3)
+BOOL CLI::InitPIDGEN3(PIDGEN3 *p3)
 {
     const char *BINKID = &options.binkID[0];
     auto bink = keys["BINK"][BINKID];
@@ -192,26 +192,26 @@ BOOL CLI::InitPIDGEN3(PIDGEN3 &pidgen3)
         fmt::print("\n");
     }
 
-    pidgen3.LoadEllipticCurve(bink["p"], bink["a"], bink["b"], bink["g"]["x"], bink["g"]["y"], bink["pub"]["x"],
-                              bink["pub"]["y"], bink["n"], bink["priv"]);
+    p3->LoadEllipticCurve(bink["p"], bink["a"], bink["b"], bink["g"]["x"], bink["g"]["y"], bink["pub"]["x"],
+                          bink["pub"]["y"], bink["n"], bink["priv"]);
 
     if (options.state != STATE_PIDGEN_GENERATE)
     {
         return true;
     }
 
-    pidgen3.info.setChannelID(options.channelID);
+    p3->info.setChannelID(options.channelID);
     if (options.verbose)
     {
-        fmt::print("> Channel ID: {:03d}\n", options.channelID);
+        fmt::print("> Channel ID: {:#03d}\n", options.channelID);
     }
 
     if (options.serialSet)
     {
-        pidgen3.info.setSerial(options.serial);
+        p3->info.setSerial(options.serial);
         if (options.verbose)
         {
-            fmt::print("> Serial {:#09d}\n", options.serial);
+            fmt::print("> Serial {:#06d}\n", options.serial);
         }
     }
 
@@ -225,11 +225,6 @@ BOOL CLI::InitPIDGEN3(PIDGEN3 &pidgen3)
  */
 BOOL CLI::InitConfirmationID(ConfirmationID &confid)
 {
-    auto ctx = BN_CTX_new();
-    BIGNUM *pkey = BN_CTX_get(ctx), *nonresidue = BN_CTX_get(ctx), *modulous = BN_CTX_get(ctx);
-    BIGNUM *fvals[6];
-    QWORD fvalsq[6];
-
     if (!keys["products"][options.productCode].contains("meta") ||
         !keys["products"][options.productCode]["meta"].contains("activation"))
     {
@@ -264,17 +259,10 @@ BOOL CLI::InitConfirmationID(ConfirmationID &confid)
         fmt::print("\n");
     }
 
-    for (BYTE i = 0; i < 6; i++)
-    {
-        fvals[i] = BN_CTX_get(ctx);
-        auto xval = flavour["x"][fmt::format("{}", i)].get<std::string>();
-        BN_dec2bn(&fvals[i], xval.c_str());
-        UMSKT::BN_bn2lebin(fvals[i], (unsigned char *)&fvalsq[i], sizeof(*fvalsq));
-    }
-
-    // confid.LoadHyperellipticCurve(fvals, );
-
-    BN_CTX_free(ctx);
+    confid.LoadHyperellipticCurve(flavour["x"]["0"], flavour["x"]["1"], flavour["x"]["2"], flavour["x"]["3"],
+                                  flavour["x"]["4"], flavour["x"]["5"], flavour["priv"], flavour["quotient"],
+                                  flavour["non_residue"], flavour["iid_key"], meta["tags"].contains("xpbrand"),
+                                  meta["tags"].contains("office"), meta["activation"]["version"]);
     return false;
 }
 
@@ -282,7 +270,7 @@ BOOL CLI::InitConfirmationID(ConfirmationID &confid)
  *
  * @return success
  */
-BOOL CLI::PIDGENGenerate()
+BOOL CLI::PIDGenerate()
 {
     // TODO:
     // if options.pidgen2generate
@@ -295,34 +283,20 @@ BOOL CLI::PIDGENGenerate()
     std::string key;
     bink["p"].get_to(key);
 
-    if (PIDGEN3::checkFieldStrIsBink1998(key))
-    {
-        if (options.verbose)
-        {
-            fmt::print("Detected a BINK1998 key\n");
-        }
+    auto p3 = PIDGEN3::Factory(key);
+    InitPIDGEN3(p3);
 
-        auto bink1998 = BINK1998();
-        InitPIDGEN3(bink1998);
-        return BINK1998Generate(bink1998);
-    }
-    else
-    {
-        if (options.verbose)
-        {
-            fmt::print("Detected a BINK2002 key\n");
-        }
-        auto bink2002 = BINK2002();
-        InitPIDGEN3(bink2002);
-        return BINK2002Generate(bink2002);
-    }
+    auto retval = PIDGEN3Generate(p3);
+
+    delete p3;
+    return retval;
 }
 
 /**
  *
  * @return isValid
  */
-BOOL CLI::PIDGENValidate()
+BOOL CLI::PIDValidate()
 {
     // TODO:
     // if options.pidgen2validate
@@ -335,26 +309,12 @@ BOOL CLI::PIDGENValidate()
     std::string key;
     bink["p"].get_to(key);
 
-    if (PIDGEN3::checkFieldStrIsBink1998(key))
-    {
-        if (options.verbose)
-        {
-            fmt::print("Detected a BINK1998 key\n");
-        }
-        auto bink1998 = BINK1998();
-        InitPIDGEN3(bink1998);
-        return BINK1998Validate(bink1998);
-    }
-    else
-    {
-        if (options.verbose)
-        {
-            fmt::print("Detected a BINK2002 key\n");
-        }
-        auto bink2002 = BINK2002();
-        InitPIDGEN3(bink2002);
-        return BINK2002Validate(bink2002);
-    }
+    auto p3 = PIDGEN3::Factory(key);
+    InitPIDGEN3(p3);
+    auto retval = PIDGEN3Validate(p3);
+
+    delete p3;
+    return retval;
 }
 
 /**
@@ -371,10 +331,10 @@ int CLI::Run()
     switch (options.state)
     {
     case STATE_PIDGEN_GENERATE:
-        return PIDGENGenerate();
+        return PIDGenerate();
 
     case STATE_PIDGEN_VALIDATE:
-        return PIDGENValidate();
+        return PIDValidate();
 
     case STATE_CONFIRMATION_ID:
         return ConfirmationIDGenerate();

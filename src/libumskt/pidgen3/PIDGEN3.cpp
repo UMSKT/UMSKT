@@ -36,6 +36,24 @@ int getRandomNumber()
 }
 
 /**
+ * Creates an Integer that populates PIDGEN3::MaxSizeBINK1998
+ * Invoked during Runtime startup
+ *
+ * @return
+ */
+Integer MakeMaxSizeBINK1998()
+{
+    Integer max;
+
+    // 1 << 385 (or max size of BINK1998 field in bits + 1)
+    max.SetBit((12 * 4 * 8) + 1);
+
+    return max;
+}
+
+const Integer PIDGEN3::MaxSizeBINK1998 = MakeMaxSizeBINK1998();
+
+/**
  * Initializes the elliptic curve
  *
  * @param pSel          [in] prime
@@ -65,59 +83,47 @@ BOOL PIDGEN3::LoadEllipticCurve(const std::string pSel, const std::string aSel, 
     // BIGNUM - Large numbers
     // BIGNUMCTX - Context large numbers (temporary)
 
-    // Context variable
-    BN_CTX *context = BN_CTX_new();
-
     // We're presented with an elliptic curve, a multivariable function y(x; p; a; b), where
     // y^2 % p = x^3 + ax + b % p.
-    BIGNUM *a = BN_CTX_get(context), *b = BN_CTX_get(context), *p = BN_CTX_get(context);
+    auto p = Integer(&pSel[0]), a = Integer(&aSel[0]), b = Integer(&bSel[0]),
 
-    // Public key will consist of the resulting (x; y) values.
-    BIGNUM *publicKeyX = BN_CTX_get(context), *publicKeyY = BN_CTX_get(context);
+         // Public key will consist of the resulting (x; y) values.
+        generatorX = Integer(&generatorXSel[0]), generatorY = Integer(&generatorYSel[0]),
 
-    // G(x; y) is a generator function, its return value represents a point on the elliptic curve.
-    BIGNUM *generatorX = BN_CTX_get(context), *generatorY = BN_CTX_get(context);
-
-    genOrder = BN_new();
-    privateKey = BN_new();
-
-    /* Public data */
-    BN_dec2bn(&p, &pSel[0]);
-    BN_dec2bn(&a, &aSel[0]);
-    BN_dec2bn(&b, &bSel[0]);
-    BN_dec2bn(&generatorX, &generatorXSel[0]);
-    BN_dec2bn(&generatorY, &generatorYSel[0]);
-
-    BN_dec2bn(&publicKeyX, &publicKeyXSel[0]);
-    BN_dec2bn(&publicKeyY, &publicKeyYSel[0]);
+         // G(x; y) is a generator function, its return value represents a point on the elliptic curve.
+        publicKeyX = Integer(&publicKeyXSel[0]), publicKeyY = Integer(&publicKeyYSel[0]);
 
     /* Computed Data */
-    BN_dec2bn(&genOrder, &genOrderSel[0]);
-    BN_dec2bn(&privateKey, &privateKeySel[0]);
+    genOrder = Integer(&genOrderSel[0]);
+    privateKey = Integer(&privateKeySel[0]);
 
     /* Elliptic Curve calculations. */
     // The group is defined via Fp = all integers [0; p - 1], where p is prime.
     // The function EC_POINT_set_affine_coordinates() sets the x and y coordinates for the point p defined over the
     // curve given in group.
-    eCurve = EC_GROUP_new_curve_GFp(p, a, b, context);
+    eCurve = ECP(p, a, b);
 
-    // Create new point for the generator on the elliptic curve and set its coordinates to (genX; genY).
-    genPoint = EC_POINT_new(eCurve);
-    EC_POINT_set_affine_coordinates(eCurve, genPoint, generatorX, generatorY, context);
+    // Create new point N for the generator on the elliptic curve and set its coordinates to (genX; genY).
+    genPoint = ECP::Point(generatorX, generatorY);
 
-    // Create new point for the public key on the elliptic curve and set its coordinates to (pubX; pubY).
-    pubPoint = EC_POINT_new(eCurve);
-    EC_POINT_set_affine_coordinates(eCurve, pubPoint, publicKeyX, publicKeyY, context);
+    // Create new point Q for the public key on the elliptic curve and set its coordinates to (pubX; pubY).
+    pubPoint = ECP::Point(publicKeyX, publicKeyY);
 
     // If generator and public key points are not on the elliptic curve, either the generator or the public key values
     // are incorrect.
-    assert(EC_POINT_is_on_curve(eCurve, genPoint, context) == true);
-    assert(EC_POINT_is_on_curve(eCurve, pubPoint, context) == true);
-
-    // Cleanup
-    BN_CTX_free(context);
+    assert(eCurve.VerifyPoint(genPoint) == true);
+    assert(eCurve.VerifyPoint(pubPoint) == true);
 
     return true;
+}
+
+PIDGEN3 *PIDGEN3::Factory(const std::string &field)
+{
+    if (checkFieldStrIsBink1998(field))
+    {
+        return new BINK1998();
+    }
+    return new BINK2002();
 }
 
 BOOL PIDGEN3::Generate(std::string &pKey)
@@ -165,7 +171,6 @@ BOOL PIDGEN3::Validate(std::string &pKey)
 void PIDGEN3::base24(std::string &cdKey, BYTE *byteSeq)
 {
     BYTE rbyteSeq[16], output[26];
-    BIGNUM *z;
 
     // Copy byte sequence to the reversed byte sequence.
     memcpy(rbyteSeq, byteSeq, sizeof(rbyteSeq));
@@ -178,22 +183,18 @@ void PIDGEN3::base24(std::string &cdKey, BYTE *byteSeq)
         ; // do nothing, just counting
     }
 
-    UMSKT::endian(rbyteSeq, ++length);
-
     // Convert reversed byte sequence to BigNum z.
-    z = BN_bin2bn(rbyteSeq, length, nullptr);
+    auto z = Integer((BYTE *)&rbyteSeq, sizeof(rbyteSeq));
 
     // Divide z by 24 and convert the remainder to a CD-key char.
     for (int i = 24; i >= 0; i--)
     {
-        output[i] = pKeyCharset[BN_div_word(z, 24)];
+        output[i] = pKeyCharset[z.Modulo(24)];
     }
 
     output[25] = 0;
 
     cdKey = (char *)output;
-
-    BN_free(z);
 }
 
 /**
@@ -205,7 +206,7 @@ void PIDGEN3::base24(std::string &cdKey, BYTE *byteSeq)
 void PIDGEN3::unbase24(BYTE *byteSeq, std::string cdKey)
 {
     BYTE pDecodedKey[PK_LENGTH + NULL_TERMINATOR]{};
-    BIGNUM *y = BN_new();
+    Integer y;
 
     // Remove dashes from the CD-key and put it into a Base24 byte array.
     for (int i = 0, k = 0; i < cdKey.length() && k < PK_LENGTH; i++)
@@ -226,52 +227,40 @@ void PIDGEN3::unbase24(BYTE *byteSeq, std::string cdKey)
     // Calculate the weighed sum of byte array elements.
     for (int i = 0; i < PK_LENGTH; i++)
     {
-        BN_mul_word(y, PK_LENGTH - 1);
-        BN_add_word(y, pDecodedKey[i]);
+        y *= PK_LENGTH - 1;
+        y += pDecodedKey[i];
     }
 
     // Acquire length.
-    int n = BN_num_bytes(y);
+    auto n = y.ByteCount();
 
     // Place the generated code into the byte sequence.
-    BN_bn2bin(y, byteSeq);
-    BN_free(y);
-
-    // Reverse the byte sequence.
-    UMSKT::endian(byteSeq, n);
+    y.Encode(byteSeq, 16);
 }
 
+/**
+ * Checks to see if the currently instantiated PIDGEN3 object has a
+ * field size greater than the maximum known BINK1998 size.
+ *
+ * @return
+ */
 BOOL PIDGEN3::checkFieldIsBink1998()
 {
-    auto *max = BN_new();
-
-    // 1 << 385 (or max size of BINK1998 field in bits + 1)
-    BN_set_bit(max, (12 * 4 * 8) + 1);
-
-    // retval is -1 when (max < privateKey)
-    int retval = BN_cmp(max, privateKey);
-
-    BN_free(max);
-
     // is max > privateKey?
-    return retval == 1;
+    return (MaxSizeBINK1998 > privateKey);
 }
 
+/**
+ * Checks if a given field, in a std::string, is greater than
+ * the maximum known BINK1998 size
+ *
+ * @param keyin
+ * @return
+ */
 BOOL PIDGEN3::checkFieldStrIsBink1998(std::string keyin)
 {
-    auto *context = BN_CTX_new();
-    auto max = BN_CTX_get(context), input = BN_CTX_get(context);
+    Integer check(&keyin[0]);
 
-    BN_dec2bn(&input, &keyin[0]);
-
-    // 1 << 385 (or max size of BINK1998 field in bits + 1)
-    BN_set_bit(max, (12 * 4 * 8) + 1);
-
-    // retval is -1 when (max < privateKey)
-    int retval = BN_cmp(max, input);
-
-    BN_CTX_free(context);
-
-    // is max > privateKey?
-    return retval == 1;
+    // is max > check?
+    return (MaxSizeBINK1998 > check);
 }
