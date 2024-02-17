@@ -23,28 +23,37 @@
 #ifndef UMSKT_PIDGEN2_H
 #define UMSKT_PIDGEN2_H
 
-#include "../libumskt.h"
+#include "../pidgen.h"
 
-class EXPORT PIDGEN2
+class EXPORT PIDGEN2 : public PIDGEN
 {
-    DWORD32 year;
-    DWORD32 day;
-    BOOL isOEM;
-    BOOL isOffice;
+    static const std::vector<std::string> channelIDDisallowList;
+    static const std::vector<std::string> validYears;
 
-    static constexpr char channelIDBlacklist[7][4] = {"333", "444", "555", "666", "777", "888", "999"};
-    static constexpr char validYears[8][3] = {"95", "96", "97", "98", "99", "00", "01", "02"};
+    enum KeySize
+    {
+        FPP = 10,
+        Office = 11,
+        OEM = 17
+    };
 
   public:
-    BOOL isNumericString(char *input);
-    BOOL isValidChannelID(char *channelID);
-    BOOL isValidOEMID(char *OEMID);
-    BOOL isValidYear(char *year);
-    BOOL isValidDay(char *day);
-    BOOL isValidRetailProductID(char *productID);
-    int addDigits(char *input);
-    int GenerateRetail(char *channelID, char *&keyout);
-    int GenerateOEM(char *year, char *day, char *oem, char *&keyout);
+    struct KeyInfo
+    {
+        BOOL isOEM, isOffice;
+        Integer Day, Year, OEMID, ChannelID, Serial;
+    } info;
+
+    BOOL Generate(std::string &pKey) override;
+    BOOL Validate(const std::string &pKey) override;
+    std::string StringifyKey(const std::string &pKey) override;
+    std::string StringifyProductID() override;
+
+    BOOL isValidSerial();
+    BOOL isValidOEMID();
+    [[nodiscard]] BOOL isValidChannelID() const;
+    [[nodiscard]] BOOL isValidOEMYear() const;
+    [[nodiscard]] BOOL isValidOEMDay() const;
 };
 
 #endif // UMSKT_PIDGEN2_H

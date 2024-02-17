@@ -39,21 +39,21 @@ class EXPORT BINK1998 : public PIDGEN3
         eCurve = p3->eCurve;
     }
 
-    static constexpr DWORD32 FieldBits = 384;
-    static constexpr DWORD32 FieldBytes = FieldBits / 8;
+    static constexpr DWORD32 FieldBits = (48 * 8);
+    static constexpr DWORD32 FieldBytes = (FieldBits / 8);
     static constexpr DWORD32 SHAMessageLength = (4 + 2 * FieldBytes);
 
     using PIDGEN3::Pack;
-    BOOL Pack(Q_OWORD *pRaw) override;
+    Integer Pack(const KeyInfo &ki) override;
 
     using PIDGEN3::Unpack;
-    BOOL Unpack(Q_OWORD *pRaw) override;
+    KeyInfo Unpack(const Integer &raw) override;
 
     using PIDGEN3::Generate;
     BOOL Generate(std::string &pKey) override;
 
     using PIDGEN3::Validate;
-    BOOL Validate(std::string &pKey) override;
+    BOOL Validate(const std::string &pKey) override;
 };
 
 #endif // UMSKT_BINK1998_H

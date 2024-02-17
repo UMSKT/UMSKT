@@ -169,9 +169,9 @@ void ConfirmationID::decode_iid_new_version(BYTE *iid, BYTE *hwid, DWORD32 *vers
  */
 void ConfirmationID::Mix(BYTE *buffer, BYTE bufSize, const BYTE *key, BYTE keySize)
 {
-    BYTE sha1_input[64], sha1_result[SHA::DIGESTSIZE];
+    BYTE sha1_input[64], sha1_result[SHA1::DIGESTSIZE];
     BYTE half = bufSize / 2;
-    auto digest = SHA();
+    auto digest = SHA1();
 
     // assert(half <= sizeof(sha1_result) && half + keySize <= sizeof(sha1_input) - 9);
     for (BYTE external_counter = 0; external_counter < 4; external_counter++)
@@ -224,9 +224,9 @@ void ConfirmationID::Mix(BYTE *buffer, BYTE bufSize, const BYTE *key, BYTE keySi
  */
 void ConfirmationID::Unmix(BYTE *buffer, BYTE bufSize, const BYTE key[4], BYTE keySize)
 {
-    BYTE sha1_input[64], sha1_result[SHA::DIGESTSIZE];
+    BYTE sha1_input[64], sha1_result[SHA1::DIGESTSIZE];
     BYTE half = bufSize / 2;
-    auto digest = SHA();
+    auto digest = SHA1();
     // assert(half <= sizeof(sha1_result) && half + keySize <= sizeof(sha1_input) - 9);
 
     for (BYTE external_counter = 0; external_counter < 4; external_counter++)
@@ -554,7 +554,7 @@ CONFIRMATION_ID_STATUS ConfirmationID::Generate(const std::string &installationI
         decimal[34 - i] = c4;
     }
 
-    assert(e.encoded[0] == 0 && e.encoded[1] == 0 && e.encoded[2] == 0 && e.encoded[3] == 0);
+    assert(e.byte[0] == 0 && e.byte[1] == 0 && e.byte[2] == 0 && e.byte[3] == 0);
 
     char *q = &confirmationIDOut[0];
 

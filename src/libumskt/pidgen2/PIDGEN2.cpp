@@ -22,187 +22,304 @@
 
 #include "PIDGEN2.h"
 
+const std::vector<std::string> PIDGEN2::channelIDDisallowList = {"333", "444", "555", "666", "777", "888", "999"};
+const std::vector<std::string> PIDGEN2::validYears = {"95", "96", "97", "98", "99", "00", "01", "02"};
+
 /**
+ * Generates a PID 2.0 key, output is placed in pKey
  *
- * @param input
- * @return
+ * @param pKey
+ * @return true
  */
-BOOL PIDGEN2::isNumericString(char *input)
+BOOL PIDGEN2::Generate(std::string &pKey)
 {
-    for (int i = 0; i < strlen(input); i++)
+    Integer random;
+    random.Randomize(rng, sizeof(DWORD32) * 8);
+
+    info.ChannelID = random % MaxChannelID;
+    if (!isValidChannelID())
     {
-        if (input[i] < '0' || input[i] > '9')
+        info.ChannelID++;
+        if (info.ChannelID <= Integer::Zero())
         {
-            return false;
+            info.ChannelID = Integer::One();
         }
+        else if (info.ChannelID >= 999)
+        {
+            info.ChannelID = 998;
+        }
+    }
+
+    random.Randomize(rng, sizeof(DWORD32) * 8);
+    info.Serial = random % MaxSerial;
+
+    if (info.isOEM)
+    {
+        info.Day = (random % Integer(365)) + Integer::One();
+        info.Year = IntegerS(validYears[random % validYears.size()]);
+
+        info.OEMID = (info.ChannelID * TEN) + (info.Serial / (MaxSerial / TEN));
+        info.Serial %= (MaxSerial / TEN);
+
+        info.OEMID = (info.OEMID * TEN) + GenerateMod7(info.OEMID);
+
+        DWORD32 day, year, serial, oemid;
+        EncodeN(info.Day, day);
+        EncodeN(info.Year, year);
+        EncodeN(info.Serial, serial);
+        EncodeN(info.OEMID, oemid);
+
+        if (debug)
+        {
+            fmt::print("\n{:03d}{:02d}-OEM-{:07d}-{:05d}\n", day, year, oemid, serial);
+        }
+
+        pKey = fmt::format("{:03d}{:02d}{:07d}{:05d}", day, year, oemid, serial);
+    }
+    else if (info.isOffice)
+    {
+        info.ChannelID = (info.ChannelID * TEN) + ((info.ChannelID % TEN) + 1);
+        info.Serial = (info.Serial * TEN) + GenerateMod7(info.Serial);
+
+        DWORD32 channelid, serial;
+        EncodeN(info.ChannelID, channelid);
+        EncodeN(info.Serial, serial);
+
+        if (debug)
+        {
+            fmt::print("\n{:04d}-{:07d}\n", channelid, serial);
+        }
+
+        pKey = fmt::format("{:04d}{:07d}", channelid, serial);
+    }
+    else
+    {
+        info.Serial = (info.Serial * TEN) + GenerateMod7(info.Serial);
+
+        fmt::print("{}\n", info.Serial);
+
+        DWORD32 channelid, serial;
+        EncodeN(info.ChannelID, channelid);
+        EncodeN(info.Serial, serial);
+
+        if (debug)
+        {
+            fmt::print("\n{:03d}-{:07d}\n", channelid, serial);
+        }
+
+        pKey = fmt::format("{:03d}{:07d}", channelid, serial);
     }
 
     return true;
 }
 
 /**
+ * Valid serial types are:
  *
- * @param input
+ * C = Channel/Site ID (001 - 998)
+ * E = Office Channel ID (+1) Check Digit
+ * N = Serial
+ * K = Mod7 Check Digit
+ *
+ * -- OEM Specific
+ * D = 3 Digit day (001 - 366)
+ * Y = 2 Digit year
+ * O = OEM ID - typically seen as a channel ID + the first digit of the serial + mod7 check digit
+ *
+ * note that the N segment for OEM serials do not have a Mod7 check
+ *
+ * CCC-NNNNNNK
+ * CCCE-NNNNNNK
+ * DDDYY-ZZOOONK-NNNNN
+ * DDDYY-OEM-ZZOOONK-NNNNN
+ *
+ * we can determine what type of key we have
+ * simply by counting the numeric characters
+ *
+ * @param pKey
  * @return
  */
-int PIDGEN2::addDigits(char *input)
+BOOL PIDGEN2::Validate(const std::string &pKey)
 {
-    int output = 0;
+    std::string filtered;
+    std::copy_if(pKey.begin(), pKey.end(), std::back_inserter(filtered), [](char c) { return std::isdigit(c); });
 
-    if (!isNumericString(input))
+    bool bIsValidChannelID, bIsValidSerial, bIsValidOEMDay, bIsValidOEMYear, bIsValidOEMID;
+
+    switch (filtered.length())
     {
-        return -1;
-    }
+    case KeySize::FPP:
+        // standard FPP/CCP has 10 digits
+        info.ChannelID = IntegerS(filtered.substr(0, 3));
+        info.Serial = IntegerS(filtered.substr(3, 7));
 
-    for (int i = 0; i < strlen(input); i++)
-    {
-        output += input[i] - '0';
-    }
+        bIsValidChannelID = isValidChannelID();
+        bIsValidSerial = isValidSerial();
 
-    return output;
+        if (debug)
+        {
+            fmt::print("\n\nisValidChannelID: {} isValidSerial: {}\n", bIsValidChannelID, bIsValidSerial);
+        }
+
+        return bIsValidChannelID && bIsValidSerial;
+
+    case KeySize::Office:
+        // so far only office 97 has been documented using this
+        info.isOffice = true;
+        info.ChannelID = IntegerS(filtered.substr(0, 4));
+        info.Serial = IntegerS(filtered.substr(4, 7));
+
+        bIsValidChannelID = isValidChannelID();
+        bIsValidSerial = isValidSerial();
+
+        if (debug)
+        {
+            fmt::print("\n\nisValidChannelID: {} isValidSerial: {}\n", bIsValidChannelID, bIsValidSerial);
+        }
+
+        return bIsValidChannelID && bIsValidSerial;
+
+    case KeySize::OEM:
+        // all OEM keys follow this pattern
+        info.isOEM = true;
+        info.Day = IntegerS(filtered.substr(0, 3));
+        info.Year = IntegerS(filtered.substr(3, 2));
+        info.OEMID = IntegerS(filtered.substr(5, 7)); // 6 + check digit
+        info.Serial = IntegerS(filtered.substr(12, 5));
+
+        bIsValidOEMDay = isValidOEMDay();
+        bIsValidOEMYear = isValidOEMYear();
+        bIsValidOEMID = isValidOEMID();
+
+        if (debug)
+        {
+            fmt::print("\n\nisValidOEMDay: {} isValidOEMYear: {} isValidOEMID: {}\n", bIsValidOEMDay, bIsValidOEMYear,
+                       bIsValidOEMID);
+        }
+
+        return bIsValidOEMDay && bIsValidOEMYear && bIsValidOEMID;
+
+    default:
+        return false;
+    }
 }
 
 /**
  *
- * @param channelID
+ * @param pKey
  * @return
  */
-BOOL PIDGEN2::isValidChannelID(char *channelID)
+std::string PIDGEN2::StringifyKey(const std::string &pKey)
 {
-    if (strlen(channelID) > 3)
+    switch (pKey.length())
+    {
+    case KeySize::FPP:
+        return fmt::format("{}-{}", pKey.substr(0, 3), pKey.substr(3, 7));
+
+    case KeySize::Office:
+        return fmt::format("{}-{}", pKey.substr(0, 4), pKey.substr(4, 7));
+
+    case KeySize::OEM:
+        return fmt::format("{}-OEM-{}-{}", pKey.substr(0, 5), pKey.substr(5, 7), pKey.substr(12, 5));
+
+    default:
+        return "";
+    }
+}
+
+/**
+ *
+ * @return
+ */
+std::string PIDGEN2::StringifyProductID()
+{
+    if (info.isOEM)
+    {
+        return fmt::format("{:d}{:d}-OEM-{:d}-{:d}", info.Year, info.Day, info.OEMID, info.Serial);
+    }
+
+    return fmt::format("{}-{}", info.ChannelID, info.Serial);
+}
+
+/**
+ * Is the Serial with check digit a valid serial?
+ *
+ * standard Mod7 Check
+ *
+ * @return validity
+ */
+BOOL PIDGEN2::isValidSerial()
+{
+    return isValidMod7(info.Serial);
+}
+
+/**
+ * Is the OEMID a valid?
+ *
+ * @return validity
+ */
+BOOL PIDGEN2::isValidOEMID()
+{
+    if (info.OEMID.IsZero())
     {
         return false;
     }
 
-    for (int i = 0; i <= 6; i++)
+    return isValidMod7(info.OEMID);
+}
+
+/**
+ * Is the Channel ID a valid Channel ID?
+ * also validates Channel ID check digit if applicable
+ *
+ * Known invalid Channel IDs are:
+ * 333, 444, 555, 666, 777, 888, 999
+ *
+ * @return validity
+ */
+BOOL PIDGEN2::isValidChannelID() const
+{
+    // if we're office, do the last digit +1 checksum
+    if (info.isOffice)
     {
-        if (strcmp(channelID, channelIDBlacklist[i]) != 0)
+        Integer CheckDigit = (info.ChannelID % TEN), ChannelID = (info.ChannelID / TEN);
+
+        if (std::find(channelIDDisallowList.begin(), channelIDDisallowList.end(), IntToString(ChannelID)) !=
+            channelIDDisallowList.end())
         {
             return false;
         }
+
+        return (ChannelID % TEN) + 1 == CheckDigit;
     }
 
-    return true;
+    // otherwise just make sure we're not in the disallow list
+    return std::find(channelIDDisallowList.begin(), channelIDDisallowList.end(), IntToString(info.ChannelID)) ==
+           channelIDDisallowList.end();
 }
 
 /**
+ * Is the OEM year in the allow list?
  *
- * @param OEMID
- * @return
+ * Known allowed years are:
+ * 95, 96, 97, 98, 99, 00, 01, 02
+ *
+ * @return validity
  */
-BOOL PIDGEN2::isValidOEMID(char *OEMID)
+BOOL PIDGEN2::isValidOEMYear() const
 {
-    if (!isNumericString(OEMID))
-    {
-        return false;
-    }
-
-    if (strlen(OEMID) > 5)
-    {
-        if (OEMID[0] != '0' || OEMID[1] != '0')
-        {
-            return false;
-        }
-    }
-
-    int mod = addDigits(OEMID);
-
-    return (mod % 21 == 0);
+    auto year = fmt::format("{:02d}", info.Year.ConvertToLong());
+    return std::find(validYears.begin(), validYears.end(), year) != validYears.end();
 }
 
 /**
+ * Is the OEM Day an allowed day?
  *
- * @param year
- * @return
- */
-BOOL PIDGEN2::isValidYear(char *year)
-{
-    for (int i = 0; i <= 7; i++)
-    {
-        if (year == validYears[i])
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-/**
+ * Allowed days are 1 - 366 inclusive
  *
- * @param day
- * @return
+ * @return validity
  */
-BOOL PIDGEN2::isValidDay(char *day)
+BOOL PIDGEN2::isValidOEMDay() const
 {
-    if (!isNumericString(day))
-    {
-        return false;
-    }
-
-    int iDay = std::stoi(day);
-    if (iDay == 0 || iDay >= 365)
-    {
-        return false;
-    }
-    return true;
-}
-
-/**
- *
- * @param productID
- * @return
- */
-BOOL PIDGEN2::isValidRetailProductID(char *productID)
-{
-    return true;
-}
-
-/**
- *
- * @param channelID
- * @param keyout
- * @return
- */
-int PIDGEN2::GenerateRetail(char *channelID, char *&keyout)
-{
-    if (!isValidChannelID(channelID))
-    {
-        return 1;
-    }
-
-    return 0;
-}
-
-/**
- *
- * @param year
- * @param day
- * @param oem
- * @param keyout
- * @return
- */
-int PIDGEN2::GenerateOEM(char *year, char *day, char *oem, char *&keyout)
-{
-    if (!isValidOEMID(oem))
-    {
-        int mod = addDigits(oem);
-        mod += mod % 21;
-
-        snprintf(oem, 8, "%07u", mod);
-    }
-
-    if (!isValidYear(year))
-    {
-        _strncpy(year, 4, validYears[0], 4);
-    }
-
-    if (!isValidDay(day))
-    {
-        auto iday = UMSKT::getRandom<int>();
-        iday = (iday + NULL_TERMINATOR) % 365;
-    }
-
-    _strncpy(keyout, 32, fmt::format("{}{}-OEM-{}-{}", year, day, oem, oem).c_str(), 32);
-
-    return 0;
+    return info.Day >= 0 && info.Day <= 366;
 }

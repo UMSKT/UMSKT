@@ -23,7 +23,7 @@
 #include "cli.h"
 
 // define static storage
-Options CLI::options;
+CLI::Options CLI::options;
 json CLI::keys;
 
 /**
@@ -35,8 +35,14 @@ json CLI::keys;
 BYTE CLI::Init(int argcIn, char **argvIn)
 {
     // set default options
-    options = {argcIn, argvIn, "2E",  "",    "",    "",    "",    "",    "WINXP", "PROVLK", 0,
-               0,      1,      false, false, false, false, false, false, false,   PIDGEN_3, STATE_PIDGEN_GENERATE};
+    options.argc = argcIn;
+    options.argv = argvIn;
+    options.binkID = "2E";
+    options.productCode = "WINXP";
+    options.productFlavour = "VLK";
+    options.numKeys = 1;
+    options.pidgenversion = Options::PIDGEN_VERSION::PIDGEN_3;
+    options.state = Options::APPLICATION_STATE::STATE_PIDGEN_GENERATE;
 
     SetHelpText();
 
@@ -97,7 +103,7 @@ BOOL CLI::loadJSON(const fs::path &filename)
 
     if (options.verbose)
     {
-        fmt::print("Loading keys file {}\n", options.keysFilename);
+        fmt::print("Loading keys file: {}\n", options.keysFilename);
     }
 
     std::ifstream f(filename);
@@ -113,58 +119,16 @@ BOOL CLI::loadJSON(const fs::path &filename)
 
     if (keys.is_discarded())
     {
-        fmt::print("ERROR: Unable to parse keys from {}\n", filename.string());
+        fmt::print("ERROR: Unable to parse keys from: {}\n", filename.string());
         return false;
     }
 
     if (options.verbose)
     {
-        fmt::print("Loaded keys from {} successfully\n", options.keysFilename);
+        fmt::print("Loaded keys from \"{}\" successfully\n", options.keysFilename);
     }
 
     return true;
-}
-
-/**
- *
- * @param pid
- */
-void CLI::printID(DWORD32 *pid)
-{
-    char raw[12], b[6], c[8];
-    char i, digit = 0;
-
-    // Convert PID to ascii-number (=raw)
-    snprintf(raw, sizeof(raw), "%09u", pid[0]);
-
-    // Make b-part {640-....}
-    _strncpy(b, 6, &raw[0], 3);
-    b[3] = 0;
-
-    // Make c-part {...-123456X...}
-    _strcpy(c, &raw[3]);
-
-    // Make checksum digit-part {...56X-}
-    assert(strlen(c) == 6);
-    for (i = 0; i < 6; i++)
-    {
-        digit += c[i] - '0'; // Sum digits
-    }
-
-    digit %= 7;
-    if (digit > 0)
-    {
-        digit = 7 - digit;
-    }
-
-    c[6] = digit + '0';
-    c[7] = 0;
-
-    DWORD32 binkid;
-    _sscanf(&options.binkID[0], "%x", &binkid);
-    binkid /= 2;
-
-    fmt::print("> Product ID: PPPPP-{}-{}-{}xxx\n", b, c, binkid);
 }
 
 /**
@@ -174,13 +138,12 @@ void CLI::printID(DWORD32 *pid)
  */
 BOOL CLI::InitPIDGEN3(PIDGEN3 *p3)
 {
-    const char *BINKID = &options.binkID[0];
-    auto bink = keys["BINK"][BINKID];
+    auto bink = keys["BINK"][options.binkID];
 
     if (options.verbose)
     {
         fmt::print("{:->80}\n", "");
-        fmt::print("Loaded the following elliptic curve parameters: BINK[{}]\n", BINKID);
+        fmt::print("Loaded the following elliptic curve parameters: BINK[{}]\n", options.binkID);
         fmt::print("{:->80}\n", "");
         fmt::print("{:>6}: {}\n", "P", bink["p"]);
         fmt::print("{:>6}: {}\n", "a", bink["a"]);
@@ -192,27 +155,37 @@ BOOL CLI::InitPIDGEN3(PIDGEN3 *p3)
         fmt::print("\n");
     }
 
-    p3->LoadEllipticCurve(bink["p"], bink["a"], bink["b"], bink["g"]["x"], bink["g"]["y"], bink["pub"]["x"],
-                          bink["pub"]["y"], bink["n"], bink["priv"]);
+    p3->LoadEllipticCurve(options.binkID, bink["p"], bink["a"], bink["b"], bink["g"]["x"], bink["g"]["y"],
+                          bink["pub"]["x"], bink["pub"]["y"], bink["n"], bink["priv"]);
 
-    if (options.state != STATE_PIDGEN_GENERATE)
+    if (options.state != Options::APPLICATION_STATE::STATE_PIDGEN_GENERATE)
     {
         return true;
     }
 
-    p3->info.setChannelID(options.channelID);
-    if (options.verbose)
+    if (options.channelID.IsZero())
     {
-        fmt::print("> Channel ID: {:#03d}\n", options.channelID);
+        options.channelID.Randomize(UMSKT::rng, sizeof(DWORD32) * 8);
     }
 
-    if (options.serialSet)
+    options.channelID %= 999;
+    p3->info.ChannelID = options.channelID;
+    if (options.verbose)
     {
-        p3->info.setSerial(options.serial);
+        fmt::print("> Channel ID: {:d}\n", options.channelID);
+    }
+
+    if (options.serial.NotZero() && p3->checkFieldIsBink1998())
+    {
+        p3->info.Serial = options.serial;
         if (options.verbose)
         {
-            fmt::print("> Serial {:#06d}\n", options.serial);
+            fmt::print("> Serial {:d}\n", options.serial);
         }
+    }
+    else if (options.serial.NotZero() && !p3->checkFieldIsBink1998())
+    {
+        fmt::print("Warning: Discarding user-supplied serial for BINK2002\n");
     }
 
     return true;
@@ -228,7 +201,7 @@ BOOL CLI::InitConfirmationID(ConfirmationID &confid)
     if (!keys["products"][options.productCode].contains("meta") ||
         !keys["products"][options.productCode]["meta"].contains("activation"))
     {
-        fmt::print("ERROR: product flavour {} does not have known activation values", options.productCode);
+        fmt::print("ERROR: product flavour \"{}\" does not have known activation values", options.productCode);
         return false;
     }
 
@@ -236,7 +209,7 @@ BOOL CLI::InitConfirmationID(ConfirmationID &confid)
 
     if (!keys["activation"].contains(meta["flavour"]))
     {
-        fmt::print("ERROR: {} is an unknown activation flavour", meta["flavour"]);
+        fmt::print("ERROR: \"{}\" is an unknown activation flavour", meta["flavour"]);
         return false;
     }
 
@@ -272,23 +245,26 @@ BOOL CLI::InitConfirmationID(ConfirmationID &confid)
  */
 BOOL CLI::PIDGenerate()
 {
-    // TODO:
-    // if options.pidgen2generate
-    // return pidgen2generate
-    // otherwise...
+    BOOL retval = false;
 
-    const char *BINKID = &options.binkID[0];
-    auto bink = keys["BINK"][BINKID];
+    if (options.pidgenversion == Options::PIDGEN_VERSION::PIDGEN_2)
+    {
+        auto p2 = PIDGEN2();
+        retval = PIDGEN2Generate(p2);
+        return retval;
+    }
+    else if (options.pidgenversion == Options::PIDGEN_VERSION::PIDGEN_3)
+    {
+        auto bink = keys["BINK"][options.binkID];
 
-    std::string key;
-    bink["p"].get_to(key);
+        auto p3 = PIDGEN3::Factory(bink["p"]);
+        InitPIDGEN3(p3);
+        retval = PIDGEN3Generate(p3);
 
-    auto p3 = PIDGEN3::Factory(key);
-    InitPIDGEN3(p3);
+        delete p3;
+        return retval;
+    }
 
-    auto retval = PIDGEN3Generate(p3);
-
-    delete p3;
     return retval;
 }
 
@@ -298,22 +274,26 @@ BOOL CLI::PIDGenerate()
  */
 BOOL CLI::PIDValidate()
 {
-    // TODO:
-    // if options.pidgen2validate
-    // return pidgen2validate
-    // otherwise...
+    BOOL retval = false;
 
-    const char *BINKID = &options.binkID[0];
-    auto bink = keys["BINK"][BINKID];
+    if (options.pidgenversion == Options::PIDGEN_VERSION::PIDGEN_2)
+    {
+        auto p2 = PIDGEN2();
+        retval = PIDGEN2Validate(p2);
+        return retval;
+    }
+    else if (options.pidgenversion == Options::PIDGEN_VERSION::PIDGEN_3)
+    {
+        auto bink = keys["BINK"][options.binkID];
 
-    std::string key;
-    bink["p"].get_to(key);
+        auto p3 = PIDGEN3::Factory(bink["p"]);
+        InitPIDGEN3(p3);
+        retval = PIDGEN3Validate(p3);
 
-    auto p3 = PIDGEN3::Factory(key);
-    InitPIDGEN3(p3);
-    auto retval = PIDGEN3Validate(p3);
+        delete p3;
+        return retval;
+    }
 
-    delete p3;
     return retval;
 }
 
@@ -330,63 +310,16 @@ int CLI::Run()
      */
     switch (options.state)
     {
-    case STATE_PIDGEN_GENERATE:
+    case Options::APPLICATION_STATE::STATE_PIDGEN_GENERATE:
         return PIDGenerate();
 
-    case STATE_PIDGEN_VALIDATE:
+    case Options::APPLICATION_STATE::STATE_PIDGEN_VALIDATE:
         return PIDValidate();
 
-    case STATE_CONFIRMATION_ID:
+    case Options::APPLICATION_STATE::STATE_CONFIRMATION_ID:
         return ConfirmationIDGenerate();
 
     default:
         return 1;
     }
-}
-
-/**
- * Prints a product key to stdout
- *
- * @param pk std::string to print
- */
-void CLI::printKey(std::string &pk)
-{
-    assert(pk.length() >= PK_LENGTH);
-
-    fmt::print("{}-{}-{}-{}-{}", pk.substr(0, 5), pk.substr(5, 5), pk.substr(10, 5), pk.substr(15, 5),
-               pk.substr(20, 5));
-}
-
-/**
- * std::BinaryOperation compatible accumulator for validating/stripping an input string against the PIDGEN3 charset
- * this can be moved to the PIDGEN3 at a later date
- *
- * @param accumulator
- * @param currentChar
- * @return
- */
-std::string CLI::validateInputKeyCharset(std::string &accumulator, char currentChar)
-{
-    char cchar = ::toupper(currentChar);
-    if (std::find(std::begin(PIDGEN3::pKeyCharset), std::end(PIDGEN3::pKeyCharset), cchar) !=
-        std::end(PIDGEN3::pKeyCharset))
-    {
-        accumulator.push_back(cchar);
-    }
-    return accumulator;
-}
-
-/**
- *
- * @param in_key
- * @param out_key
- * @return
- */
-BOOL CLI::stripKey(const std::string &in_key, std::string &out_key)
-{
-    // copy out the product key stripping out extraneous characters
-    out_key = std::accumulate(in_key.begin(), in_key.end(), std::string(), validateInputKeyCharset);
-
-    // only return true if we've handled exactly PK_LENGTH chars
-    return (out_key.length() == PK_LENGTH);
 }

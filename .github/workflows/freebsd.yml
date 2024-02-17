@@ -40,18 +40,15 @@
      - name: Build & Test in FreeBSD 
        id: test 
        uses: vmactions/freebsd-vm@v1 
-       with: 
-         envs: 'MYTOKEN MYTOKEN2' 
+       with:
          usesh: true 
          prepare: | 
-           pkg install -y cmake openssl git bash 
+           pkg install -y cmake git bash 
   
          run: | 
            mkdir build 
-           cd build 
-           cmake .. 
-           make 
-           ./umskt  # Execute the test here 
+           cmake -DCMAKE_BUILD_TYPE=Release build/ 
+           cmake --build build/ 
   
      - name: Move files to correct directory 
        run: | 

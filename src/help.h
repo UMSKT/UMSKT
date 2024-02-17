@@ -23,8 +23,15 @@
 #ifndef UMSKT_HELP_H
 #define UMSKT_HELP_H
 
-typedef BOOL CLIHandlerFunc(int, char *);
+typedef BOOL CLIHandlerFunc(const std::string &);
 
+/**
+ * CLI Options List.
+ *
+ * Note: options are processed in the order found in the ENUM
+ * order matters mostly for UX.
+ *
+ */
 enum CLIHelpOptionIDs
 {
     OPTION_HELP,

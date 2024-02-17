@@ -25,7 +25,19 @@
 #include "BINK2002.h"
 
 /**
- * https://xkcd.com/221/
+ * PID 3.0 Product Key Character Set
+ */
+const std::string PIDGEN3::pKeyCharset = "BCDFGHJKMPQRTVWXY2346789";
+
+/**
+ * Maximum Field size for BINK 1998
+ */
+const DWORD32 PIDGEN3::MaxSizeBINK1998 = BINK1998::FieldBits + 1;
+
+/**
+ * RFC 1149.5 specifies 4 as the standard IEEE-vetted random number.
+ *
+ * see also: https://xkcd.com/221/
  *
  * @return 4
  */
@@ -34,24 +46,6 @@ int getRandomNumber()
     return 4; // chosen by fair dice roll
               // guaranteed to be random
 }
-
-/**
- * Creates an Integer that populates PIDGEN3::MaxSizeBINK1998
- * Invoked during Runtime startup
- *
- * @return
- */
-Integer MakeMaxSizeBINK1998()
-{
-    Integer max;
-
-    // 1 << 385 (or max size of BINK1998 field in bits + 1)
-    max.SetBit((12 * 4 * 8) + 1);
-
-    return max;
-}
-
-const Integer PIDGEN3::MaxSizeBINK1998 = MakeMaxSizeBINK1998();
 
 /**
  * Initializes the elliptic curve
@@ -68,10 +62,11 @@ const Integer PIDGEN3::MaxSizeBINK1998 = MakeMaxSizeBINK1998();
  *
  * @return true on success, false on fail
  */
-BOOL PIDGEN3::LoadEllipticCurve(const std::string pSel, const std::string aSel, const std::string bSel,
-                                const std::string generatorXSel, const std::string generatorYSel,
-                                const std::string publicKeyXSel, const std::string publicKeyYSel,
-                                const std::string genOrderSel, const std::string privateKeySel)
+BOOL PIDGEN3::LoadEllipticCurve(const std::string &BinkIDSel, const std::string &pSel, const std::string &aSel,
+                                const std::string &bSel, const std::string &generatorXSel,
+                                const std::string &generatorYSel, const std::string &publicKeyXSel,
+                                const std::string &publicKeyYSel, const std::string &genOrderSel,
+                                const std::string &privateKeySel)
 {
     // We cannot produce a valid key without knowing the private key k. The reason for this is that
     // we need the result of the function K(x; y) = kG(x; y).
@@ -79,23 +74,21 @@ BOOL PIDGEN3::LoadEllipticCurve(const std::string pSel, const std::string aSel, 
     // We can, however, validate any given key using the available public key: {p, a, b, G, K}.
     // genOrder the order of the generator G, a value we have to reverse -> Schoof's Algorithm.
 
-    // Initialize BIGNUM and BIGNUMCTX structures.
-    // BIGNUM - Large numbers
-    // BIGNUMCTX - Context large numbers (temporary)
+    BINKID = IntegerHexS(BinkIDSel);
 
     // We're presented with an elliptic curve, a multivariable function y(x; p; a; b), where
     // y^2 % p = x^3 + ax + b % p.
-    auto p = Integer(&pSel[0]), a = Integer(&aSel[0]), b = Integer(&bSel[0]),
+    auto p = IntegerS(pSel), a = IntegerS(aSel), b = IntegerS(bSel);
 
-         // Public key will consist of the resulting (x; y) values.
-        generatorX = Integer(&generatorXSel[0]), generatorY = Integer(&generatorYSel[0]),
+    // Public key will consist of the resulting (x; y) values.
+    auto generatorX = IntegerS(generatorXSel), generatorY = IntegerS(generatorYSel);
 
-         // G(x; y) is a generator function, its return value represents a point on the elliptic curve.
-        publicKeyX = Integer(&publicKeyXSel[0]), publicKeyY = Integer(&publicKeyYSel[0]);
+    // G(x; y) is a generator function, its return value represents a point on the elliptic curve.
+    auto publicKeyX = IntegerS(publicKeyXSel), publicKeyY = IntegerS(publicKeyYSel);
 
     /* Computed Data */
-    genOrder = Integer(&genOrderSel[0]);
-    privateKey = Integer(&privateKeySel[0]);
+    genOrder = IntegerS(genOrderSel);
+    privateKey = IntegerS(privateKeySel);
 
     /* Elliptic Curve calculations. */
     // The group is defined via Fp = all integers [0; p - 1], where p is prime.
@@ -117,6 +110,12 @@ BOOL PIDGEN3::LoadEllipticCurve(const std::string pSel, const std::string aSel, 
     return true;
 }
 
+/**
+ * Instantiates a PID 3.0 generator based on a given field on the heap
+ *
+ * @param field
+ * @return PIDGEN3 based on the field type
+ */
 PIDGEN3 *PIDGEN3::Factory(const std::string &field)
 {
     if (checkFieldStrIsBink1998(field))
@@ -126,141 +125,192 @@ PIDGEN3 *PIDGEN3::Factory(const std::string &field)
     return new BINK2002();
 }
 
+/**
+ * Factory-style Generate function, checks the currently instantiated field
+ * creates the correct PIDGEN for the field type using the copy constructor
+ * and invokes its Generate()
+ *
+ * @param pKey
+ * @return successfulness
+ */
 BOOL PIDGEN3::Generate(std::string &pKey)
 {
-    BOOL retval;
-
-    if (checkFieldIsBink1998())
-    {
-        auto p3 = BINK1998();
-        retval = p3.Generate(pKey);
-    }
-    else
-    {
-        auto p3 = BINK2002();
-        retval = p3.Generate(pKey);
-    }
-
-    return retval;
-}
-
-BOOL PIDGEN3::Validate(std::string &pKey)
-{
-    BOOL retval;
-
     if (checkFieldIsBink1998())
     {
         auto p3 = BINK1998(this);
-        retval = p3.Validate(pKey);
-    }
-    else
-    {
-        auto p3 = BINK2002(this);
-        retval = p3.Validate(pKey);
+        return p3.Generate(pKey);
     }
 
-    return retval;
+    auto p3 = BINK2002(this);
+    return p3.Generate(pKey);
+}
+
+/**
+ * Factory style Validate function, see Generate() for more info
+ *
+ * @param pKey
+ * @return successfulness
+ */
+BOOL PIDGEN3::Validate(const std::string &pKey)
+{
+    if (checkFieldIsBink1998())
+    {
+        auto p3 = BINK1998(this);
+        return p3.Validate(pKey);
+    }
+
+    auto p3 = BINK2002(this);
+    return p3.Validate(pKey);
 }
 
 /**
  * Converts from byte sequence to the CD-key.
  *
- * @param cdKey   [out] std::string CDKey input
- * @param byteSeq [in] BYTE*
+ * @param seq Integer representation
+ * @return std::string CDKey output
  **/
-void PIDGEN3::base24(std::string &cdKey, BYTE *byteSeq)
+std::string PIDGEN3::base24(Integer &seq)
 {
-    BYTE rbyteSeq[16], output[26];
-
-    // Copy byte sequence to the reversed byte sequence.
-    memcpy(rbyteSeq, byteSeq, sizeof(rbyteSeq));
-
-    // Skip trailing zeroes and reverse y.
-    int length;
-
-    for (length = 15; rbyteSeq[length] <= 0; length--)
-    {
-        ; // do nothing, just counting
-    }
-
-    // Convert reversed byte sequence to BigNum z.
-    auto z = Integer((BYTE *)&rbyteSeq, sizeof(rbyteSeq));
+    std::string cdKey;
+    cdKey.reserve(PK_LENGTH);
 
     // Divide z by 24 and convert the remainder to a CD-key char.
-    for (int i = 24; i >= 0; i--)
+    Integer r, q, a = seq;
+    for (int i = PK_LENGTH - 1; i >= 0; i--)
     {
-        output[i] = pKeyCharset[z.Modulo(24)];
+        Integer::Divide(r, q, a, (WORD)pKeyCharset.length());
+        cdKey.insert(cdKey.begin(), pKeyCharset[r.ConvertToLong()]);
+        a = q;
     }
 
-    output[25] = 0;
-
-    cdKey = (char *)output;
+    return cdKey;
 }
 
 /**
  * Converts from CD-key to a byte sequence.
  *
- * @param byteSeq [out] *BYTE representation of the CDKey
- * @param cdKey   [in] std::string CDKey to convert
+ * @param cdKey std::string CDKey to convert
+ * @return Integer raw representation of the CDKey
  **/
-void PIDGEN3::unbase24(BYTE *byteSeq, std::string cdKey)
+Integer PIDGEN3::unbase24(const std::string &cdKey)
 {
-    BYTE pDecodedKey[PK_LENGTH + NULL_TERMINATOR]{};
-    Integer y;
+    Integer result;
 
-    // Remove dashes from the CD-key and put it into a Base24 byte array.
-    for (int i = 0, k = 0; i < cdKey.length() && k < PK_LENGTH; i++)
+    for (char ch : cdKey)
     {
-        for (int j = 0; j < 24; j++)
+        auto val = std::find(pKeyCharset.begin(), pKeyCharset.end(), ch);
+
+        // character is not in set, return early
+        if (val == pKeyCharset.end())
         {
-            if (cdKey[i] != '-' && cdKey[i] == pKeyCharset[j])
-            {
-                pDecodedKey[k++] = j;
-                break;
-            }
+            return result;
         }
+
+        // add the weighted sum to result
+        result *= (int)pKeyCharset.length();
+        result += (int)(val - pKeyCharset.begin());
     }
 
-    // Empty byte sequence.
-    memset(byteSeq, 0, 16);
+    return result;
+}
 
-    // Calculate the weighed sum of byte array elements.
-    for (int i = 0; i < PK_LENGTH; i++)
+/**
+ * Takes the currently loaded Class-level KeyInfo and calculates the check digit for display.
+ *
+ * Algorithm directly taken from PIDGEN
+ *
+ * @return std::string representation of the Product ID as Displayed on the Product
+ */
+std::string PIDGEN3::StringifyProductID()
+{
+    if (info.isOEM)
     {
-        y *= PK_LENGTH - 1;
-        y += pDecodedKey[i];
+        Integer OEMID = info.ChannelID * Integer(100);
+        OEMID += ((info.Serial / (MaxSerial / TEN)) * TEN);
+        OEMID += GenerateMod7(OEMID);
+
+        Integer Serial = info.Serial % (MaxSerial / TEN);
+
+        DWORD32 iOEMID = OEMID.ConvertToLong(), iSerial = Serial.ConvertToLong();
+        return fmt::format("PPPPP-OEM-{:07d}-{:05d}", iOEMID, iSerial);
     }
-
-    // Acquire length.
-    auto n = y.ByteCount();
-
-    // Place the generated code into the byte sequence.
-    y.Encode(byteSeq, 16);
+    else
+    {
+        DWORD32 ChannelID = info.ChannelID.ConvertToLong(),
+                Serial = (info.Serial * TEN + GenerateMod7(info.Serial)).ConvertToLong(),
+                BinkID = (BINKID / Integer::Two()).ConvertToLong();
+        return fmt::format("PPPPP-{:03d}-{:07d}-{:d}xxx", ChannelID, Serial, BinkID);
+    }
 }
 
 /**
  * Checks to see if the currently instantiated PIDGEN3 object has a
  * field size greater than the maximum known BINK1998 size.
  *
- * @return
+ * @return boolean value
  */
 BOOL PIDGEN3::checkFieldIsBink1998()
 {
-    // is max > privateKey?
-    return (MaxSizeBINK1998 > privateKey);
+    // is fieldSize < max?
+    return (eCurve.FieldSize().BitCount() < MaxSizeBINK1998);
 }
 
 /**
  * Checks if a given field, in a std::string, is greater than
  * the maximum known BINK1998 size
  *
- * @param keyin
- * @return
+ * @param keyin std::string representation of a Field
+ * @return boolean value
  */
 BOOL PIDGEN3::checkFieldStrIsBink1998(std::string keyin)
 {
-    Integer check(&keyin[0]);
+    auto check = IntegerS(keyin);
 
-    // is max > check?
-    return (MaxSizeBINK1998 > check);
+    // is fieldSize < max?
+    return (check.BitCount() < MaxSizeBINK1998);
+}
+
+/**
+ * Prints a product key to stdout
+ *
+ * @param pk std::string to print
+ */
+std::string PIDGEN3::StringifyKey(const std::string &pKey)
+{
+    assert(pKey.length() >= PK_LENGTH);
+
+    return fmt::format("{}-{}-{}-{}-{}", pKey.substr(0, 5), pKey.substr(5, 5), pKey.substr(10, 5), pKey.substr(15, 5),
+                       pKey.substr(20, 5));
+}
+
+/**
+ * std::BinaryOperation compatible accumulator for validating/stripping an input string against the PIDGEN3 charset
+ *
+ * @param accumulator
+ * @param currentChar
+ * @return
+ */
+std::string PIDGEN3::ValidateStringKeyInputCharset(std::string &accumulator, char currentChar)
+{
+    char cchar = (char)::toupper(currentChar);
+    if (std::find(pKeyCharset.begin(), pKeyCharset.begin(), cchar) != pKeyCharset.end())
+    {
+        accumulator.push_back(cchar);
+    }
+    return accumulator;
+}
+
+/**
+ *
+ * @param in_key
+ * @param out_key
+ * @return
+ */
+BOOL PIDGEN3::ValidateKeyString(const std::string &in_key, std::string &out_key)
+{
+    // copy out the product key stripping out extraneous characters
+    out_key = std::accumulate(in_key.begin(), in_key.end(), std::string(), ValidateStringKeyInputCharset);
+
+    // only return true if we've handled exactly PK_LENGTH chars
+    return (out_key.length() == PK_LENGTH);
 }

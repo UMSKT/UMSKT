@@ -23,9 +23,25 @@
 #include "libumskt.h"
 
 std::FILE *UMSKT::debug;
+std::FILE *UMSKT::verbose;
 
-BOOL UMSKT::VERBOSE = false;
-BOOL UMSKT::DEBUG = false;
+BOOL UMSKT::IS_CONSTRUCTED = UMSKT::CONSTRUCT();
+
+/**
+ * a static "constructor" that does some housekeeping for certain
+ * platforms, in DJGPP for instance we need to setup the interval
+ * timer for RNG.
+ *
+ * @return true
+ */
+BOOL UMSKT::CONSTRUCT()
+{
+#ifdef __DJGPP__
+    // this should be set up as early as possible
+    auto now = uclock();
+#endif
+    return true;
+}
 
 /**
  * sets the filestream used for debugging
@@ -35,4 +51,14 @@ BOOL UMSKT::DEBUG = false;
 void UMSKT::setDebugOutput(std::FILE *input)
 {
     debug = input;
+}
+
+/**
+ * sets the filestream used for verbose messages
+ *
+ * @param input std::FILE
+ */
+void UMSKT::setVerboseOutput(std::FILE *input)
+{
+    verbose = input;
 }

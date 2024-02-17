@@ -39,14 +39,20 @@
     "WIN95": {
       "meta": {
         "type": "PIDGEN2",
-        "tags": "windows"
+        "tags": [
+          "windows",
+          "legacyoempid"
+        ]
       },
       "name": "Windows 95 (all)"
     },
     "WINNT": {
       "meta": {
         "type": "PIDGEN2",
-        "tags": "windows"
+        "tags": [
+          "windows",
+          "legacyoempid"
+        ]
       },
       "name": "Windows NT (all)"
     },
@@ -54,7 +60,8 @@
       "meta": {
         "type": "PIDGEN3",
         "tags": [
-          "windows"
+          "windows",
+          "legacyoempid"
         ]
       },
       "name": "Windows 98 (all versions)",
@@ -67,7 +74,8 @@
       "meta": {
         "type": "PIDGEN3",
         "tags": [
-          "office"
+          "office",
+          "legacyoempid"
         ]
       },
       "name": "Office 2000 (all versions)",
@@ -121,7 +129,8 @@
         "type": "PIDGEN3",
         "default": "PRO",
         "tags": [
-          "windows"
+          "windows",
+          "legacyoempid"
         ]
       },
       "name": "Windows 2000",
@@ -159,7 +168,8 @@
       "meta": {
         "type": "PIDGEN3",
         "tags": [
-          "windows"
+          "windows",
+          "legacypid"
         ]
       },
       "name": "Windows ME",
@@ -283,7 +293,7 @@
     "WINXP": {
       "meta": {
         "type": "PIDGEN3",
-        "default": "PROVLK",
+        "default": "VLK",
         "tags": [
           "windows",
           "xpbrand"

@@ -28,10 +28,7 @@
 
 #include <filesystem>
 #include <fstream>
-#include <iostream>
-#include <string>
 #include <unordered_map>
-#include <vector>
 
 #include <fmt/color.h>
 #include <fmt/core.h>
@@ -70,68 +67,53 @@ template <> struct fmt::formatter<json> : ostream_formatter
 #define UMSKTCLI_VERSION_STRING "unknown version-dirty"
 #endif
 
-enum APPLICATION_STATE
-{
-    STATE_PIDGEN_GENERATE,
-    STATE_PIDGEN_VALIDATE,
-    STATE_CONFIRMATION_ID
-};
-
-enum PIDGEN_VERSION
-{
-    PIDGEN_2 = 2,
-    PIDGEN_3 = 3,
-};
-
-struct Options
-{
-    int argc;
-    char **argv;
-
-    std::string binkID;
-    std::string keysFilename;
-    std::string installationID;
-    std::string keyToCheck;
-    std::string productID;
-    std::string authInfo;
-    std::string productCode;
-    std::string productFlavour;
-
-    DWORD32 channelID;
-    DWORD32 serial;
-    DWORD32 numKeys;
-
-    BOOL oem;
-    BOOL upgrade;
-    BOOL serialSet;
-    BOOL verbose;
-    BOOL help;
-    BOOL error;
-    BOOL list;
-
-    struct Meta
-    {
-        std::string type;
-        std::vector<std::string> tags;
-        struct Activation
-        {
-            std::string flavour;
-            int version;
-        };
-    };
-
-    PIDGEN3::KeyInfo info;
-
-    PIDGEN_VERSION pidgenversion;
-    APPLICATION_STATE state;
-};
-
 class CLI
 {
     std::string pKey;
     DWORD32 count, total, iBinkID;
 
-    static Options options;
+    struct Options
+    {
+        int argc;
+        char **argv;
+
+        std::string binkID;
+        std::string keysFilename;
+        std::string installationID;
+        std::string keyToCheck;
+        std::string productID;
+        std::string authInfo;
+        std::string productCode;
+        std::string productFlavour;
+
+        Integer channelID;
+        Integer serial;
+        DWORD32 numKeys;
+
+        BOOL oem;
+        BOOL upgrade;
+        BOOL verbose;
+        BOOL help;
+        BOOL error;
+        BOOL list;
+
+        PIDGEN3::KeyInfo info;
+
+        enum PIDGEN_VERSION
+        {
+            PIDGEN_2 = 2,
+            PIDGEN_3 = 3,
+        };
+        PIDGEN_VERSION pidgenversion;
+
+        enum APPLICATION_STATE
+        {
+            STATE_PIDGEN_GENERATE,
+            STATE_PIDGEN_VALIDATE,
+            STATE_CONFIRMATION_ID
+        };
+        APPLICATION_STATE state;
+    } static options;
 
   public:
     CLI()
@@ -166,13 +148,11 @@ class CLI
     static CLIHandlerFunc SetValidateOption;
     static CLIHandlerFunc SetProductCodeOption;
     static CLIHandlerFunc SetFlavourOption;
+    static CLIHandlerFunc SetAuthDataOption;
 
     static BOOL parseCommandLine();
     static BOOL processOptions();
-    static void printID(DWORD32 *pid);
-    static void printKey(std::string &pk);
-    static BOOL stripKey(const std::string &in_key, std::string &out_key);
-    static std::string validateInputKeyCharset(std::string &accumulator, char currentChar);
+    static BOOL processListCommand();
 
     BOOL InitPIDGEN3(PIDGEN3 *p3);
     BOOL InitConfirmationID(ConfirmationID &confid);
@@ -185,20 +165,6 @@ class CLI
     BOOL PIDGEN3Generate(PIDGEN3 *p3);
     BOOL PIDGEN3Validate(PIDGEN3 *p3);
     BOOL ConfirmationIDGenerate();
-
-    INLINE static std::string strtolower(std::string &in)
-    {
-        auto retval = std::string(in);
-        std::transform(retval.begin(), retval.end(), retval.begin(), ::tolower);
-        return retval;
-    }
-
-    INLINE static std::string strtoupper(std::string &in)
-    {
-        auto retval = std::string(in);
-        std::transform(retval.begin(), retval.end(), retval.begin(), ::toupper);
-        return retval;
-    }
 
     int Run();
 };

@@ -27,9 +27,29 @@
  * @param pidgen2
  * @return success
  */
-BOOL CLI::PIDGEN2Generate(PIDGEN2 &pidgen2)
+BOOL CLI::PIDGEN2Generate(PIDGEN2 &p2)
 {
-    return true;
+    p2.info.ChannelID = options.channelID;
+    p2.info.Serial = options.serial;
+    p2.info.isOEM = options.oem;
+
+    std::string serial;
+    p2.Generate(serial);
+
+    serial = p2.StringifyKey(serial);
+
+    fmt::print("{}", serial);
+
+    auto retval = p2.Validate(serial);
+
+    if (!retval)
+    {
+        fmt::print(" [INVALID]");
+    }
+
+    fmt::print("\n");
+
+    return retval;
 }
 
 /**
@@ -37,7 +57,7 @@ BOOL CLI::PIDGEN2Generate(PIDGEN2 &pidgen2)
  * @param pidgen2
  * @return success
  */
-BOOL CLI::PIDGEN2Validate(PIDGEN2 &pidgen2)
+BOOL CLI::PIDGEN2Validate(PIDGEN2 &p2)
 {
     return true;
 }
@@ -49,12 +69,11 @@ BOOL CLI::PIDGEN2Validate(PIDGEN2 &pidgen2)
 BOOL CLI::PIDGEN3Generate(PIDGEN3 *p3)
 {
     // raw PID/serial value
-    DWORD32 nRaw = options.channelID * 1'000'000;
-    DWORD32 serialRnd;
+    Integer serialRnd;
 
     if (p3->checkFieldIsBink1998())
     {
-        if (options.serialSet)
+        if (options.serial.NotZero())
         {
             // using user-provided serial
             serialRnd = options.serial;
@@ -62,43 +81,54 @@ BOOL CLI::PIDGEN3Generate(PIDGEN3 *p3)
         else
         {
             // generate a random number to use as a serial
-            serialRnd = UMSKT::getRandom<DWORD32>();
+            serialRnd.Randomize(UMSKT::rng, sizeof(DWORD32) * 8);
         }
 
         // make sure it's less than 999999
-        nRaw += (serialRnd % 999999);
-
-        if (options.verbose)
-        {
-            // print the resulting Product ID
-            // PID value is printed in BINK1998::Generate
-            printID(&nRaw);
-        }
+        serialRnd %= 999999;
     }
+
+    p3->info.isOEM = options.oem;
 
     for (DWORD32 i = 0; i < total; i++)
     {
         if (!p3->checkFieldIsBink1998())
         {
-            auto authvalue = UMSKT::getRandom<DWORD32>() & BITMASK(10);
-            p3->info.AuthInfo.Decode((BYTE *)&authvalue, sizeof(DWORD32));
+            if (options.authInfo.empty())
+            {
+                p3->info.AuthInfo.Randomize(UMSKT::rng, 10);
+            }
+            else
+            {
+                p3->info.AuthInfo = CryptoPP::Crop(UMSKT::IntegerS(options.authInfo), 10);
+            }
 
             if (options.verbose)
             {
-                fmt::print("> AuthInfo: {:#08x}\n", p3->info.AuthInfo);
+                fmt::print("> AuthInfo: {:d}\n", p3->info.AuthInfo);
             }
         }
         else
         {
-            p3->info.setSerial(nRaw);
+            p3->info.Serial = serialRnd;
+        }
+
+        if (options.verbose)
+        {
+            fmt::print("\n");
         }
 
         p3->Generate(pKey);
 
+        if (options.verbose)
+        {
+            fmt::print("> Product ID: {}\n\n", p3->StringifyProductID());
+        }
+
         bool isValid = p3->Validate(pKey);
         if (isValid)
         {
-            printKey(pKey);
+            fmt::print(p3->StringifyKey(pKey));
             if (i <= total - 1 || options.verbose)
             {
                 fmt::print("\n");
@@ -109,8 +139,7 @@ BOOL CLI::PIDGEN3Generate(PIDGEN3 *p3)
         {
             if (options.verbose)
             {
-                printKey(pKey);
-                fmt::print(" [Invalid]");
+                fmt::print("{} [Invalid]", p3->StringifyKey(pKey));
                 if (i <= total - 1)
                 {
                     fmt::print("\n");
@@ -136,14 +165,14 @@ BOOL CLI::PIDGEN3Validate(PIDGEN3 *p3)
 {
     std::string product_key;
 
-    if (!CLI::stripKey(options.keyToCheck, product_key))
+    if (!PIDGEN3::ValidateKeyString(options.keyToCheck, product_key))
     {
         fmt::print("ERROR: Product key is in an incorrect format!\n");
         return false;
     }
 
-    CLI::printKey(product_key);
-    fmt::print("\n");
+    fmt::print("{}\n", p3->StringifyKey(product_key));
+
     if (!p3->Validate(product_key))
     {
         fmt::print("ERROR: Product key is invalid! Wrong BINK ID?\n");

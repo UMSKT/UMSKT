@@ -27,7 +27,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-32bit:
+  prepare:
     runs-on: windows-latest
     steps:
       # https://github.com/actions/runner-images/issues/6067#issuecomment-1213069040
@@ -52,97 +52,30 @@ jobs:
               exit 1
           }
 
-      - name: Download And Install 32-bit OpenSSL 3.1.4
-        run: |
-          $installDir = "$Env:ProgramFiles\OpenSSL"
-          $installerURL = "https://slproweb.com/download/Win32OpenSSL-3_1_4.exe"
-          $installerName = "Win32OpenSSL-3_1_4.exe"
-          $installerPath = Join-Path -Path "${env:Temp}" -ChildPath "$installerName"
-
-          (New-Object System.Net.WebClient).DownloadFile($installerURL, $installerPath)
-          
-          Remove-Item "$installDir" -Force -Recurse
-          $installerArgs = '/silent', '/sp-', '/suppressmsgboxes', "/DIR=`"$installDir`""
-          Start-Process -FilePath $installerPath -ArgumentList $installerArgs -Wait -PassThru
-
       - name: Checkout Source Tree
         uses: actions/checkout@v3
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
 
-      - name: Configure UMSKT
-        uses: threeal/cmake-action@v1.2.0
-        with:
-          generator: "Visual Studio 17 2022"
-          options: CMAKE_SYSTEM_VERSION="5.1.2600"
-          args: -A "Win32" -T v141_xp
-
-      - name: Build UMSKT
-        working-directory: build
-        run: msbuild ALL_BUILD.vcxproj /P:Configuration=Release
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v3.1.2
-        with:
-          name: UMSKT-Win32
-          path: build/Release
-
-  build-64bit:
+  build:
     runs-on: windows-latest
+    needs: prepare
+    strategy:
+      matrix:
+        arch: [ { name: Win32, displayName: x86 }, { name: x64, displayName: x64} ]
     steps:
-      - name: Install Windows XP Support for Visual Studio
-        run: |
-          Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
-          $InstallPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
-          $componentsToAdd = @(
-            "Microsoft.VisualStudio.Component.WinXP"
-          )
-          [string]$workloadArgs = $componentsToAdd | ForEach-Object {" --add " +  $_}
-          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"",$workloadArgs, '--quiet', '--norestart', '--nocache')
-          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
-          if ($process.ExitCode -eq 0)
-          {
-              Write-Host "components have been successfully added"
-              Get-ChildItem C:\ProgramData\Microsoft\VisualStudio\Packages\Microsoft.Windows.XPSupport.*
-          }
-          else
-          {
-              Write-Host "components were not installed"
-              exit 1
-          }
-    
-      - name: Download And Install 64-bit OpenSSL 3.1.4
-        run: |
-          $installDir = "$Env:ProgramFiles\OpenSSL"
-          $installerURL = "https://slproweb.com/download/Win64OpenSSL-3_1_4.exe"
-          $installerName = "Win64OpenSSL-3_1_4.exe"
-          $installerPath = Join-Path -Path "${env:Temp}" -ChildPath "$installerName"
-
-          (New-Object System.Net.WebClient).DownloadFile($installerURL, $installerPath)
-          
-          Remove-Item "$installDir" -Force -Recurse
-          $installerArgs = '/silent', '/sp-', '/suppressmsgboxes', "/DIR=`"$installDir`""
-          Start-Process -FilePath $installerPath -ArgumentList $installerArgs -Wait -PassThru
-
-      - name: Checkout Source Tree
-        uses: actions/checkout@v3
-
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1
-
-      - name: Configure UMSKT
-        uses: threeal/cmake-action@v1.2.0
+      - name: Configure and build UMSKT for ${{ matrix.values.displayName }}
+        uses: threeal/cmake-action@v1.3.0
         with:
+          options: CMAKE_BUILD_TYPE=Release
           generator: "Visual Studio 17 2022"
-          args: -A "x64" -T "v141_xp"
-
-      - name: Build UMSKT
-        working-directory: build
-        run: msbuild ALL_BUILD.vcxproj /P:Configuration=Release
+          args: -A "${{ matrix.arch.name }}" -T "v141_xp"
+          run-build: true
+          build-args: "--config Release"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v3.1.2
         with:
-          name: UMSKT-Win64
+          name: UMSKT-${{ matrix.values.displayName }}
           path: build/Release

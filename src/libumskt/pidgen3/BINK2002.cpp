@@ -24,6 +24,7 @@
  *   and uploaded to GitHub by TheMCHK in August of 2019
  *
  *   Endermanch (Andrew) rewrote the algorithm in May of 2023
+ *   Neo ported Endermanch's algorithm to CryptoPP in February of 2024
  * }
  */
 
@@ -32,52 +33,53 @@
 /**
  * Packs a Windows Server 2003-like Product Key.
  *
- * @param pRaw [out] *OWORD raw product key
- **/
-BOOL BINK2002::Pack(Q_OWORD *pRaw)
+ * @param ki PIDGEN3::KeyInfo struct to pack
+ * @return Integer representation of the Product Key
+ */
+Integer BINK2002::Pack(const KeyInfo &ki)
 {
-    Integer raw;
     // AuthInfo [113..104] <- Signature [103..42] <- Hash [41..11] <- Channel ID [10..1] <- Upgrade [0];
-    raw += (info.AuthInfo & ((1 << 11) - 1)) << 104;
-    raw += info.Signature << 42;
-    raw += info.Hash << 11;
-    raw += info.ChannelID << 1;
-    raw += info.isUpgrade;
+    Integer raw = CryptoPP::Crop(ki.AuthInfo, 10) << 104 | CryptoPP::Crop(ki.Signature, 62) << 42 |
+                  CryptoPP::Crop(ki.Hash, 31) << 11 | CryptoPP::Crop(ki.ChannelID, 10) << 1 | ki.isUpgrade;
 
-    raw.Encode((BYTE *)pRaw, sizeof(QWORD) * 2);
+    if (debug)
+    {
+        fmt::print("pack: {:x}\n\n", raw);
+    }
 
-    return true;
+    return raw;
 }
 
 /**
  * Unpacks a Windows Server 2003-like Product Key.
  *
- * @param pRaw [in] *OWORD raw product key input
- **/
-BOOL BINK2002::Unpack(Q_OWORD *pRaw)
+ * @param raw Integer representation of the product key
+ * @return unpacked PIDGEN3::KeyInfo struct
+ */
+BINK2002::KeyInfo BINK2002::Unpack(const Integer &raw)
 {
     // We're assuming that the quantity of information within the product key is at most 114 bits.
     // log2(24^25) = 114.
+    KeyInfo ki;
 
     // Upgrade = Bit 0
-    info.isUpgrade = FIRSTNBITS(pRaw->qword[0], 1);
+    ki.isUpgrade = CryptoPP::Crop(raw, 1).ConvertToLong();
 
     // Channel ID = Bits [1..10] -> 10 bits
-    info.ChannelID = NEXTSNBITS(pRaw->qword[0], 10, 1);
+    ki.ChannelID = CryptoPP::Crop(raw >> 1, 10);
 
-    // Hash = Bits [11..41] -> 31 bits
-    info.Hash = NEXTSNBITS(pRaw->qword[0], 31, 11);
+    // Hash = Bits [11..41] -> 30 bits
+    ki.Hash = CryptoPP::Crop(raw >> 11, 31);
 
     // Signature = Bits [42..103] -> 62 bits
     // The quad-word signature overlaps AuthInfo in bits 104 and 105,
     // hence Microsoft employs a secret technique called: Signature = HIDWORD(Signature) >> 2 | LODWORD(Signature)
-    info.Signature = NEXTSNBITS(pRaw->qword[0], 30, 10) << 32 | FIRSTNBITS(pRaw->qword[1], 10) << 22 |
-                     NEXTSNBITS(pRaw->qword[0], 22, 42);
+    ki.Signature = CryptoPP::Crop(raw >> 42, 62);
 
     // AuthInfo = Bits [104..113] -> 10 bits
-    info.AuthInfo = NEXTSNBITS(pRaw->qword[1], 10, 40);
+    ki.AuthInfo = CryptoPP::Crop(raw >> 104, 10);
 
-    return true;
+    return ki;
 }
 
 /**
@@ -89,16 +91,14 @@ BOOL BINK2002::Unpack(Q_OWORD *pRaw)
  */
 BOOL BINK2002::Generate(std::string &pKey)
 {
-    Integer c, e, s;
+    // copy the starting state from the class
+    KeyInfo ki = info;
+    SHA1 sha1;
 
-    Q_OWORD pRaw;
-
-    Integer limit;
-    limit.SetBit(62);
-    limit--;
+    Integer c, e, s, pRaw;
 
     // Data segment of the RPK.
-    Integer pData = info.ChannelID << 1 | info.isUpgrade;
+    Integer pData = ki.ChannelID << 1 | ki.isUpgrade;
 
     BOOL noSquare;
 
@@ -111,61 +111,114 @@ BOOL BINK2002::Generate(std::string &pKey)
 
         // R = cG
         R = eCurve.Multiply(c, genPoint);
+        if (debug)
+        {
+            fmt::print(debug, "c: {:x}\n\n", c);
+            fmt::print(debug, "R[x,y] [{:x},\n{:x}]\n\n", R.x, R.y);
+        }
 
-        BYTE msgDigest[SHA::DIGESTSIZE], msgBuffer[SHAMessageLength], *pMsgBuffer = msgBuffer;
+        BYTE msgDigest[SHA1::DIGESTSIZE], msgBuffer[SHAMessageLength], *pMsgBuffer = msgBuffer;
 
         // Assemble the first SHA message.
-        msgBuffer[0] = 0x79;
+        *pMsgBuffer = 0x79;
         pMsgBuffer++;
 
-        pData.Encode(pMsgBuffer, 2);
-        pMsgBuffer += 2;
+        pMsgBuffer = EncodeN(pData, pMsgBuffer, 2);
 
         // Convert resulting point coordinates to bytes.
         // and flip the endianness
-        R.x.Encode(pMsgBuffer, FieldBytes);
-        std::reverse(pMsgBuffer, pMsgBuffer + FieldBytes);
-        pMsgBuffer += FieldBytes;
-
-        R.y.Encode(pMsgBuffer, FieldBytes);
-        std::reverse(pMsgBuffer, pMsgBuffer + FieldBytes);
-        pMsgBuffer += FieldBytes;
+        pMsgBuffer = EncodeN(R.x, pMsgBuffer, FieldBytes);
+        EncodeN(R.y, pMsgBuffer, FieldBytes);
 
         // pHash = SHA1(79 || Channel ID || R.x || R.y)
-        auto digest = SHA();
-        digest.Update(msgBuffer, FieldBytes);
-        digest.Final(msgDigest);
+        sha1.CalculateDigest(msgDigest, msgBuffer, SHAMessageLength);
 
-        // Translate the byte digest into a 32-bit integer - this is our computed hash.
+        if (debug)
+        {
+            fmt::print("msgBuffer[1]: ");
+            for (BYTE b : msgBuffer)
+            {
+                fmt::print("{:x}", b);
+            }
+            fmt::print("\n\n");
+
+            fmt::print("msgDigest[1]: ");
+            for (BYTE b : msgDigest)
+            {
+                fmt::print("{:x}", b);
+            }
+            fmt::print("\n\n");
+        }
+
+        // Translate the byte sha1 into a 32-bit integer - this is our computed hash.
         // Truncate the hash to 31 bits.
-        info.Hash = BYDWORD(msgDigest) & BITMASK(31);
+        ki.Hash = CryptoPP::Crop(IntegerN(msgDigest), 31);
+
+        if (verbose)
+        {
+            BYTE buf[8];
+            sha1.CalculateTruncatedDigest(buf, sizeof(buf), msgBuffer, SHAMessageLength);
+
+            fmt::print("truncated buffer: ");
+            for (BYTE b : buf)
+            {
+                fmt::print("{:x}", b);
+            }
+            fmt::print("\n\n");
+
+            DWORD h0 = ((DWORD)buf[0] | ((DWORD)buf[1] << 8) | ((DWORD)buf[2] << 16) | ((DWORD)buf[3] << 24));
+            DWORD h1 =
+                ((((DWORD)buf[4]) | ((DWORD)buf[5] << 8) | ((DWORD)buf[6] << 16) | ((DWORD)buf[7] << 24)) >> (32 - 19))
+                << 1;
+
+            h1 |= (h0 >> 31) & 1;
+
+            fmt::print("h0,1: {:x} {:x}\n\n", h0, h1);
+
+            ki.Serial = IntegerN(h1);
+
+            fmt::print("serial: {:d}\n\n", ki.Serial);
+        }
 
         // Assemble the second SHA message.
         pMsgBuffer = msgBuffer;
         msgBuffer[0x00] = 0x5D;
         pMsgBuffer++;
 
-        pData.Encode(pMsgBuffer, 2);
-        pMsgBuffer += 2;
+        pMsgBuffer = EncodeN(pData, pMsgBuffer, 2);
+        pMsgBuffer = EncodeN(ki.Hash, pMsgBuffer, 4);
+        pMsgBuffer = EncodeN(ki.AuthInfo, pMsgBuffer, 2);
 
-        info.Hash.Encode(pMsgBuffer, 4);
-        pMsgBuffer += 4;
+        *pMsgBuffer = 0x00;
+        pMsgBuffer++;
 
-        info.AuthInfo.Encode(pMsgBuffer, 2);
-        pMsgBuffer += 2;
-
-        msgBuffer[0x09] = 0x00;
-        msgBuffer[0x0A] = 0x00;
+        *pMsgBuffer = 0x00;
+        pMsgBuffer++;
 
         // newSignature = SHA1(5D || Channel ID || Hash || AuthInfo || 00 00)
-        digest = SHA();
-        digest.Update(msgBuffer, 0x0B);
-        digest.Final(msgDigest);
+        sha1.CalculateDigest(msgDigest, msgBuffer, pMsgBuffer - msgBuffer);
 
-        // Translate the byte digest into a 64-bit integer - this is our computed intermediate signature.
+        if (debug)
+        {
+            fmt::print("msgBuffer[2]: ");
+            for (BYTE b : msgBuffer)
+            {
+                fmt::print("{:x}", b);
+            }
+            fmt::print("\n\n");
+
+            fmt::print("msgDigest[2]: ");
+            for (BYTE b : msgDigest)
+            {
+                fmt::print("{:x}", b);
+            }
+            fmt::print("\n\n");
+        }
+
+        // Translate the byte sha1 into a 64-bit integer - this is our computed intermediate signature.
         // As the signature is only 62 bits long at most, we have to truncate it by shifting the high DWORD right 2
         // bits (per spec).
-        Integer iSignature = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
+        QWORD iSignature = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
 
         /*
          *
@@ -197,13 +250,13 @@ BOOL BINK2002::Generate(std::string &pKey)
          */
 
         // e = ek (mod n)
-        e = iSignature * privateKey % genOrder;
+        e = CryptoPP::ModularMultiplication(IntegerN(iSignature), privateKey, genOrder);
 
         // s = (ek (mod n))²
         s = CryptoPP::ModularExponentiation(e, Integer::Two(), genOrder);
 
         // c *= 4 (c <<= 2)
-        c <<= 2;
+        c *= 4;
 
         // s += c
         s += c;
@@ -212,9 +265,11 @@ BOOL BINK2002::Generate(std::string &pKey)
         // hence if BN_sqrt_mod returns NULL, we need to restart with a different seed.
         // s = √((ek)² + 4c (mod n))
         s = CryptoPP::ModularSquareRoot(s, genOrder);
+        noSquare = s.IsZero();
 
         // s = -ek + √((ek)² + 4c) (mod n)
-        s = s - e % genOrder;
+        s -= e;
+        s %= genOrder;
 
         // If s is odd, add order to it.
         // The order is a prime, so it can't be even.
@@ -225,29 +280,32 @@ BOOL BINK2002::Generate(std::string &pKey)
         }
 
         // s /= 2 (s >>= 1)
-        s >>= 1;
+        s /= 2;
 
         // Translate resulting scalar into a 64-bit integer (the byte order is little-endian).
-        info.Signature = s;
+        ki.Signature = s;
 
         // Pack product key.
-        Pack(&pRaw);
+        pRaw = Pack(ki);
 
-        fmt::print(UMSKT::debug, "Generation results:\n");
-        fmt::print(UMSKT::debug, "{:>10}: {}\n", "Upgrade", (bool)info.isUpgrade);
-        fmt::print(UMSKT::debug, "{:>10}: {}\n", "Channel ID", info.ChannelID);
-        fmt::print(UMSKT::debug, "{:>10}: {}\n", "Hash", info.Hash);
-        fmt::print(UMSKT::debug, "{:>10}: {}\n", "Signature", info.Signature);
-        fmt::print(UMSKT::debug, "{:>10}: {}\n", "AuthInfo", info.AuthInfo);
-        fmt::print(UMSKT::debug, "\n");
-
-    } while (info.Signature > limit || noSquare);
+        if (verbose)
+        {
+            fmt::print(verbose, "Generation results:\n");
+            fmt::print(verbose, "{:>10}: {}\n", "Upgrade", (bool)ki.isUpgrade);
+            fmt::print(verbose, "{:>10}: {}\n", "Channel ID", ki.ChannelID);
+            fmt::print(verbose, "{:>10}: {:x}\n", "Hash", ki.Hash);
+            fmt::print(verbose, "{:>10}: {:x}\n", "Signature", ki.Signature);
+            fmt::print(verbose, "{:>10}: {:x}\n", "AuthInfo", ki.AuthInfo);
+            fmt::print(verbose, "\n");
+        }
+    } while (ki.Signature.BitCount() > 62 || noSquare);
     // ↑ ↑ ↑
     // The signature can't be longer than 62 bits, else it will
     // overlap with the AuthInfo segment next to it.
-
     // Convert bytecode to Base24 CD-key.
-    base24(pKey, pRaw.byte);
+    pKey = base24(pRaw);
+
+    info = ki;
 
     return true;
 }
@@ -257,53 +315,59 @@ BOOL BINK2002::Generate(std::string &pKey)
  *
  * @param pKey
  **/
-BOOL BINK2002::Validate(std::string &pKey)
+BOOL BINK2002::Validate(const std::string &pKey)
 {
-    Q_OWORD bKey;
+    Integer pRaw;
+    SHA1 sha1;
 
     // Convert Base24 CD-key to bytecode.
-    unbase24(bKey.byte, &pKey[0]);
+    pRaw = unbase24(pKey);
 
     // Extract product key segments from bytecode.
-    Unpack(&bKey);
+    KeyInfo ki = Unpack(pRaw);
 
-    Integer pData = info.ChannelID << 1 | info.isUpgrade;
+    Integer pData = ki.ChannelID << 1 | ki.isUpgrade;
 
-    fmt::print(UMSKT::debug, "Validation results:\n");
-    fmt::print(UMSKT::debug, "{:>10}: {}\n", "Upgrade", (bool)info.isUpgrade);
-    fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "Channel ID", info.ChannelID);
-    fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "Hash", info.Hash);
-    fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "Signature", info.Signature);
-    fmt::print(UMSKT::debug, "{:>10}: {:d}\n", "AuthInfo", info.AuthInfo);
-    fmt::print(UMSKT::debug, "\n");
+    if (verbose)
+    {
+        fmt::print(verbose, "Validation results:\n");
+        fmt::print(verbose, "{:>10}: {}\n", "Upgrade", (bool)ki.isUpgrade);
+        fmt::print(verbose, "{:>10}: {}\n", "Channel ID", ki.ChannelID);
+        fmt::print(verbose, "{:>10}: {:x}\n", "Hash", ki.Hash);
+        fmt::print(verbose, "{:>10}: {:x}\n", "Signature", ki.Signature);
+        fmt::print(verbose, "{:>10}: {:x}\n", "AuthInfo", ki.AuthInfo);
+        fmt::print(verbose, "\n");
+    }
 
-    BYTE msgDigest[SHA::DIGESTSIZE], msgBuffer[SHAMessageLength], *pMsgBuffer = msgBuffer;
+    BYTE msgDigest[SHA1::DIGESTSIZE], msgBuffer[SHAMessageLength], *pMsgBuffer = msgBuffer;
 
     // Assemble the first SHA message.
     msgBuffer[0x00] = 0x5D;
     pMsgBuffer++;
 
-    pData.Encode(pMsgBuffer, 2);
-    pMsgBuffer += 2;
+    pMsgBuffer = EncodeN(pData, pMsgBuffer, 2);
+    pMsgBuffer = EncodeN(ki.Hash, pMsgBuffer, 4);
+    pMsgBuffer = EncodeN(ki.AuthInfo, pMsgBuffer, 2);
 
-    info.Hash.Encode(pMsgBuffer, 4);
-    pMsgBuffer += 4;
+    *pMsgBuffer = 0x00;
+    pMsgBuffer++;
 
-    info.AuthInfo.Encode(pMsgBuffer, 2);
-    pMsgBuffer += 2;
-
-    msgBuffer[0x09] = 0x00;
-    msgBuffer[0x0A] = 0x00;
+    *pMsgBuffer = 0x00;
+    pMsgBuffer++;
 
     // newSignature = SHA1(5D || Channel ID || Hash || AuthInfo || 00 00)
-    auto digest = SHA();
-    digest.Update(msgBuffer, 0x0B);
-    digest.Final(msgDigest);
+    sha1.CalculateDigest(msgDigest, msgBuffer, pMsgBuffer - msgBuffer);
 
-    // Translate the byte digest into a 64-bit integer - this is our computed intermediate signature.
+    if (debug)
+    {
+        auto intDigest = IntegerN(msgDigest);
+        fmt::print(debug, "\nhash 1: {:x}\n\n", intDigest);
+    }
+
+    // Translate the byte sha1 into a 64-bit integer - this is our computed intermediate signature.
     // As the signature is only 62 bits long at most, we have to truncate it by shifting the high DWORD right 2 bits
     // (per spec).
-    Integer iSignature = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
+    QWORD iSignature = NEXTSNBITS(BYDWORD(&msgDigest[4]), 30, 2) << 32 | BYDWORD(msgDigest);
 
     /*
      *
@@ -319,45 +383,52 @@ BOOL BINK2002::Validate(std::string &pKey)
      *  P = s(sG + eK)
      *
      */
-    Integer e = iSignature, s = info.Signature;
+    Integer e = IntegerN(iSignature), s = ki.Signature;
 
     // Create 2 points on the elliptic curve.
-    ECP::Point p, t;
+    ECP::Point P, t;
 
     // t = sG
     t = eCurve.Multiply(s, genPoint);
 
-    // p = eK
-    p = eCurve.Multiply(e, pubPoint);
+    // P = eK
+    P = eCurve.Multiply(e, pubPoint);
 
-    // p += t
-    p = eCurve.Add(p, t);
+    // P += t
+    P = eCurve.Add(P, t);
 
-    // p *= s
-    p = eCurve.Multiply(s, p);
+    // P *= s
+    P = eCurve.Multiply(s, P);
+
+    if (debug)
+    {
+        fmt::print("P[x,y]: [{:x},\n{:x}]\n\n", P.x, P.y);
+    }
 
     // Assemble the second SHA message.
     pMsgBuffer = msgBuffer;
     msgBuffer[0x00] = 0x79;
     pMsgBuffer++;
 
-    pData.Encode(pMsgBuffer, 2);
-    pMsgBuffer += 2;
+    pMsgBuffer = EncodeN(pData, pMsgBuffer, 2);
+    pMsgBuffer = EncodeN(P.x, pMsgBuffer, FieldBytes);
+    EncodeN(P.y, pMsgBuffer, FieldBytes);
 
-    p.x.Encode(pMsgBuffer, FieldBytes);
-    pMsgBuffer += FieldBytes;
+    // compHash = SHA1(79 || Channel ID || P.x || P.y)
+    sha1.CalculateDigest(msgDigest, msgBuffer, SHAMessageLength);
 
-    p.y.Encode(pMsgBuffer, FieldBytes);
-    pMsgBuffer += FieldBytes;
+    auto intDigest = IntegerN(msgDigest);
+    if (debug)
+    {
+        fmt::print(debug, "hash 2: {:x}\n\n", intDigest);
+    }
 
-    // compHash = SHA1(79 || Channel ID || p.x || p.y)
-    digest.Update(msgBuffer, SHAMessageLength);
-    digest.Final(msgDigest);
-
-    // Translate the byte digest into a 32-bit integer - this is our computed hash.
+    // Translate the byte sha1 into a 32-bit integer - this is our computed hash.
     // Truncate the hash to 31 bits.
-    Integer compHash = BYDWORD(msgDigest) & BITMASK(31);
+    Integer compHash = CryptoPP::Crop(intDigest, 31);
+
+    info = ki;
 
     // If the computed hash checks out, the key is valid.
-    return compHash == info.Hash;
+    return compHash == ki.Hash;
 }

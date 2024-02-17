@@ -148,7 +148,7 @@ extern "C"
 
     // ---------------------------------------------
 
-    EXPORT void *PIDGEN3_INIT(const char *p, const char *a, const char *b, const char *generatorX,
+    EXPORT void *PIDGEN3_INIT(const char *binkid, const char *p, const char *a, const char *b, const char *generatorX,
                               const char *generatorY, const char *publicKeyX, const char *publicKeyY,
                               const char *genOrder, const char *privateKey)
     {
@@ -163,7 +163,7 @@ extern "C"
             p3 = new BINK2002();
         }
 
-        p3->LoadEllipticCurve(p, a, b, generatorX, generatorY, publicKeyX, publicKeyY, genOrder, privateKey);
+        p3->LoadEllipticCurve(binkid, p, a, b, generatorX, generatorY, publicKeyX, publicKeyY, genOrder, privateKey);
 
         return p3;
     }

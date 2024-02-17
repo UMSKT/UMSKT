@@ -25,58 +25,76 @@
 
 #include "../typedefs.h"
 
-#include <iostream>
-#include <sstream>
-#include <string>
+#ifdef __DJGPP__
+#include <time.h>
+#endif
 
 #include <cryptopp/cryptlib.h>
 #include <cryptopp/ecp.h>
-#include <cryptopp/filters.h>
-#include <cryptopp/hex.h>
 #include <cryptopp/integer.h>
+#include <cryptopp/misc.h>
 #include <cryptopp/nbtheory.h>
 #include <cryptopp/osrng.h>
-#include <cryptopp/randpool.h>
-#include <cryptopp/rng.h>
 #include <cryptopp/sha.h>
 
-using Integer = CryptoPP::Integer;
 using ECP = CryptoPP::ECP;
-using SHA = CryptoPP::SHA1;
+using SHA1 = CryptoPP::SHA1;
+using Integer = CryptoPP::Integer;
 
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
-class HexInteger : public Integer
-{
-};
-
 // fmt <-> CryptoPP linkage
-template <> struct fmt::formatter<HexInteger> : fmt::formatter<std::string_view>
+template <> class fmt::formatter<Integer>
 {
-    auto format(const HexInteger &i, format_context &ctx) const
+    char type_ = 'd';
+
+  public:
+    constexpr auto parse(format_parse_context &ctx)
     {
-        size_t size = i.MinEncodedSize();
-        CryptoPP::SecByteBlock encoded;
-        encoded.resize(size);
-        i.Encode(encoded, size);
+        auto i = ctx.begin(), end = ctx.end();
 
-        std::string hexString;
+        if (i != end)
+        {
+            switch (*i)
+            {
+            case 'B':
+            case 'b':
+            case 'o':
+            case 'X':
+            case 'x':
+            case 'd':
+                type_ = *i++;
+            }
+        }
 
-        CryptoPP::HexEncoder encoder(new CryptoPP::StringSink(hexString), false);
-        encoder.Put(encoded, size);
-        encoder.MessageEnd();
-
-        return fmt::formatter<std::string_view>::format(hexString, ctx);
+        if (i != end && *i != '}')
+        {
+            throw format_error("invalid format");
+        }
+        return i;
     }
-};
 
-template <> struct fmt::formatter<Integer> : ostream_formatter
-{
-    auto format(const Integer &i, format_context &ctx) const
+    template <typename FmtContext> constexpr auto format(const Integer &i, FmtContext &ctx) const
     {
-        return basic_ostream_formatter<char>::format(i, ctx);
+        switch (type_)
+        {
+        case 'B':
+        case 'b':
+            return format_to(ctx.out(), "{}", IntToString(i, 2));
+
+        case 'o':
+            return format_to(ctx.out(), "{}", IntToString(i, 8));
+
+        case 'X':
+        case 'x':
+            return format_to(ctx.out(), "{}", IntToString(i, 16));
+
+        case 'd':
+        default:
+            return format_to(ctx.out(), "{}", IntToString(i, 10));
+        }
     }
 };
 
@@ -137,34 +155,141 @@ enum UMSKT_TAG
 class EXPORT UMSKT
 {
   public:
-    static std::FILE *debug;
-    static BOOL VERBOSE;
-    static BOOL DEBUG;
-    static std::map<UMSKT_TAG, UMSKT_Value> tags;
-    static CryptoPP::DefaultAutoSeededRNG rng;
-
-    static void DESTRUCT()
+    /**
+     * Convert a std::string to an Integer
+     *
+     * @param in
+     * @return
+     */
+    INLINE static Integer IntegerS(const std::string &in)
     {
-        if (debug != nullptr)
-        {
-            std::fclose(debug);
-        }
-        debug = nullptr;
+        return Integer(&in[0]);
     }
 
-    static void setDebugOutput(std::FILE *input);
+    /**
+     * Convert a std::string to an Integer
+     *
+     * @param in
+     * @return
+     */
+    INLINE static Integer IntegerHexS(const std::string &in)
+    {
+        return IntegerS("0x" + in);
+    }
 
-    template <typename T> static T getRandom()
+    /**
+     * Convert Native byte buffer to Integer
+     *
+     * @param buf
+     * @param size
+     * @return
+     */
+    INLINE static Integer IntegerN(BYTE *buf, size_t size)
+    {
+        return {buf, size, Integer::UNSIGNED, CryptoPP::LITTLE_ENDIAN_ORDER};
+    }
+
+    /**
+     * Convert Native Type T to Integer, where T is a concrete type
+     *
+     * @tparam T
+     * @param in
+     * @return
+     */
+    template <typename T> INLINE static Integer IntegerN(const T &in)
+    {
+        return IntegerN((BYTE *)&in, sizeof(T));
+    }
+
+    /**
+     * Encode Integer to a Native byte buffer
+     *
+     * @param in
+     * @param buf
+     * @param buflen
+     * @return
+     */
+    INLINE static BYTE *EncodeN(const Integer &in, BYTE *buf, size_t buflen)
+    {
+        in.Encode(buf, buflen);
+        std::reverse(buf, buf + buflen);
+        return buf + buflen;
+    }
+
+    /**
+     * Encode Integer to Native type T where T is a concrete type
+     *
+     * @tparam T
+     * @param in
+     * @param buf
+     * @return
+     */
+    template <typename T> INLINE static BYTE *EncodeN(const Integer &in, T &buf)
+    {
+        return EncodeN(in, (BYTE *)&buf, sizeof(T));
+    }
+
+    /**
+     * Encode a random number into a Native concrete type
+     *
+     * @tparam T
+     * @return
+     */
+    template <typename T> INLINE static T getRandom()
     {
         T retval;
         rng.GenerateBlock((BYTE *)&retval, sizeof(retval));
         return retval;
     }
 
-    static const char *VERSION()
+    INLINE static std::string strtolower(std::string &in)
     {
-        return fmt::format("LIBUMSKT {} compiled on {} {}", LIBUMSKT_VERSION_STRING, __DATE__, __TIME__).c_str();
+        auto retval = std::string(in);
+        std::transform(retval.begin(), retval.end(), retval.begin(), ::tolower);
+        return retval;
     }
+
+    INLINE static std::string strtoupper(const std::string &in)
+    {
+        auto retval = std::string(in);
+        std::transform(retval.begin(), retval.end(), retval.begin(), ::toupper);
+        return retval;
+    }
+
+    /**
+     * Gets the compiled-in version information
+     *
+     * @return Null-Terminated C-Style string pointer
+     */
+    INLINE static const std::string VERSION()
+    {
+        return fmt::format("LIBUMSKT {} compiled on {} {}", LIBUMSKT_VERSION_STRING, __DATE__, __TIME__);
+    }
+
+    static std::FILE *debug;
+    static std::FILE *verbose;
+    static BOOL IS_CONSTRUCTED;
+    static std::map<UMSKT_TAG, UMSKT_Value> tags;
+    static CryptoPP::DefaultAutoSeededRNG rng;
+
+    static BOOL CONSTRUCT();
+
+    static void DESTRUCT()
+    {
+        if (debug != nullptr && debug != stdout && debug != stderr)
+        {
+            std::fclose(debug);
+            debug = nullptr;
+        }
+        if (verbose != nullptr && verbose != stdout && debug != stderr)
+        {
+            std::fclose(verbose);
+            verbose = nullptr;
+        }
+    }
+
+    static void setDebugOutput(std::FILE *input);
+    static void setVerboseOutput(std::FILE *input);
 };
 
 #endif // UMSKT_LIBUMSKT_H

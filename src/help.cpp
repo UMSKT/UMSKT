@@ -76,7 +76,7 @@ void CLI::SetHelpText()
 
     helpOptions[OPTION_AUTHDATA] = {
         "a",  "authdata", "(advanced, PIDGEN 3 [BINK 2002] only) specify a value for the authentication data field",
-        true, "",         nullptr};
+        true, "",         &SetAuthDataOption};
 
     helpOptions[OPTION_VALIDATE] = {
         "V",  "validate", "validate a specified product ID against known BINKs and algorithms",
@@ -132,7 +132,7 @@ BOOL CLI::parseCommandLine()
                 continue;
             }
 
-            auto success = thisOption.handler(1, &nextarg[0]);
+            auto success = thisOption.handler(nextarg);
 
             if (!success)
             {
@@ -155,9 +155,13 @@ BOOL CLI::parseCommandLine()
     }
 
 CommandLineParseEnd:
+    if (options.verbose)
+    {
+        fmt::print("\n");
+    }
     if (options.error)
     {
-        DisplayErrorMessage(0, nullptr);
+        DisplayErrorMessage("");
     }
     return !options.error;
 }
@@ -176,126 +180,108 @@ BOOL CLI::processOptions()
 
     if (options.list)
     {
-        // the following code is absolutely unhinged
-        // I'm so sorry
-
-#if defined(__UNICODE__) || defined(__GNUC__)
-        auto *leaf = "\u251C", *last = "\u2514", *line = "\u2500";
-#else
-        auto *leaf = "\xC3", *last = "\xC0", *line = "\xC4";
-#endif
-
-        fmt::print("Listing known products and flavours: \n\n");
-
-        fmt::print("* The following product list uses this style of formatting:\n");
-        fmt::print("{}: {} \n", fmt::styled("PRODUCT", fmt::emphasis::bold), "Product name");
-        fmt::print("{}{}{} {}: {} \n", last, line, line, "FLAVOUR", "Flavour name");
-        fmt::print("* Products that require a flavour are noted with {}\n\n",
-                   fmt::styled("(no default)", fmt::emphasis::bold));
-
-        for (auto const &i : keys["products"].items())
-        {
-            auto el = i.value();
-            auto containsFlavours = el.contains("flavours");
-
-            fmt::print("{:<9} {} ", fmt::styled(fmt::format("{}:", i.key()), fmt::emphasis::bold), el["name"]);
-            if (el.contains("BINK"))
-            {
-                fmt::print("{}\n", el["BINK"]);
-            }
-            else if (el["meta"].contains("default"))
-            {
-                fmt::print("(default: {} {})\n", fmt::styled(el["meta"]["default"], fmt::emphasis::bold),
-                           el["flavours"][el["meta"]["default"]]["BINK"]);
-            }
-            else if (el["meta"]["type"].get<std::string>() == "PIDGEN3")
-            {
-                fmt::print("[{}]\n", el["meta"]["type"]);
-            }
-            else
-            {
-                fmt::print("{}\n", fmt::styled("(no default)", fmt::emphasis::bold));
-            }
-            if (containsFlavours)
-            {
-                auto flavours = el["flavours"];
-                for (auto j = flavours.begin(); j != flavours.end(); j++)
-                {
-                    auto el2 = j.value();
-                    BOOL isLast = j == --flavours.end();
-                    fmt::print("{}{}{} {:<9} {} ", !isLast ? leaf : last, line, line, fmt::format("{}:", j.key()),
-                               fmt::format("{} {}", el["name"], el2["name"]));
-                    if (el2.contains("meta") && el2["meta"].contains("type"))
-                    {
-                        fmt::print("[{}]\n", el2["meta"]["type"]);
-                    }
-                    else
-                    {
-                        fmt::print("{}\n", el2["BINK"]);
-                    }
-                }
-            }
-            fmt::print("\n");
-        }
-
-        return false;
+        return processListCommand();
     }
 
     if (options.productCode.empty())
     {
-        fmt::print("ERROR: product code is required. Exiting...");
-        DisplayHelp(0, nullptr);
+        fmt::print("ERROR: product code is required. Exiting...\n");
+        DisplayHelp("");
         return false;
     }
 
-    const char *productCode = &options.productCode[0];
-    if (!keys["products"].contains(productCode))
+    if (!keys["products"].contains(options.productCode))
     {
-        fmt::print("ERROR: Product {} is unknown", productCode);
+        fmt::print("ERROR: Product \"{}\" is unknown\n", options.productCode);
         return false;
     }
 
-    auto product = keys["products"][productCode];
+    auto product = keys["products"][options.productCode];
     if (options.verbose)
     {
-        fmt::print("Selecting product: {}\n", productCode);
+        fmt::print("Selecting product: {}\n", options.productCode);
     }
 
     json flavour;
     if (product.contains("flavours"))
     {
-        flavour = product["flavours"][options.productFlavour];
-        if (options.verbose)
+        // no default flavour, no flavour specified
+        if (!product["meta"].contains("default") && options.productFlavour.empty())
         {
-            fmt::print("Selecting flavour: {}\n", options.productFlavour);
+            fmt::print("ERROR: Product \"{}\n does not have a default flavour. Please specify a flavour.",
+                       options.productCode);
+            return false;
+        }
+        // yes flavour specified, but not found
+        else if (!product["flavours"].contains(options.productFlavour) && !options.productFlavour.empty())
+        {
+            fmt::print("ERROR: Product \"{}\" does not have a flavour named \"{}\"\n", options.productCode,
+                       options.productFlavour);
+            return false;
+        }
+        // yes default flavour, no flavour specified
+        else if (product["meta"].contains("default") && options.productFlavour.empty())
+        {
+            flavour = product["flavours"][product["meta"]["default"]];
+            if (options.verbose)
+            {
+                fmt::print("Selecting default flavour: {}\n", product["meta"]["default"]);
+            }
+        }
+        // yes flavour specified, and is found
+        else
+        {
+            flavour = product["flavours"][options.productFlavour];
+            if (options.verbose)
+            {
+                fmt::print("Selecting flavour: {}\n", options.productFlavour);
+            }
         }
     }
     else
     {
+        // no variants, just go with what we have
         flavour = product;
     }
 
-    if (options.state != STATE_PIDGEN_GENERATE && options.state != STATE_PIDGEN_VALIDATE)
+    if (options.state != Options::STATE_PIDGEN_GENERATE && options.state != Options::STATE_PIDGEN_VALIDATE)
     {
         // exit early if we're not doing PIDGEN
         goto processOptionsExitEarly;
     }
 
-    if (options.oem)
+    if (flavour["meta"]["type"] == "PIDGEN3")
     {
-        flavour["BINK"][1].get_to(options.binkID);
+        options.pidgenversion = Options::PIDGEN_VERSION::PIDGEN_3;
+        if (options.verbose)
+        {
+            fmt::print("Setting PIDGEN type to \"PIDGEN3\"\n");
+        }
+
+        if (options.oem)
+        {
+            flavour["BINK"][1].get_to(options.binkID);
+        }
+        else
+        {
+            flavour["BINK"][0].get_to(options.binkID);
+        }
+
+        if (options.verbose)
+        {
+            fmt::print("Selected BINK: {}\n", options.binkID);
+        }
     }
-    else
+    else if (flavour["meta"]["type"] == "PIDGEN2")
     {
-        flavour["BINK"][0].get_to(options.binkID);
+        options.pidgenversion = Options::PIDGEN_VERSION::PIDGEN_2;
+        if (options.verbose)
+        {
+            fmt::print("Setting PIDGEN type to \"PIDGEN2\"\n");
+        }
     }
 
-    if (options.verbose)
-    {
-        fmt::print("Selected BINK: {}\n", options.binkID);
-    }
-
-    if (options.state != STATE_PIDGEN_GENERATE)
+    if (options.state != Options::STATE_PIDGEN_GENERATE)
     {
         // exit early if we're only validating
         goto processOptionsExitEarly;
@@ -329,14 +315,15 @@ BOOL CLI::processOptions()
 
         if (options.verbose)
         {
-            fmt::print("Selected channel ID: {} (DPC entry {}/{})\n", options.channelID, rand % filtered.size(),
+            fmt::print("Selected channel ID: {} (DPC entry {}/{})\n", options.channelID, (rand % filtered.size()) + 1,
                        filtered.size());
         }
     }
 
-    if (options.channelID == 0)
+    if (options.channelID.IsZero())
     {
-        options.channelID = UMSKT::getRandom<WORD>() % 999;
+        options.channelID.Randomize(UMSKT::rng, sizeof(DWORD32) * 8);
+        options.channelID %= PIDGEN::MaxChannelID;
         if (options.verbose)
         {
             fmt::print("Generated channel ID: {}\n", options.channelID);
@@ -360,10 +347,87 @@ processOptionsExitEarly:
 }
 
 /**
+ * Displays the contents of the input JSON file in an
+ * intuitive and attractive pattern
+ *
+ * @return false
+ */
+BOOL CLI::processListCommand()
+{
+    // the following code is absolutely unhinged
+    // I'm so sorry
+
+#if defined(__UNICODE__) || defined(__GNUC__)
+    auto *leaf = "\u251C", *last = "\u2514", *line = "\u2500";
+#else
+    auto *leaf = "\xC3", *last = "\xC0", *line = "\xC4";
+#endif
+
+    fmt::print("Listing known products and flavours: \n\n");
+
+    fmt::print("* The following product list uses this style of formatting:\n");
+    fmt::print("{}: {} \n", fmt::styled("PRODUCT", fmt::emphasis::bold), "Product name");
+    fmt::print("{}{}{} {}: {} \n", last, line, line, "FLAVOUR", "Flavour name");
+    fmt::print("* Products that require a flavour are noted with {}\n\n",
+               fmt::styled("(no default)", fmt::emphasis::bold));
+
+    for (auto const &i : keys["products"].items())
+    {
+        auto el = i.value();
+        auto containsFlavours = el.contains("flavours");
+
+        fmt::print("{:<9} {} ", fmt::styled(fmt::format("{}:", i.key()), fmt::emphasis::bold), el["name"]);
+        if (el.contains("BINK"))
+        {
+            fmt::print("{}\n", el["BINK"]);
+        }
+        else if (el["meta"].contains("default"))
+        {
+            fmt::print("(default: {} {})\n", fmt::styled(el["meta"]["default"], fmt::emphasis::bold),
+                       el["flavours"][el["meta"]["default"]]["BINK"]);
+        }
+        else if (el["meta"]["type"] == "PIDGEN3")
+        {
+            fmt::print("[{}]\n", el["meta"]["type"]);
+        }
+        else
+        {
+            fmt::print("{}\n", fmt::styled("(no default)", fmt::emphasis::bold));
+        }
+
+        if (containsFlavours)
+        {
+            auto flavours = el["flavours"];
+            for (auto j = flavours.begin(); j != flavours.end(); j++)
+            {
+                auto el2 = j.value();
+                BOOL isLast = j == --flavours.end();
+
+                fmt::print("{}{}{} {:<9} {} ", !isLast ? leaf : last, line, line, fmt::format("{}:", j.key()),
+                           fmt::format("{} {}", el["name"], el2["name"]));
+
+                if (el2.contains("meta") && el2["meta"].contains("type"))
+                {
+                    fmt::print("[{}]\n", el2["meta"]["type"]);
+                }
+                else
+                {
+                    fmt::print("{}\n", el2["BINK"]);
+                }
+            }
+        }
+
+        fmt::print("\n");
+    }
+
+    return false;
+}
+
+/**
  *
  * @return success
  */
-BOOL CLI::DisplayHelp(int, char *)
+BOOL CLI::DisplayHelp(const std::string &)
 {
     options.help = true;
     fmt::print("usage: {} \n", options.argv[0]);
@@ -371,6 +435,7 @@ BOOL CLI::DisplayHelp(int, char *)
     for (BYTE i = 0; i < CLIHelpOptionID_END; i++)
     {
         CLIHelpOptions o = helpOptions[i];
+
         if (o.Short.empty())
         {
             fmt::print("\t{:>2} --{:<15} {}", "", o.Long, o.HelpText);
@@ -396,33 +461,31 @@ BOOL CLI::DisplayHelp(int, char *)
     return true;
 }
 
-BOOL CLI::DisplayErrorMessage(int, char *)
+BOOL CLI::DisplayErrorMessage(const std::string &)
 {
     fmt::print("Error parsing command line options\n");
-    DisplayHelp(0, nullptr);
+    DisplayHelp("");
     options.error = true;
     return false;
 }
 
-BOOL CLI::SetVerboseOption(int, char *)
+BOOL CLI::SetVerboseOption(const std::string &)
 {
-    fmt::print("Enabling verbose option\n\n");
     options.verbose = true;
-    UMSKT::VERBOSE = true;
-    UMSKT::setDebugOutput(stderr);
+    UMSKT::setVerboseOutput(stdout);
+    fmt::print(UMSKT::verbose, "Enabling verbose option\n");
     return true;
 }
 
-BOOL CLI::SetDebugOption(int, char *)
+BOOL CLI::SetDebugOption(const std::string &)
 {
-    fmt::print("Enabling debug option\n");
     options.verbose = true;
-    UMSKT::DEBUG = true;
-    UMSKT::setDebugOutput(stderr);
+    UMSKT::setDebugOutput(stdout);
+    fmt::print(UMSKT::debug, "Enabling debug option\n");
     return true;
 }
 
-BOOL CLI::SetListOption(int, char *)
+BOOL CLI::SetListOption(const std::string &)
 {
     if (options.verbose)
     {
@@ -432,7 +495,7 @@ BOOL CLI::SetListOption(int, char *)
     return true;
 }
 
-BOOL CLI::SetOEMOption(int, char *)
+BOOL CLI::SetOEMOption(const std::string &)
 {
     if (options.verbose)
     {
@@ -442,7 +505,7 @@ BOOL CLI::SetOEMOption(int, char *)
     return true;
 }
 
-BOOL CLI::SetUpgradeOption(int, char *)
+BOOL CLI::SetUpgradeOption(const std::string &)
 {
     if (options.verbose)
     {
@@ -452,7 +515,7 @@ BOOL CLI::SetUpgradeOption(int, char *)
     return true;
 }
 
-BOOL CLI::SetFileOption(int count, char *file)
+BOOL CLI::SetFileOption(const std::string &file)
 {
     if (options.verbose)
     {
@@ -462,39 +525,25 @@ BOOL CLI::SetFileOption(int count, char *file)
     return true;
 }
 
-BOOL CLI::SetNumberOption(int count, char *num)
+BOOL CLI::SetNumberOption(const std::string &num)
 {
-    int nKeys;
-    if (!_sscanf(num, "%d", &nKeys))
-    {
-        return false;
-    }
+    auto nKeys = UMSKT::IntegerS(num);
 
     if (options.verbose)
     {
         fmt::print("Setting generation number option to: {}\n", num);
     }
 
-    options.numKeys = nKeys;
+    options.numKeys = nKeys.ConvertToLong();
     return true;
 }
 
-/**
- *
- * @param count
- * @param channum
- * @return
- */
-BOOL CLI::SetChannelIDOption(int count, char *channum)
+BOOL CLI::SetChannelIDOption(const std::string &channum)
 {
-    int siteID;
-    if (!_sscanf(channum, "%d", &siteID))
-    {
-        return false;
-    }
+    Integer channelID = UMSKT::IntegerS(channum);
 
     // channel ids must be between 000 and 999
-    if (siteID > 999)
+    if (channelID > PIDGEN::MaxChannelID)
     {
         fmt::print("ERROR: refusing to create a key with a Channel ID greater than 999\n");
         return false;
@@ -502,95 +551,117 @@ BOOL CLI::SetChannelIDOption(int count, char *channum)
 
     if (options.verbose)
     {
-        fmt::print("Setting channel number option to: {}\n", siteID);
+        fmt::print("Setting Channel ID option to: {}\n", channelID);
     }
 
-    options.channelID = siteID;
+    options.channelID = channelID;
     return true;
 }
 
-BOOL CLI::SetBINKOption(int count, char *bink)
+BOOL CLI::SetBINKOption(const std::string &bink)
 {
     auto strbinkid = std::string(bink);
-    options.binkID = strtoupper(strbinkid);
+    options.binkID = UMSKT::strtoupper(strbinkid);
 
     if (options.verbose)
     {
-        fmt::print("Setting BINK option to {}\n", strbinkid);
+        fmt::print("Setting BINK option to: {}\n", strbinkid);
     }
     return true;
 }
 
-BOOL CLI::SetFlavourOption(int count, char *flavour)
+BOOL CLI::SetFlavourOption(const std::string &flavour)
 {
-    auto strflavour = std::string(flavour);
-    options.productFlavour = strtoupper(strflavour);
+    auto strFlavour = UMSKT::strtoupper(flavour);
+    options.productFlavour = strFlavour;
 
     if (options.verbose)
     {
-        fmt::print("Setting flavour option to {}\n", strflavour);
+        fmt::print("Setting flavour option to: {}\n", strFlavour);
     }
     return true;
 }
 
-/**
- *
- * @param count
- * @param arg
- * @return
- */
-BOOL CLI::SetSerialOption(int count, char *arg)
+BOOL CLI::SetSerialOption(const std::string &arg)
 {
-    int serial_val;
-    if (!_sscanf(arg, "%d", &serial_val))
-    {
-        return false;
-    }
+    Integer Serial = UMSKT::IntegerS(arg);
 
     // serials must be between 000000 and 999999
-    if (serial_val > 999999)
+    if (Serial > PIDGEN::MaxSerial)
     {
         fmt::print("ERROR: refusing to create a key with a Serial not between 000000 and 999999\n");
         return false;
     }
 
-    options.serialSet = true;
-    options.serial = serial_val;
+    options.serial = Serial;
+
+    if (options.verbose)
+    {
+        fmt::print("Setting serial number option to: {}\n", Serial);
+    }
     return true;
 }
 
-BOOL CLI::SetActivationIDOption(int count, char *aid)
+BOOL CLI::SetActivationIDOption(const std::string &aid)
 {
     options.installationID = aid;
-    options.state = STATE_CONFIRMATION_ID;
-    return true;
-}
+    options.state = Options::STATE_CONFIRMATION_ID;
 
-BOOL CLI::SetProductIDOption(int count, char *product)
-{
     if (options.verbose)
     {
-        fmt::print("Setting product ID to {}", product);
+        fmt::print("Setting program state to Confirmation ID Generation\n");
     }
-    options.productID = product;
+
     return true;
 }
 
-BOOL CLI::SetValidateOption(int count, char *productID)
+BOOL CLI::SetProductIDOption(const std::string &product)
+{
+    options.productID = product;
+
+    if (options.verbose)
+    {
+        fmt::print("Setting product ID option to: {}\n", product);
+    }
+
+    return true;
+}
+
+BOOL CLI::SetValidateOption(const std::string &productID)
 {
     options.keyToCheck = productID;
-    options.state = STATE_PIDGEN_VALIDATE;
-    return true;
-}
-
-BOOL CLI::SetProductCodeOption(int, char *product)
-{
-    auto strProduct = std::string(product);
-    options.productCode = strtoupper(strProduct);
+    options.state = Options::STATE_PIDGEN_VALIDATE;
 
     if (options.verbose)
     {
-        fmt::print("Setting product code to {}\n", strProduct);
+        fmt::print("Setting program state to PIDGEN Validation\n");
     }
+
+    return true;
+}
+
+BOOL CLI::SetProductCodeOption(const std::string &product)
+{
+    auto strProduct = std::string(product);
+    options.productCode = UMSKT::strtoupper(strProduct);
+    options.productFlavour = "";
+
+    if (options.verbose)
+    {
+        fmt::print("Setting product code to: {}\n", strProduct);
+    }
+    return true;
+}
+
+BOOL CLI::SetAuthDataOption(const std::string &authData)
+{
+    auto strAuthData = std::string(authData);
+    options.authInfo = strAuthData;
+
+    if (options.verbose)
+    {
+        fmt::print("Setting authdata option to: {}\n", strAuthData);
+    }
+
     return true;
 }

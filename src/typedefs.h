@@ -28,16 +28,21 @@
 #define WIN32_LEAN_AND_MEAN
 #include <intrin.h>
 #include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
 
-#endif // defined(WIN32)
+#endif // defined(_MSC_VER)
 
 #include <algorithm>
 #include <cstdbool>
 #include <cstdint>
+#include <iostream>
 #include <map>
+#include <numeric>
+#include <sstream>
+#include <string>
 #include <vector>
 
-#ifdef DEBUG
+#if defined(DEBUG) || 1
 #include <cassert>
 #else
 #define assert(x) /* do nothing */
@@ -76,23 +81,6 @@
 #define INLINE FNINLINE
 #endif // ifdef  __EMSCRIPTEN__
 
-// POSIX <-> Windows compatability layer, because MS just *had* to be different
-#ifdef _MSC_VER
-#ifndef _sscanf
-#define _sscanf sscanf_s
-#endif
-#ifndef _strncpy
-#define _strncpy strncpy_s
-#endif
-#ifndef _strcpy
-#define _strcpy strcpy_s
-#endif
-#else
-#define _sscanf sscanf
-#define _strncpy(x, y, z, w) strncpy(x, z, w)
-#define _strcpy strcpy
-#endif // ifdef _MSC_VER
-
 // Type definitions now with more windows compatability (unfortunately)
 using BOOL = int32_t;
 using BYTE = uint8_t;
@@ -101,15 +89,14 @@ using DWORD = unsigned long;
 using DWORD32 = uint32_t;
 using QWORD = uint64_t;
 
-#if defined(_MSC_VER) && defined(_M_ARM) // for Windows on ARM ??
-using __m128 = __n128;
-#endif
-
 #if defined(__SIZEOF_INT128__) || defined(__int128)
 using uint128_t = unsigned __int128;
-#else // use the intel-supplied __m128 intrisic
+#elif defined(_MSC_VER) && defined(_M_ARM) // for Windows on ARM ??
+using uint128_t = __n128;
+#else                                      // use the intel-supplied __m128 intrisic from <intrin.h>
 using uint128_t = __m128;
 #endif
+
 using OWORD = uint128_t;
 
 typedef union {
