@@ -23,7 +23,10 @@ name: C/C++ CI (Linux)
 on:
   push:
     branches: [ "*" ]
-    paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**' ] # If only these files are edited, skip
+  pull_request:
+    branches: [ "*" ]
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**' ] # If only these files are edited, skip
   workflow_dispatch:
 
 jobs:
@@ -35,36 +38,53 @@ jobs:
           - x86
           - x86_64
           - aarch64
+          - armhf
+          - armv7
+          - ppc64le
+          - riscv64
+          - s390x
+
     steps:
-    - name: Checkout Source Tree
-      uses: actions/checkout@v3
+      - name: Checkout Source Tree
+        uses: actions/checkout@v4.1.1
 
-    - name: Setup latest Alpine Linux for ${{ matrix.arch }}
-      uses: jirutka/setup-alpine@v1
-      with:
-        packages: >
-          bash
-          build-base
-          cmake
-          git
-          musl-dev
-        arch: ${{ matrix.arch }}
-        shell-name: alpine-target.sh
+      - name: Set up CPM cache
+        id: cache-cpm
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.cpm-cache
+          key: ${{ runner.os }}-cpm-${{ hashFiles('**/') }}
+          restore-keys: |
+            ${{ runner.os }}-cpm-
 
-    - name: Configure and build UMSKT
-      uses: threeal/cmake-action@v1.3.0
-      with:
-        options: MUSL_STATIC=ON CMAKE_BUILD_TYPE=Release
-        run-build: true
-        shell: alpine-target.sh {0}
+      - name: Setup latest Alpine Linux for ${{ matrix.arch }}
+        uses: jirutka/setup-alpine@v1
+        with:
+          packages: >
+            bash
+            build-base
+            cmake
+            git
+            musl-dev
+          arch: ${{ matrix.arch }}
+          shell-name: alpine-target.sh
 
-    - name: Move files to correct directory
-      run: |
+      - name: Configure and build UMSKT
+        uses: threeal/cmake-action@v1.3.0
+        with:
+          options: UMSKT_MUSL_STATIC=ON CMAKE_BUILD_TYPE=Release CPM_SOURCE_CACHE=${{ github.workspace }}/.cpm-cache BUILD_TESTING=On
+          run-build: true
+          build-args: -j 2
+          run-test: true
+          shell: alpine-target.sh {0}
+
+      - name: Move files to correct directory
+        run: |
           mkdir -p build/actions_upload
           mv build/umskt build/actions_upload/umskt
 
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v3.1.2
-      with:
-        name: UMSKT-linux-${{ matrix.arch }}-static
-        path: build/actions_upload
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4.3.1
+        with:
+          name: UMSKT-linux-${{ matrix.arch }}-static
+          path: build/actions_upload

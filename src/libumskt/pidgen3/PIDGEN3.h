@@ -23,7 +23,7 @@
 #ifndef UMSKT_PIDGEN3_H
 #define UMSKT_PIDGEN3_H
 
-#include "../pidgen.h"
+#include <libumskt/pidgen.h>
 
 class BINK1998;
 class BINK2002;
@@ -51,14 +51,12 @@ class EXPORT PIDGEN3 : public PIDGEN
         eCurve = p3.eCurve;
     }
 
-    virtual ~PIDGEN3()
-    {
-    }
+    ~PIDGEN3() override = default;
 
     struct KeyInfo
     {
-        Integer Serial = 0, AuthInfo = 0, ChannelID = 0, Hash = 0, Signature = 0, Rand = 0;
         BOOL isUpgrade = false, isOEM = false;
+        Integer ChannelID = 0, Serial = 0, AuthInfo = 0, Rand = 0, Hash = 0, Signature = 0;
 
         void setSerial(DWORD32 SerialIn)
         {
@@ -88,15 +86,22 @@ class EXPORT PIDGEN3 : public PIDGEN
     BOOL Validate(const std::string &pKey) override;
     std::string StringifyKey(const std::string &pKey) override;
     std::string StringifyProductID() override;
+    BOOL ValidateKeyString(const std::string &in_key, std::string &out_key) override;
 
-    virtual Integer Pack(const KeyInfo &ki) = 0;
-    virtual KeyInfo Unpack(const Integer &raw) = 0;
+    virtual Integer Pack(const KeyInfo &ki)
+    {
+        throw std::runtime_error("PIDGEN3::Pack() pure virtual function call");
+    }
+
+    virtual KeyInfo Unpack(const Integer &raw)
+    {
+        throw std::runtime_error("PIDGEN3::Unpack() pure virtual function call");
+    }
 
     // PIDGEN3.cpp
     static PIDGEN3 *Factory(const std::string &field);
     static BOOL checkFieldStrIsBink1998(std::string keyin);
     static std::string ValidateStringKeyInputCharset(std::string &accumulator, char currentChar);
-    static BOOL ValidateKeyString(const std::string &in_key, std::string &out_key);
     static std::string base24(Integer &seq);
     static Integer unbase24(const std::string &cdKey);
 

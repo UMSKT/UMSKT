@@ -36,38 +36,21 @@ BOOL PIDGEN2::Generate(std::string &pKey)
     Integer random;
     random.Randomize(rng, sizeof(DWORD32) * 8);
 
-    info.ChannelID = random % MaxChannelID;
-    if (!isValidChannelID())
-    {
-        info.ChannelID++;
-        if (info.ChannelID <= Integer::Zero())
-        {
-            info.ChannelID = Integer::One();
-        }
-        else if (info.ChannelID >= 999)
-        {
-            info.ChannelID = 998;
-        }
-    }
-
-    random.Randomize(rng, sizeof(DWORD32) * 8);
-    info.Serial = random % MaxSerial;
+    info.ChannelID = info.ChannelID % MaxChannelID;
+    info.Serial = info.Serial % MaxSerial;
 
     if (info.isOEM)
     {
-        info.Day = (random % Integer(365)) + Integer::One();
-        info.Year = IntegerS(validYears[random % validYears.size()]);
+        info.Day = info.Day % Integer(366);
+        // info.Year = info.Year;
 
         info.OEMID = (info.ChannelID * TEN) + (info.Serial / (MaxSerial / TEN));
         info.Serial %= (MaxSerial / TEN);
 
         info.OEMID = (info.OEMID * TEN) + GenerateMod7(info.OEMID);
 
-        DWORD32 day, year, serial, oemid;
-        EncodeN(info.Day, day);
-        EncodeN(info.Year, year);
-        EncodeN(info.Serial, serial);
-        EncodeN(info.OEMID, oemid);
+        DWORD32 day = EncodeN(info.Day), year = EncodeN(info.Year), serial = EncodeN(info.Serial),
+                oemid = EncodeN(info.OEMID);
 
         if (debug)
         {
@@ -81,9 +64,7 @@ BOOL PIDGEN2::Generate(std::string &pKey)
         info.ChannelID = (info.ChannelID * TEN) + ((info.ChannelID % TEN) + 1);
         info.Serial = (info.Serial * TEN) + GenerateMod7(info.Serial);
 
-        DWORD32 channelid, serial;
-        EncodeN(info.ChannelID, channelid);
-        EncodeN(info.Serial, serial);
+        DWORD32 channelid = EncodeN(info.ChannelID), serial = EncodeN(info.Serial);
 
         if (debug)
         {
@@ -96,11 +77,7 @@ BOOL PIDGEN2::Generate(std::string &pKey)
     {
         info.Serial = (info.Serial * TEN) + GenerateMod7(info.Serial);
 
-        fmt::print("{}\n", info.Serial);
-
-        DWORD32 channelid, serial;
-        EncodeN(info.ChannelID, channelid);
-        EncodeN(info.Serial, serial);
+        DWORD32 channelid = EncodeN(info.ChannelID), serial = EncodeN(info.Serial);
 
         if (debug)
         {
@@ -142,7 +119,7 @@ BOOL PIDGEN2::Generate(std::string &pKey)
 BOOL PIDGEN2::Validate(const std::string &pKey)
 {
     std::string filtered;
-    std::copy_if(pKey.begin(), pKey.end(), std::back_inserter(filtered), [](char c) { return std::isdigit(c); });
+    ValidateKeyString(pKey, filtered);
 
     bool bIsValidChannelID, bIsValidSerial, bIsValidOEMDay, bIsValidOEMYear, bIsValidOEMID;
 
@@ -239,6 +216,19 @@ std::string PIDGEN2::StringifyProductID()
     }
 
     return fmt::format("{}-{}", info.ChannelID, info.Serial);
+}
+
+/**
+ *
+ * @param in_key
+ * @param out_key
+ * @return
+ */
+BOOL INLINE PIDGEN2::ValidateKeyString(const std::string &in_key, std::string &out_key)
+{
+    std::copy_if(in_key.begin(), in_key.end(), std::back_inserter(out_key), [](char c) { return std::isdigit(c); });
+
+    return out_key.length() == KeySize::FPP || out_key.length() == KeySize::Office || out_key.length() == KeySize::OEM;
 }
 
 /**

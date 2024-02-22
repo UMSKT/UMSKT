@@ -37,7 +37,7 @@ void CLI::SetHelpText()
     helpOptions[OPTION_DEBUG] = {"d", "debug", "enable debug output", false, "", &SetDebugOption};
 
     helpOptions[OPTION_FILE] = {
-        "F", "file", "(advanced) specify which keys JSON file to load", true, "[embedded file]", &SetFileOption};
+        "", "file", "(advanced) specify which keys JSON file to load", true, "[embedded file]", &SetFileOption};
 
     helpOptions[OPTION_LIST] = {"l", "list", "list supported products", false, "", &SetListOption};
 
@@ -52,7 +52,7 @@ void CLI::SetHelpText()
                                   true, "1",      &SetNumberOption};
 
     helpOptions[OPTION_ACTIVATIONID] = {
-        "i", "installationID",      "(activation only) installation ID used to generate confirmation ID", true,
+        "I", "installationID",      "(activation only) installation ID used to generate confirmation ID", true,
         "",  &SetActivationIDOption};
 
     helpOptions[OPTION_ACTIVATIONPID] = {
@@ -64,14 +64,14 @@ void CLI::SetHelpText()
     helpOptions[OPTION_UPGRADE] = {"U",   "upgrade", "(PIDGEN 3 only) generate an upgrade key",
                                    false, "",        &SetUpgradeOption};
 
-    helpOptions[OPTION_BINK] = {"b",  "binkID", "(advanced) override which BINK identifier to load",
-                                true, "",       &SetBINKOption};
+    helpOptions[OPTION_BINK] = {"",   "bink", "(advanced) override which BINK identifier to load",
+                                true, "",     &SetBINKOption};
 
-    helpOptions[OPTION_CHANNELID] = {"c",  "channelid", "(advanced) override which product channel to use",
-                                     true, "",          &SetChannelIDOption};
+    helpOptions[OPTION_CHANNELID] = {"",   "channel", "(advanced) override which product channel to use",
+                                     true, "",        &SetChannelIDOption};
 
     helpOptions[OPTION_SERIAL] = {
-        "s",  "serial", "(advanced, PIDGEN 2/3 [BINK 1998] only) specify a serial to generate",
+        "",   "serial", "(advanced, PIDGEN 2/3 [BINK 1998] only) specify a serial to generate",
         true, "",       &SetSerialOption};
 
     helpOptions[OPTION_AUTHDATA] = {
@@ -331,9 +331,9 @@ BOOL CLI::processOptions()
     }
 
     // FE and FF are BINK 1998, but use a different, currently unhandled encoding scheme, we return an error here
-    if (options.binkID == "FE" || options.binkID == "FF")
+    if (options.binkID == "TS00" || options.binkID == "TS01")
     {
-        fmt::print("ERROR: Terminal Services BINKs (FE and FF) are unsupported at this time\n");
+        fmt::print("ERROR: Terminal Services BINKs (TS00 and TS01) are unsupported at this time\n");
         return false;
     }
 
@@ -357,7 +357,7 @@ BOOL CLI::processListCommand()
     // the following code is absolutely unhinged
     // I'm so sorry
 
-#if defined(__UNICODE__) || defined(__GNUC__)
+#if defined(UNICODE) || defined(__GNUC__)
     auto *leaf = "\u251C", *last = "\u2514", *line = "\u2500";
 #else
     auto *leaf = "\xC3", *last = "\xC0", *line = "\xC4";
@@ -522,6 +522,7 @@ BOOL CLI::SetFileOption(const std::string &file)
         fmt::print("Setting file option to: {}\n", file);
     }
     options.keysFilename = file;
+
     return true;
 }
 

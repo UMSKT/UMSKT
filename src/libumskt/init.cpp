@@ -20,7 +20,7 @@
  * @Maintainer Neo
  */
 
-#include "libumskt.h"
+#include <libumskt/libumskt.h>
 
 std::FILE *UMSKT::debug;
 std::FILE *UMSKT::verbose;
@@ -38,7 +38,7 @@ BOOL UMSKT::CONSTRUCT()
 {
 #ifdef __DJGPP__
     // this should be set up as early as possible
-    auto now = uclock();
+    uclock();
 #endif
     return true;
 }

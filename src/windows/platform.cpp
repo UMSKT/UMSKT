@@ -20,7 +20,7 @@
  * @Maintainer Neo
  */
 
-#include "../cli.h"
+#include "cli/cli.h"
 #include "resource.h"
 
 /**

@@ -24,11 +24,17 @@ on:
   push:
     branches: [ "*" ]
     paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
+  pull_request:
+    branches: [ "*" ]
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
   workflow_dispatch:
 
 jobs:
-  prepare:
+  build:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [ { name: Win32, displayName: x86 }, { name: x64, displayName: x64 } ]
     steps:
       # https://github.com/actions/runner-images/issues/6067#issuecomment-1213069040
       - name: Install Windows XP Support for Visual Studio
@@ -52,30 +58,33 @@ jobs:
               exit 1
           }
 
+      - name: Set up CPM cache
+        id: cache-cpm
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.cpm-cache
+          key: ${{ runner.os }}-cpm-${{ hashFiles('**/') }}
+          restore-keys: |
+            ${{ runner.os }}-cpm-
+
       - name: Checkout Source Tree
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
 
-  build:
-    runs-on: windows-latest
-    needs: prepare
-    strategy:
-      matrix:
-        arch: [ { name: Win32, displayName: x86 }, { name: x64, displayName: x64} ]
-    steps:
       - name: Configure and build UMSKT for ${{ matrix.values.displayName }}
         uses: threeal/cmake-action@v1.3.0
         with:
-          options: CMAKE_BUILD_TYPE=Release
+          options: CMAKE_BUILD_TYPE=Release CPM_SOURCE_CACHE=${{ github.workspace }}/.cpm-cache BUILD_TESTING=On
           generator: "Visual Studio 17 2022"
           args: -A "${{ matrix.arch.name }}" -T "v141_xp"
           run-build: true
-          build-args: "--config Release"
+          build-args: --config Release -j 2
+          run-test: true
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3.1.2
+        uses: actions/upload-artifact@v4.3.1
         with:
           name: UMSKT-${{ matrix.values.displayName }}
           path: build/Release

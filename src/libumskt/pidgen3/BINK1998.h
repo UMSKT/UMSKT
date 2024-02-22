@@ -39,6 +39,8 @@ class EXPORT BINK1998 : public PIDGEN3
         eCurve = p3->eCurve;
     }
 
+    ~BINK1998() override = default;
+
     static constexpr DWORD32 FieldBits = (48 * 8);
     static constexpr DWORD32 FieldBytes = (FieldBits / 8);
     static constexpr DWORD32 SHAMessageLength = (4 + 2 * FieldBytes);

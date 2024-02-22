@@ -24,6 +24,8 @@
  *  the history provided by diamondggg is that they are the originator of the code
  *  and was created in tandem with an acquaintance who knows number theory.
  *  The file dates suggest this code was written sometime in 2017/2018
+ *
+ *  The algorithm was refactored by Neo in 2023
  * }
  */
 
@@ -102,14 +104,14 @@ BOOL ConfirmationID::LoadHyperellipticCurve(const std::string *f, const std::str
 {
     for (int i = 0; i < 6; i++)
     {
-        Integer(&f[i][0]).Encode((BYTE *)curve[i], sizeof(QWORD));
+        EncodeN(IntegerS(f[i]), curve[i]);
     }
 
-    Integer(&priv[0]).Encode(privateKey.byte, sizeof(Q_OWORD));
+    EncodeN(IntegerS(priv), privateKey);
 
-    Integer(&modulus[0]).Encode((BYTE *)&MOD, sizeof(QWORD));
+    EncodeN(IntegerS(modulus), MOD);
 
-    Integer(&nonresidue[0]).Encode((BYTE *)NON_RESIDUE, sizeof(QWORD));
+    EncodeN(IntegerS(nonresidue), NON_RESIDUE);
 
     this->isOffice = isOffice;
     this->isXPBrand = isXPBrand;

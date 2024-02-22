@@ -16,11 +16,71 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 01/05/2024
+ * @FileCreated by Neo on 02/18/2024
  * @Maintainer Neo
  */
 
 #include "cli.h"
+
+/**
+ *
+ * @param pidgen3
+ * @return success
+ */
+BOOL CLI::InitPIDGEN3(PIDGEN3 *p3)
+{
+    auto bink = keys["BINK"][options.binkID];
+
+    if (options.verbose)
+    {
+        fmt::print("{:->80}\n", "");
+        fmt::print("Loaded the following elliptic curve parameters: BINK[{}]\n", options.binkID);
+        fmt::print("{:->80}\n", "");
+        fmt::print("{:>6}: {}\n", "P", bink["p"]);
+        fmt::print("{:>6}: {}\n", "a", bink["a"]);
+        fmt::print("{:>6}: {}\n", "b", bink["b"]);
+        fmt::print("{:>6}: [{},\n{:>9}{}]\n", "G[x,y]", bink["g"]["x"], "", bink["g"]["y"]);
+        fmt::print("{:>6}: [{},\n{:>9}{}]\n", "K[x,y]", bink["pub"]["x"], "", bink["pub"]["y"]);
+        fmt::print("{:>6}: {}\n", "n", bink["n"]);
+        fmt::print("{:>6}: {}\n", "k", bink["priv"]);
+        fmt::print("\n");
+    }
+
+    p3->LoadEllipticCurve(options.binkID, bink["p"], bink["a"], bink["b"], bink["g"]["x"], bink["g"]["y"],
+                          bink["pub"]["x"], bink["pub"]["y"], bink["n"], bink["priv"]);
+
+    if (options.state != Options::APPLICATION_STATE::STATE_PIDGEN_GENERATE)
+    {
+        return true;
+    }
+
+    if (options.channelID.IsZero())
+    {
+        options.channelID.Randomize(UMSKT::rng, sizeof(DWORD32) * 8);
+    }
+
+    options.channelID %= 999;
+    p3->info.ChannelID = options.channelID;
+    if (options.verbose)
+    {
+        fmt::print("> Channel ID: {:d}\n", options.channelID);
+    }
+
+    if (options.serial.NotZero() && p3->checkFieldIsBink1998())
+    {
+        p3->info.Serial = options.serial;
+        if (options.verbose)
+        {
+            fmt::print("> Serial {:d}\n", options.serial);
+        }
+    }
+    else if (options.serial.NotZero() && !p3->checkFieldIsBink1998())
+    {
+        fmt::print("Warning: Discarding user-supplied serial for BINK2002\n");
+    }
+
+    return true;
+}
 
 /**
  *
@@ -59,6 +119,23 @@ BOOL CLI::PIDGEN2Generate(PIDGEN2 &p2)
  */
 BOOL CLI::PIDGEN2Validate(PIDGEN2 &p2)
 {
+    std::string product_key;
+
+    if (!p2.ValidateKeyString(options.keyToCheck, product_key))
+    {
+        fmt::print("ERROR: Product key is in an incorrect format!\n");
+        return false;
+    }
+
+    fmt::print("{}\n", p2.StringifyKey(product_key));
+
+    if (!p2.Validate(product_key))
+    {
+        fmt::print("ERROR: Product key is invalid! Wrong BINK ID?\n");
+        return false;
+    }
+
+    fmt::print("Key validated successfully!\n");
     return true;
 }
 
@@ -165,7 +242,7 @@ BOOL CLI::PIDGEN3Validate(PIDGEN3 *p3)
 {
     std::string product_key;
 
-    if (!PIDGEN3::ValidateKeyString(options.keyToCheck, product_key))
+    if (!p3->ValidateKeyString(options.keyToCheck, product_key))
     {
         fmt::print("ERROR: Product key is in an incorrect format!\n");
         return false;
@@ -187,54 +264,56 @@ BOOL CLI::PIDGEN3Validate(PIDGEN3 *p3)
  *
  * @return success
  */
-BOOL CLI::ConfirmationIDGenerate()
+BOOL CLI::PIDGenerate()
 {
-    auto confid = ConfirmationID();
-    std::string confirmation_id;
+    BOOL retval = false;
 
-    if (!InitConfirmationID(confid))
+    if (options.pidgenversion == Options::PIDGEN_VERSION::PIDGEN_2)
     {
-        return false;
+        auto p2 = PIDGEN2();
+        retval = PIDGEN2Generate(p2);
+        return retval;
+    }
+    else if (options.pidgenversion == Options::PIDGEN_VERSION::PIDGEN_3)
+    {
+        auto bink = keys["BINK"][options.binkID];
+
+        auto p3 = PIDGEN3::Factory(bink["p"]);
+        InitPIDGEN3(p3);
+        retval = PIDGEN3Generate(p3);
+
+        delete p3;
+        return retval;
     }
 
-    DWORD32 err = confid.Generate(options.installationID, confirmation_id, options.productID);
+    return retval;
+}
 
-    if (err == SUCCESS)
+/**
+ *
+ * @return isValid
+ */
+BOOL CLI::PIDValidate()
+{
+    BOOL retval = false;
+
+    if (options.pidgenversion == Options::PIDGEN_VERSION::PIDGEN_2)
     {
-        fmt::print("{}\n", confirmation_id);
-        return true;
+        auto p2 = PIDGEN2();
+        retval = PIDGEN2Validate(p2);
+        return retval;
+    }
+    else if (options.pidgenversion == Options::PIDGEN_VERSION::PIDGEN_3)
+    {
+        auto bink = keys["BINK"][options.binkID];
+
+        auto p3 = PIDGEN3::Factory(bink["p"]);
+        InitPIDGEN3(p3);
+        retval = PIDGEN3Validate(p3);
+
+        delete p3;
+        return retval;
     }
 
-    switch (err)
-    {
-    case ERR_TOO_SHORT:
-        fmt::print("ERROR: Installation ID is too short.\n");
-        break;
-
-    case ERR_TOO_LARGE:
-        fmt::print("ERROR: Installation ID is too long.\n");
-        break;
-
-    case ERR_INVALID_CHARACTER:
-        fmt::print("ERROR: Invalid character in installation ID.\n");
-        break;
-
-    case ERR_INVALID_CHECK_DIGIT:
-        fmt::print("ERROR: Installation ID checksum failed. Please check that it is typed correctly.\n");
-        break;
-
-    case ERR_UNKNOWN_VERSION:
-        fmt::print("ERROR: Unknown installation ID version.\n");
-        break;
-
-    case ERR_UNLUCKY:
-        fmt::print("ERROR: Unable to generate valid confirmation ID.\n");
-        break;
-
-    default:
-        fmt::print("Unknown error occurred during Confirmation ID generation: {}\n", err);
-        break;
-    }
-
-    return false;
+    return retval;
 }

@@ -20,12 +20,12 @@
  * @Maintainer Neo
  */
 
-#include "libumskt.h"
-#include "confid/confid.h"
-#include "pidgen2/PIDGEN2.h"
-#include "pidgen3/BINK1998.h"
-#include "pidgen3/BINK2002.h"
-#include "pidgen3/PIDGEN3.h"
+#include <libumskt/confid/confid.h>
+#include <libumskt/libumskt.h>
+#include <libumskt/pidgen2/PIDGEN2.h>
+#include <libumskt/pidgen3/BINK1998.h>
+#include <libumskt/pidgen3/BINK2002.h>
+#include <libumskt/pidgen3/PIDGEN3.h>
 
 std::map<UMSKT_TAG, UMSKT_Value> UMSKT::tags;
 CryptoPP::DefaultAutoSeededRNG UMSKT::rng;

@@ -23,8 +23,8 @@
 # Stage 1: Install Visual Studio
 FROM mcr.microsoft.com/dotnet/framework/runtime:4.8.1 as visualstudio
 # Download and install Build Tools for Visual Studio 2022 for native desktop workload.
-#ADD https://aka.ms/vs/17/release/vs_buildtools.exe C:\TEMP\vs_buildtools.exe
-ADD vs_buildtools.exe C:\TEMP\vs_buildtools.exe
+ADD https://aka.ms/vs/17/release/vs_buildtools.exe C:\TEMP\vs_buildtools.exe
+#ADD vs_buildtools.exe C:\TEMP\vs_buildtools.exe
 RUN C:\TEMP\vs_buildtools.exe --quiet --wait --norestart --nocache `
     --add Microsoft.VisualStudio.Workload.VCTools `
     --add Microsoft.VisualStudio.Workload.MSBuildTools `
@@ -40,26 +40,15 @@ RUN ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass", "[System.Net.Ser
 RUN ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass", "choco feature enable -n allowGlobalConfirmation"]
 RUN ["powershell.exe", "-NoLogo", "-ExecutionPolicy", "Bypass", "choco install git --params \"'/GitAndUnixToolsOnPath /WindowsTerminal /NoShellIntegration /NoGuiHereIntegration /NoShellHereIntegration /NoCredentialManager /SChannel'\""]
 
-#Install OpenSSL 32bit 3.1.1
-#ADD https://slproweb.com/download/Win32OpenSSL-3_1_1.msi C:\TEMP\Win32OpenSSL-3_1_1.msi
-ADD Win32OpenSSL-3_1_1.msi C:\TEMP\Win32OpenSSL-3_1_1.msi
-RUN msiexec /i C:\TEMP\Win32OpenSSL-3_1_1.msi /quiet /qn /norestart
-
-#Install OpenSSL 64bit 3.1.1
-#ADD https://slproweb.com/download/Win64OpenSSL-3_1_1.msi C:\TEMP\Win64OpenSSL-3_1_1.msi
-ADD Win64OpenSSL-3_1_1.msi C:\TEMP\Win64OpenSSL-3_1_1.msi
-RUN msiexec /i C:\TEMP\Win64OpenSSL-3_1_1.msi /quiet /qn /norestart
-
 # Stage 3: Build the 32-bit version of UMSKT
 FROM prereqisites as Build32
 WORKDIR C:\umskt\
 COPY . C:\umskt\
 
 RUN C:\BuildTools\Common7\Tools\VsDevCmd.bat && `
-   mkdir C:\umskt\build && `
-   cd C:\umskt\build && `
-   cmake -DMSVC_MSDOS_STUB:string=..\umskt.exe .. -G "Visual Studio 17 2022" -A "Win32" -T v141_xp && `
-   msbuild ALL_BUILD.vcxproj /P:Configuration=Release
+   mkdir C:\umskt\build && cd C:\umskt && `
+   cmake -B build -DCPM_SOURCE_CACHE=../.cpm-cache -DUMSKT_MSVC_WINXP=On -DCMAKE_BUILD_TYPE=Release -DMSVC_MSDOS_STUB=..\umskt.exe -G "Visual Studio 17 2022" -A "Win32" -T v141_xp && `
+   cmake --build build --config Release -j 10
 
 # Stage 4: Build the 64-bit version of UMSKT
 FROM prereqisites as Build64
@@ -67,12 +56,10 @@ FROM prereqisites as Build64
 WORKDIR C:\umskt\
 COPY . C:\umskt\
 
-ENV OPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64"
 RUN C:\BuildTools\Common7\Tools\VsDevCmd.bat && `
-   mkdir C:\umskt\build && `
-   cd C:\umskt\build && `
-   cmake .. && `
-   msbuild ALL_BUILD.vcxproj /P:Configuration=Release
+   cd C:\umskt && `
+   cmake -B build -DCPM_SOURCE_CACHE=../.cpm-cache -DCMAKE_BUILD_TYPE=Release && `
+   cmake --build build --config Release -j 10
 
 # Stage 5: Copy binaries to an output/runtime image
 FROM mcr.microsoft.com/dotnet/framework/runtime:4.8.1 as output

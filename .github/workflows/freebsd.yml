@@ -17,46 +17,58 @@
 #
 # @FileCreated by techguy16 on 07/23/2023
 # @Maintainer techguy16
-  
- name: C/C++ CI (FreeBSD) 
-  
- on: 
+
+name: C/C++ CI (FreeBSD)
+
+on:
   push:
     branches: [ "*" ]
-    paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**' ] # If only these files are edited, skip
   pull_request:
     branches: [ "*" ]
-    paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
-
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**' ] # If only these files are edited, skip
   workflow_dispatch:
-  
- jobs: 
-   build: 
-     runs-on: ubuntu-latest
-     name: build-x86_64 
-     steps: 
-     - uses: actions/checkout@v3 
-  
-     - name: Build & Test in FreeBSD 
-       id: test 
-       uses: vmactions/freebsd-vm@v1 
-       with:
-         usesh: true 
-         prepare: | 
-           pkg install -y cmake git bash 
-  
-         run: | 
-           mkdir build 
-           cmake -DCMAKE_BUILD_TYPE=Release build/ 
-           cmake --build build/ 
-  
-     - name: Move files to correct directory 
-       run: | 
-           mkdir -p build/actions_upload 
-           mv build/umskt build/actions_upload/umskt 
-  
-     - name: Upload build artifact 
-       uses: actions/upload-artifact@v3.1.2 
-       with: 
-         name: UMSKT-FreeBSD 
-         path: build/actions_upload
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: build-x86_64
+
+    steps:
+      - name: Checkout Source Tree
+        uses: actions/checkout@v4.1.1
+
+      - name: Set up CPM cache
+        id: cache-cpm
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.cpm-cache
+          key: ${{ runner.os }}-cpm-${{ hashFiles('**/') }}
+          restore-keys: |
+            ${{ runner.os }}-cpm-
+
+      - name: Build & Test in FreeBSD
+        id: test
+        uses: vmactions/freebsd-vm@v1.0.6
+        with:
+          usesh: true
+          prepare: |
+            pkg install -y cmake git bash
+
+          run: |
+            mkdir build
+            cmake -DCMAKE_BUILD_TYPE=Release -DCPM_SOURCE_CACHE= ${{ github.workspace }}/.cpm-cache -DBUILD_TESTING=On -B build/
+            cmake --build build/ -j 2
+            cd build
+            ctest
+
+      - name: Move files to correct directory
+        run: |
+          mkdir -p build/actions_upload
+          mv build/umskt build/actions_upload/umskt
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4.3.1
+        with:
+          name: UMSKT-FreeBSD
+          path: build/actions_upload

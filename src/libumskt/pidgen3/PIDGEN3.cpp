@@ -290,10 +290,10 @@ std::string PIDGEN3::StringifyKey(const std::string &pKey)
  * @param currentChar
  * @return
  */
-std::string PIDGEN3::ValidateStringKeyInputCharset(std::string &accumulator, char currentChar)
+std::string INLINE PIDGEN3::ValidateStringKeyInputCharset(std::string &accumulator, char currentChar)
 {
     char cchar = (char)::toupper(currentChar);
-    if (std::find(pKeyCharset.begin(), pKeyCharset.begin(), cchar) != pKeyCharset.end())
+    if (std::find(pKeyCharset.begin(), pKeyCharset.end(), cchar) != pKeyCharset.end())
     {
         accumulator.push_back(cchar);
     }

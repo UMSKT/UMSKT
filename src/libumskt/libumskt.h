@@ -23,7 +23,7 @@
 #ifndef UMSKT_LIBUMSKT_H
 #define UMSKT_LIBUMSKT_H
 
-#include "../typedefs.h"
+#include <typedefs.h>
 
 #ifdef __DJGPP__
 #include <time.h>
@@ -43,7 +43,6 @@ using Integer = CryptoPP::Integer;
 
 #include <fmt/core.h>
 #include <fmt/format.h>
-#include <fmt/ostream.h>
 
 // fmt <-> CryptoPP linkage
 template <> class fmt::formatter<Integer>
@@ -227,6 +226,21 @@ class EXPORT UMSKT
     template <typename T> INLINE static BYTE *EncodeN(const Integer &in, T &buf)
     {
         return EncodeN(in, (BYTE *)&buf, sizeof(T));
+    }
+
+    /**
+     * Encode Integer to Native type T where T is a concrete type
+     *
+     * @tparam T
+     * @param in
+     * @param buf
+     * @return
+     */
+    template <typename T = DWORD32> INLINE static T EncodeN(const Integer &in)
+    {
+        T buf;
+        EncodeN(in, (BYTE *)&buf, sizeof(T));
+        return buf;
     }
 
     /**

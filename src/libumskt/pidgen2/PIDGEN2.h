@@ -23,7 +23,7 @@
 #ifndef UMSKT_PIDGEN2_H
 #define UMSKT_PIDGEN2_H
 
-#include "../pidgen.h"
+#include <libumskt/pidgen.h>
 
 class EXPORT PIDGEN2 : public PIDGEN
 {
@@ -38,6 +38,8 @@ class EXPORT PIDGEN2 : public PIDGEN
     };
 
   public:
+    ~PIDGEN2() override = default;
+
     struct KeyInfo
     {
         BOOL isOEM, isOffice;
@@ -48,6 +50,7 @@ class EXPORT PIDGEN2 : public PIDGEN
     BOOL Validate(const std::string &pKey) override;
     std::string StringifyKey(const std::string &pKey) override;
     std::string StringifyProductID() override;
+    BOOL ValidateKeyString(const std::string &in_key, std::string &out_key) override;
 
     BOOL isValidSerial();
     BOOL isValidOEMID();

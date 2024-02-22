@@ -34,15 +34,36 @@
 class PIDGEN : public UMSKT
 {
   public:
+    virtual ~PIDGEN() = default;
     static const Integer SEVEN;
     static const Integer TEN;
     static const Integer MaxChannelID;
     static const Integer MaxSerial;
 
-    virtual BOOL Generate(std::string &pKey) = 0;
-    virtual BOOL Validate(const std::string &pKey) = 0;
-    virtual std::string StringifyKey(const std::string &pKey) = 0;
-    virtual std::string StringifyProductID() = 0;
+    virtual BOOL Generate(std::string &pKey)
+    {
+        throw std::runtime_error("PIDGEN::Generate() pure virtual function call");
+    }
+
+    virtual BOOL Validate(const std::string &pKey)
+    {
+        throw std::runtime_error("PIDGEN::Validate() pure virtual function call");
+    }
+
+    virtual std::string StringifyKey(const std::string &pKey)
+    {
+        throw std::runtime_error("PIDGEN::StringifyKey() pure virtual function call");
+    }
+
+    virtual std::string StringifyProductID()
+    {
+        throw std::runtime_error("PIDGEN::StringifyProductID() pure virtual function call");
+    }
+
+    virtual BOOL ValidateKeyString(const std::string &in_key, std::string &out_key)
+    {
+        throw std::runtime_error("PIDGEN::ValidateKeyString() pure virtual function call");
+    }
 
     Integer GenerateMod7(const Integer &in);
     BOOL isValidMod7(const Integer &in);

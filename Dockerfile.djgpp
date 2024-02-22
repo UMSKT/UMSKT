@@ -19,67 +19,55 @@
 # @Maintainer Neo
 
 # Stage 1: Install Prerequisites
-#FROM ubuntu:latest as prerequisites
+FROM ubuntu:latest as prerequisites
 
 # Stage 1: Install build dependencies
-#RUN apt-get update && apt-get -y install \
-#    build-essential \
-#    cmake \
-#    wget \
-#    7zip \
-#    git \
-#    flex \
-#    libfl-dev \
-#    nasm \
-#    libslang2-dev \
-#    pkg-config \
-#    libslang2-modules \
-#    gcc-multilib \
-#    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get -y install \
+    build-essential \
+    cmake \
+    wget \
+    7zip \
+    git \
+    flex \
+    libfl-dev \
+    nasm \
+    libslang2-dev \
+    pkg-config \
+    libslang2-modules \
+    gcc-multilib \
+    && rm -rf /var/lib/apt/lists/*
 
-
-FROM djgpp-prerequisites:latest as djgpp-watt32
+FROM prerequisites as djgpp
 SHELL ["/bin/bash", "-c"]
 
 WORKDIR /
 
-ENV CC=/djgpp/bin/i586-pc-msdosdjgpp-gcc CXX=/djgpp/bin/i586-pc-msdosdjgpp-g++ CMAKE_FIND_ROOT_PATH=/djgpp WATT_ROOT=/djgpp/watt32
+ENV CC=/djgpp/bin/i586-pc-msdosdjgpp-gcc CXX=/djgpp/bin/i586-pc-msdosdjgpp-g++ CMAKE_FIND_ROOT_PATH=/djgpp
 
-# Stage 2: compile WATT32 for D
+# Stage 2: setup djgpp
 RUN wget https://github.com/andrewwutw/build-djgpp/releases/download/v3.4/djgpp-linux64-gcc1220.tar.bz2 \
     && tar xjf djgpp-linux64-gcc1220.tar.bz2 \
-    && rm -rf djgpp-linux64-gcc1220.tar.bz2 \
-    && cd djgpp \
-    && git clone https://github.com/UMSKT/Watt-32.git watt32 \
-    && cd watt32/util \
-    && make clean && make linux \
-    && cd ../src \
-    && source /djgpp/setenv \
-    && ./configur.sh djgpp \
-    && make -f djgpp.mak \
-    && ln -s ${WATT_ROOT}/lib/libwatt.a ${CMAKE_FIND_ROOT_PATH}/lib
+    && rm -rf djgpp-linux64-gcc1220.tar.bz2
 
 # Stage 3: compile UMSKT
-FROM djgpp-watt32 as build
+FROM djgpp as build
 SHELL ["/bin/bash", "-c"]
 
 WORKDIR /src
 COPY . /src
 
-ENV PKG_CONFIG_PATH=/djgpp/lib/pkgconfig VERBOSE=1
 # Build UMSKT from the local directory
 RUN mkdir /src/build \
-  && cd /src/build \
   && source /djgpp/setenv \
-  && cmake -DDJGPP_WATT32=${WATT_ROOT}/lib/libwatt.a .. \
-  && make
+  && cmake -DUMSKT_DJGPP_COMPILE=On -DCMAKE_BUILD_TYPE=Release -DCPM_SOURCE_CACHE=`pwd`/.cpm-cache -B build \
+  && cmake --build build -j 10 --verbose
 
 CMD ["bash"]
 
 # Stage 6: Output
 FROM scratch as output
 
-COPY --from=build /src/build/umskt.exe /umskt.exe
+COPY --from=build /src/build/umskt.exe /
 
 # invoke via
 # docker build -f Dockerfile.djgpp -o type=tar,dest=build-djgpp/umskt-dos.tar .

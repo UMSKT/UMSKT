@@ -23,8 +23,7 @@
 #ifndef UMSKT_CLI_H
 #define UMSKT_CLI_H
 
-#include "libumskt/libumskt.h"
-#include "typedefs.h"
+#include <libumskt/libumskt.h>
 
 #include <filesystem>
 #include <fstream>
@@ -32,7 +31,6 @@
 
 #include <fmt/color.h>
 #include <fmt/core.h>
-#include <fmt/ostream.h>
 #include <fmt/ranges.h>
 #include <nlohmann/json.hpp>
 
@@ -40,7 +38,7 @@ using json = nlohmann::json;
 namespace fs = std::filesystem;
 
 // fmt <-> json linkage
-template <> struct fmt::formatter<json> : ostream_formatter
+template <> struct fmt::formatter<json> : formatter<string_view>
 {
     auto format(const json &j, format_context &ctx) const
     {
@@ -50,18 +48,20 @@ template <> struct fmt::formatter<json> : ostream_formatter
         }
         else
         {
-            return basic_ostream_formatter<char>::format(j, ctx);
+            std::stringstream s;
+            s << j;
+            return formatter<string_view>::format(s.str(), ctx);
         }
     }
 };
 
+#include "../libumskt/confid/confid.h"
+#include "../libumskt/libumskt.h"
+#include "../libumskt/pidgen2/PIDGEN2.h"
+#include "../libumskt/pidgen3/BINK1998.h"
+#include "../libumskt/pidgen3/BINK2002.h"
+#include "../libumskt/pidgen3/PIDGEN3.h"
 #include "help.h"
-#include "libumskt/confid/confid.h"
-#include "libumskt/libumskt.h"
-#include "libumskt/pidgen2/PIDGEN2.h"
-#include "libumskt/pidgen3/BINK1998.h"
-#include "libumskt/pidgen3/BINK2002.h"
-#include "libumskt/pidgen3/PIDGEN3.h"
 
 #ifndef UMSKTCLI_VERSION_STRING
 #define UMSKTCLI_VERSION_STRING "unknown version-dirty"

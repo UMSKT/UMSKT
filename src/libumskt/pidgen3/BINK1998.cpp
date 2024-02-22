@@ -99,6 +99,11 @@ BOOL BINK1998::Generate(std::string &pKey)
     // copy initial state from object
     auto ki = info;
 
+    if (!ki.Rand.IsZero())
+    {
+        c = ki.Rand;
+    }
+
     // Data segment of the RPK.
     Integer serialPack = (ki.ChannelID * MaxSerial) + ki.Serial;
     Integer pData = (serialPack << 1) | ki.isUpgrade;
@@ -110,8 +115,11 @@ BOOL BINK1998::Generate(std::string &pKey)
     {
         ECP::Point R;
 
-        // Generate a random number c consisting of 384 bits without any constraints.
-        c.Randomize(UMSKT::rng, FieldBits);
+        if (ki.Rand.IsZero())
+        {
+            // Generate a random number c consisting of 384 bits without any constraints.
+            c.Randomize(UMSKT::rng, FieldBits);
+        }
 
         // Pick a random derivative of the base point on the elliptic curve.
         // R = cG;
@@ -201,7 +209,7 @@ BOOL BINK1998::Generate(std::string &pKey)
             fmt::print(verbose, "\n");
         }
 
-    } while (ki.Signature.BitCount() > 55);
+    } while (ki.Signature.BitCount() > 55 && ki.Rand.IsZero());
     // ↑ ↑ ↑
     // The signature can't be longer than 55 bits, else it will
     // make the CD-key longer than 25 characters.
@@ -237,13 +245,13 @@ BOOL BINK1998::Validate(const std::string &pKey)
 
     if (verbose)
     {
-        fmt::print(UMSKT::verbose, "Validation results:\n");
-        fmt::print(UMSKT::verbose, "{:>10}: {}\n", "Upgrade", (bool)ki.isUpgrade);
-        fmt::print(UMSKT::verbose, "{:>10}: {}\n", "Channel ID", ki.ChannelID);
-        fmt::print(UMSKT::verbose, "{:>10}: {}\n", "Sequence", ki.Serial);
-        fmt::print(UMSKT::verbose, "{:>10}: {:x}\n", "Hash", ki.Hash);
-        fmt::print(UMSKT::verbose, "{:>10}: {:x}\n", "Signature", ki.Signature);
-        fmt::print(UMSKT::verbose, "\n");
+        fmt::print(verbose, "Validation results:\n");
+        fmt::print(verbose, "{:>10}: {}\n", "Upgrade", (bool)ki.isUpgrade);
+        fmt::print(verbose, "{:>10}: {}\n", "Channel ID", ki.ChannelID);
+        fmt::print(verbose, "{:>10}: {}\n", "Sequence", ki.Serial);
+        fmt::print(verbose, "{:>10}: {:x}\n", "Hash", ki.Hash);
+        fmt::print(verbose, "{:>10}: {:x}\n", "Signature", ki.Signature);
+        fmt::print(verbose, "\n");
     }
 
     Integer serialPack = (ki.ChannelID * MaxSerial) + ki.Serial;
@@ -280,7 +288,7 @@ BOOL BINK1998::Validate(const std::string &pKey)
 
     if (debug)
     {
-        fmt::print("\nP[x,y]: [{:x},\n{:x}]\n\n", P.x, P.y);
+        fmt::print(debug, "P[x,y]: [{:x},\n{:x}]\n\n", P.x, P.y);
     }
 
     BYTE msgDigest[SHA1::DIGESTSIZE], msgBuffer[SHAMessageLength], *pMsgBuffer = msgBuffer;

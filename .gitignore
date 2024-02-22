@@ -3,6 +3,7 @@ build*/
 *.exe
 *.wasm
 umskt
+.cpm-cache
 
 ### NotepadPP template
 # Notepad++ backups #

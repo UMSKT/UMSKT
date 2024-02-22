@@ -16,30 +16,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 06/17/2023
+ * @FileCreated by Neo on 02/19/2024
  * @Maintainer Neo
  */
+#ifndef UMSKT_LIBUMSKT_UNITTEST_H
+#define UMSKT_LIBUMSKT_UNITTEST_H
 
-#include "resource.h"
-#include "typedefs.h"
+#include <gtest/gtest.h>
+#include <libumskt/libumskt.h>
 
-BOOLEAN WINAPI DllMain(IN HINSTANCE hDllHandle, IN DWORD nReason, IN LPVOID Reserved)
+class libumsktUnitTests : public testing::Test
 {
-
-    BOOLEAN bSuccess = TRUE;
-    //  Perform global initialization.
-    switch (nReason)
+  public:
+    libumsktUnitTests()
     {
-    case DLL_PROCESS_ATTACH:
-        //  For optimization.
-        DisableThreadLibraryCalls(hDllHandle);
-        break;
-
-    case DLL_PROCESS_DETACH:
-        break;
+        // UMSKT::setVerboseOutput(stderr);
+        // UMSKT::setDebugOutput(stderr);
     }
+    ~libumsktUnitTests() override = default;
+};
 
-    return bSuccess;
-}
-
-//  end DllMain
+#endif // UMSKT_LIBUMSKT_UNITTEST_H

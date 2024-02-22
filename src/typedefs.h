@@ -25,20 +25,23 @@
 
 #if defined(_MSC_VER)
 
+// squelch the insane amount of warnings from cstdbool
+#define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
 #define WIN32_LEAN_AND_MEAN
-#include <intrin.h>
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 
 #endif // defined(_MSC_VER)
 
 #include <algorithm>
+#include <cctype>
 #include <cstdbool>
 #include <cstdint>
 #include <iostream>
 #include <map>
 #include <numeric>
 #include <sstream>
+#include <stdint128>
 #include <string>
 #include <vector>
 
@@ -88,15 +91,6 @@ using WORD = uint16_t;
 using DWORD = unsigned long;
 using DWORD32 = uint32_t;
 using QWORD = uint64_t;
-
-#if defined(__SIZEOF_INT128__) || defined(__int128)
-using uint128_t = unsigned __int128;
-#elif defined(_MSC_VER) && defined(_M_ARM) // for Windows on ARM ??
-using uint128_t = __n128;
-#else                                      // use the intel-supplied __m128 intrisic from <intrin.h>
-using uint128_t = __m128;
-#endif
-
 using OWORD = uint128_t;
 
 typedef union {

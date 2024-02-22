@@ -44,7 +44,7 @@ Integer BINK2002::Pack(const KeyInfo &ki)
 
     if (debug)
     {
-        fmt::print("pack: {:x}\n\n", raw);
+        fmt::print(debug, "pack: {:x}\n\n", raw);
     }
 
     return raw;
@@ -97,6 +97,11 @@ BOOL BINK2002::Generate(std::string &pKey)
 
     Integer c, e, s, pRaw;
 
+    if (!ki.Rand.IsZero())
+    {
+        c = ki.Rand;
+    }
+
     // Data segment of the RPK.
     Integer pData = ki.ChannelID << 1 | ki.isUpgrade;
 
@@ -106,8 +111,11 @@ BOOL BINK2002::Generate(std::string &pKey)
     {
         ECP::Point R;
 
-        // Generate a random number c consisting of 512 bits without any constraints.
-        c.Randomize(UMSKT::rng, FieldBits);
+        if (ki.Rand.IsZero())
+        {
+            // Generate a random number c consisting of 512 bits without any constraints.
+            c.Randomize(UMSKT::rng, FieldBits);
+        }
 
         // R = cG
         R = eCurve.Multiply(c, genPoint);
@@ -135,19 +143,19 @@ BOOL BINK2002::Generate(std::string &pKey)
 
         if (debug)
         {
-            fmt::print("msgBuffer[1]: ");
+            fmt::print(debug, "msgBuffer[1]: ");
             for (BYTE b : msgBuffer)
             {
-                fmt::print("{:x}", b);
+                fmt::print(debug, "{:x}", b);
             }
-            fmt::print("\n\n");
+            fmt::print(debug, "\n\n");
 
-            fmt::print("msgDigest[1]: ");
+            fmt::print(debug, "msgDigest[1]: ");
             for (BYTE b : msgDigest)
             {
-                fmt::print("{:x}", b);
+                fmt::print(debug, "{:x}", b);
             }
-            fmt::print("\n\n");
+            fmt::print(debug, "\n\n");
         }
 
         // Translate the byte sha1 into a 32-bit integer - this is our computed hash.
@@ -159,12 +167,12 @@ BOOL BINK2002::Generate(std::string &pKey)
             BYTE buf[8];
             sha1.CalculateTruncatedDigest(buf, sizeof(buf), msgBuffer, SHAMessageLength);
 
-            fmt::print("truncated buffer: ");
+            fmt::print(verbose, "truncated buffer: ");
             for (BYTE b : buf)
             {
-                fmt::print("{:x}", b);
+                fmt::print(verbose, "{:x}", b);
             }
-            fmt::print("\n\n");
+            fmt::print(verbose, "\n\n");
 
             DWORD h0 = ((DWORD)buf[0] | ((DWORD)buf[1] << 8) | ((DWORD)buf[2] << 16) | ((DWORD)buf[3] << 24));
             DWORD h1 =
@@ -173,11 +181,11 @@ BOOL BINK2002::Generate(std::string &pKey)
 
             h1 |= (h0 >> 31) & 1;
 
-            fmt::print("h0,1: {:x} {:x}\n\n", h0, h1);
+            fmt::print(verbose, "h0,1: {:x} {:x}\n\n", h0, h1);
 
             ki.Serial = IntegerN(h1);
 
-            fmt::print("serial: {:d}\n\n", ki.Serial);
+            fmt::print(verbose, "serial: {:d}\n\n", ki.Serial);
         }
 
         // Assemble the second SHA message.
@@ -200,19 +208,19 @@ BOOL BINK2002::Generate(std::string &pKey)
 
         if (debug)
         {
-            fmt::print("msgBuffer[2]: ");
+            fmt::print(debug, "msgBuffer[2]: ");
             for (BYTE b : msgBuffer)
             {
-                fmt::print("{:x}", b);
+                fmt::print(debug, "{:x}", b);
             }
-            fmt::print("\n\n");
+            fmt::print(debug, "\n\n");
 
-            fmt::print("msgDigest[2]: ");
+            fmt::print(debug, "msgDigest[2]: ");
             for (BYTE b : msgDigest)
             {
-                fmt::print("{:x}", b);
+                fmt::print(debug, "{:x}", b);
             }
-            fmt::print("\n\n");
+            fmt::print(debug, "\n\n");
         }
 
         // Translate the byte sha1 into a 64-bit integer - this is our computed intermediate signature.
@@ -298,7 +306,7 @@ BOOL BINK2002::Generate(std::string &pKey)
             fmt::print(verbose, "{:>10}: {:x}\n", "AuthInfo", ki.AuthInfo);
             fmt::print(verbose, "\n");
         }
-    } while (ki.Signature.BitCount() > 62 || noSquare);
+    } while ((ki.Signature.BitCount() > 62 || noSquare) && ki.Rand.IsZero());
     // ↑ ↑ ↑
     // The signature can't be longer than 62 bits, else it will
     // overlap with the AuthInfo segment next to it.
@@ -402,7 +410,7 @@ BOOL BINK2002::Validate(const std::string &pKey)
 
     if (debug)
     {
-        fmt::print("P[x,y]: [{:x},\n{:x}]\n\n", P.x, P.y);
+        fmt::print(debug, "P[x,y]: [{:x},\n{:x}]\n\n", P.x, P.y);
     }
 
     // Assemble the second SHA message.

@@ -23,7 +23,7 @@
 #ifndef UMSKT_CONFID_H
 #define UMSKT_CONFID_H
 
-#include "../libumskt.h"
+#include <libumskt/libumskt.h>
 
 // Confirmation ID generator constants
 enum CONFIRMATION_ID_STATUS
@@ -44,7 +44,7 @@ typedef struct
     Q_OWORD u, v;
 } TDivisor;
 
-class EXPORT ConfirmationID
+class EXPORT ConfirmationID : public UMSKT
 {
     QWORD MOD = 0, NON_RESIDUE = 0;
     QWORD curve[6] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};

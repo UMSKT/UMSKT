@@ -27,9 +27,7 @@ RUN apk add --no-cache \
   build-base \
   cmake \
   git \
-  musl-dev \
-  openssl-dev \
-  openssl-libs-static
+  musl-dev
 
 
 # Stage 2: Build
@@ -40,15 +38,15 @@ COPY . /src
 
 # Build UMSKT from the local directory
 RUN mkdir /src/build \
-  && cmake -B /src/build -DMUSL_STATIC=ON \
+  && cmake -B /src/build -DCPM_SOURCE_CACHE=/src/.cpm-cache -DCMAKE_BUILD_TYPE=Release -DUMSKT_MUSL_STATIC=ON \
   && cmake --build /src/build -j 10
 
 # Stage 3: Output
 FROM scratch as output
 
-COPY --from=builder /src/build/umskt /umskt
-COPY --from=builder /src/build/libumskt.a /umskt
-COPY --from=builder /src/build/libumskt.so /umskt
+COPY --from=builder /src/build/umskt /
+COPY --from=builder /src/build/libumskt_static.a /
+COPY --from=builder /src/build/libumskt.so /
 
 # invoke via
-# docker build -o type=tar,dest=umskt.tar .
+# docker build -o type=tar,dest=build-musl/umskt.tar .

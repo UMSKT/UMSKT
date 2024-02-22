@@ -16,30 +16,40 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 06/17/2023
+ * @FileCreated by Neo on 02/20/2024
  * @Maintainer Neo
  */
 
-#include "resource.h"
-#include "typedefs.h"
+#include "confid.h"
+#include <libumskt/libumskt_unittest.h>
 
-BOOLEAN WINAPI DllMain(IN HINSTANCE hDllHandle, IN DWORD nReason, IN LPVOID Reserved)
+/**
+ * ConfirmationID must not be an abstract class.
+ */
+TEST(TestConfirmationID, InstantiateConfirmationID)
 {
-
-    BOOLEAN bSuccess = TRUE;
-    //  Perform global initialization.
-    switch (nReason)
-    {
-    case DLL_PROCESS_ATTACH:
-        //  For optimization.
-        DisableThreadLibraryCalls(hDllHandle);
-        break;
-
-    case DLL_PROCESS_DETACH:
-        break;
-    }
-
-    return bSuccess;
+    auto p3 = new ConfirmationID();
+    ASSERT_NE(p3, nullptr);
+    delete p3;
 }
 
-//  end DllMain
+class TestConfirmationID : public libumsktUnitTests
+{
+  protected:
+    ConfirmationID *cid;
+
+    void SetUp() override
+    {
+        cid = new ConfirmationID();
+        cid->LoadHyperellipticCurve()
+    }
+
+    void TearDown() override
+    {
+        if (cid != nullptr)
+        {
+            delete cid;
+            cid = nullptr;
+        }
+    }
+};

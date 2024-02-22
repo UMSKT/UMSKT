@@ -20,7 +20,7 @@
  * @Maintainer Neo
  */
 
-#include "cli.h"
+#include <cli/cli.h>
 
 #include <cmrc/cmrc.hpp>
 CMRC_DECLARE(umskt);
