@@ -54,7 +54,7 @@ jobs:
       - name: Configure and build UMSKT for ${{ matrix.arch.displayName }}
         uses: threeal/cmake-action@v1.3.0
         with:
-          options: MUSL_STATIC=ON CMAKE_BUILD_TYPE=Release CPM_SOURCE_CACHE=${{ github.workspace }}/.cpm-cache CMAKE_OSX_ARCHITECTURES=${{ matrix.arch.name }} BUILD_TESTING=On
+          options: MUSL_STATIC=ON CMAKE_BUILD_TYPE=Release CPM_SOURCE_CACHE=${{ github.workspace }}/.cpm-cache CMAKE_OSX_ARCHITECTURES="${{ matrix.arch.name }}" BUILD_TESTING=On
           run-build: true
           build-args: -j 2
           run-test: true

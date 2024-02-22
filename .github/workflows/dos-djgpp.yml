@@ -38,7 +38,6 @@ jobs:
       CMAKE_FIND_ROOT_PATH: ${{ github.workspace }}/djgpp
       GCC_EXEC_PREFIX: ${{ github.workspace }}/lib/gcc/
       DJDIR: ${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp
-      PATH: ${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin/:${{ github.workspace }}/djgpp/bin/:${PATH}
 
     steps:
       - name: Checkout Source Tree
@@ -62,6 +61,8 @@ jobs:
         run: |
           wget https://github.com/andrewwutw/build-djgpp/releases/download/v3.4/djgpp-linux64-gcc1220.tar.bz2
           tar xjf djgpp-linux64-gcc1220.tar.bz2
+          echo "${{ github.workspace }}/djgpp/i586-pc-msdosdjgpp/bin/" >> "$GITHUB_ENV"
+          echo "${{ github.workspace }}/djgpp/bin/" >> "$GITHUB_ENV"
 
       - name: Build UMSKT for MSDOS via DJGPP
         uses: threeal/cmake-action@v1.3.0

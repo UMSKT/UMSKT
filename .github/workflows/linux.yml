@@ -41,7 +41,6 @@ jobs:
           - armhf
           - armv7
           - ppc64le
-          - riscv64
           - s390x
 
     steps:
