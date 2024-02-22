@@ -57,13 +57,9 @@ In light of the recent exponential interest in this project I've decided to put 
 
 * **Note:** Before continuing, please ensure you have the `umskt` executable extracted and on UNIX-like systems, have execution permissions (`chmod +x umskt`).
 
-#### 2. Install OpenSSL 3.1.2. 
-For Windows, click [here](https://slproweb.com/products/Win32OpenSSL.html) and choose the right version. For other operating systems, consult your package manager.
-*Note: This only applies if the build you download has OpenSSL embedded (static library) or not. You can usually tell if the download size is measured in KB or MB. If it's MB, you don't need this.*
+#### 2. Run `umskt` to generate a key, or add `--help` or `-h` to see more options.
 
-#### 3. Run `umskt` to generate a key, or add `--help` or `-h` to see more options.
-
-#### 4. *(Activation step for `Retail` and `OEM` only)*
+#### 3. *(Activation step for `Retail` and `OEM` only)*
 * After installation, you will be prompted to activate Windows.
 
 

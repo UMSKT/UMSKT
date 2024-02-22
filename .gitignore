@@ -1,8 +1,9 @@
-build/*
+build*/
 *.tar
 *.exe
 *.wasm
 umskt
+.cpm-cache
 
 ### NotepadPP template
 # Notepad++ backups #
@@ -66,7 +67,7 @@ umskt
 # *.ipr
 
 # CMake
-cmake-build-*/
+cmake*/
 
 # Mongo Explorer plugin
 .idea/**/mongoSettings.xml

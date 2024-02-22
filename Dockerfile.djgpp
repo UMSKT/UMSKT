@@ -1,6 +1,6 @@
 # This file is a part of the UMSKT Project
 #
-# Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+# Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -19,105 +19,55 @@
 # @Maintainer Neo
 
 # Stage 1: Install Prerequisites
-FROM alpine:latest as prerequisites
+FROM ubuntu:latest as prerequisites
 
 # Stage 1: Install build dependencies
-RUN apk add --no-cache \
-    autoconf \
-	automake \
-	bash \
-    bison \
-    build-base \
-	clang \
-	cmake \
-	coreutils \
-	curl \
-	elfutils-dev \
-	findutils \
+RUN apt-get update && apt-get -y install \
+    build-essential \
+    cmake \
+    wget \
+    7zip \
     git \
-	gawk \
     flex \
-	libelf \
-	libslirp-dev \
-    linux-headers \
-	nasm \
-	sed \
-    slang-dev \
-	texinfo \
-	unzip \
-	zlib-dev
-
+    libfl-dev \
+    nasm \
+    libslang2-dev \
+    pkg-config \
+    libslang2-modules \
+    gcc-multilib \
+    && rm -rf /var/lib/apt/lists/*
 
 FROM prerequisites as djgpp
-
-WORKDIR /tmp
-
-# Stage 2: compile djgpp for muslc
-ENV DJGPP_PREFIX=/djgpp BUILD_VER=12.2.0-i386
-RUN git clone https://github.com/andrewwutw/build-djgpp.git djgpp \
-    && cd djgpp \
-    && cd script \
-    && wget https://gist.github.com/Neo-Desktop/4cfd708f61f5847a7bf457d38db3b59f/raw/25d24cf509b0fc486d5d18ecb6656f120c3d0e51/12.2.0-i386 -O 12.2.0-i386 \
-    && chmod +x 12.2.0-i386 \
-    && cd ../patch \
-    && wget https://gist.github.com/Neo-Desktop/4cfd708f61f5847a7bf457d38db3b59f/raw/25d24cf509b0fc486d5d18ecb6656f120c3d0e51/patch-alpine-Fix-attempt-to-use-poisoned-calloc-error-in-libgccji.patch -O patch-alpine-Fix-attempt-to-use-poisoned-calloc-error-in-libgccji.patch  \
-    && cd .. \
-    && sed -i 's/i586/i386/g' setenv/setenv \
-    && sed -i 's/i586/i386/g' setenv/setenv.bat \
-    && ./build-djgpp.sh $BUILD_VER \
-    && rm -rf /tmp/djgpp
-
-# Stage 3: compile watt32 for djgpp-i386
-FROM djgpp as watt32
-WORKDIR /djgpp
-ENV WATT_ROOT=/djgpp/watt32 DJGPP_PREFIX=i386-pc-msdosdjgpp
 SHELL ["/bin/bash", "-c"]
-RUN git clone https://github.com/gvanem/Watt-32.git watt32 \
-    && cd watt32/util \
-    && make clean && make linux \
-    && cd ../src \
-    && source /djgpp/setenv \
-    && ./configur.sh djgpp \
-    && sed -i 's/i586/i386/g' djgpp.mak \
-    && wget https://gist.github.com/Neo-Desktop/ad26e888d64b22a59c743ab4e21ac186/raw/c9a73e1eb75ba8857883ac5c08691d2fe5b82594/djgpp.err -O ../inc/sys/djgpp.err \
-    && wget https://gist.github.com/Neo-Desktop/ad26e888d64b22a59c743ab4e21ac186/raw/c9a73e1eb75ba8857883ac5c08691d2fe5b82594/syserr.c -O build/djgpp/syserr.c \
-    && make -f djgpp.mak \
-    && ln -s /djgpp/watt32/lib/libwatt.a /djgpp/lib
 
-# Stage 4: compile OpenSSL for djgpp-i386/watt32
-FROM watt32 as openssl
-WORKDIR /tmp
+WORKDIR /
+
+ENV CC=/djgpp/bin/i586-pc-msdosdjgpp-gcc CXX=/djgpp/bin/i586-pc-msdosdjgpp-g++ CMAKE_FIND_ROOT_PATH=/djgpp
+
+# Stage 2: setup djgpp
+RUN wget https://github.com/andrewwutw/build-djgpp/releases/download/v3.4/djgpp-linux64-gcc1220.tar.bz2 \
+    && tar xjf djgpp-linux64-gcc1220.tar.bz2 \
+    && rm -rf djgpp-linux64-gcc1220.tar.bz2
+
+# Stage 3: compile UMSKT
+FROM djgpp as build
 SHELL ["/bin/bash", "-c"]
-RUN git clone https://github.com/openssl/openssl.git openssl \
-    && cd openssl \
-    && git checkout openssl-3.1.1 \
-    && source /djgpp/setenv \
-    && wget https://gist.github.com/Neo-Desktop/ad26e888d64b22a59c743ab4e21ac186/raw/c9a73e1eb75ba8857883ac5c08691d2fe5b82594/50-djgpp.conf.patch -O Configurations/50-djgpp.conf.patch \
-    && git apply Configurations/50-djgpp.conf.patch \
-    && ./Configure no-threads -DOPENSSL_DEV_NO_ATOMICS --prefix=/djgpp DJGPP \
-    && make && make install
-
-# Stage 5: compile UMSKT
-FROM openssl as build
 
 WORKDIR /src
 COPY . /src
 
-ENV CC=/djgpp/bin/i386-pc-msdosdjgpp-gcc CXX=/djgpp/bin/i386-pc-msdosdjgpp-g++ PKG_CONFIG_PATH=/djgpp/lib/pkgconfig VERBOSE=1
-SHELL ["/bin/bash", "-c"]
 # Build UMSKT from the local directory
 RUN mkdir /src/build \
-  && cd /src/build \
   && source /djgpp/setenv \
-  && cmake -DDJGPP_WATT32=${WATT_ROOT}/lib/libwatt.a .. \
-  && make
+  && cmake -DUMSKT_DJGPP_COMPILE=On -DCMAKE_BUILD_TYPE=Release -DCPM_SOURCE_CACHE=`pwd`/.cpm-cache -B build \
+  && cmake --build build -j 10 --verbose
 
 CMD ["bash"]
 
 # Stage 6: Output
 FROM scratch as output
 
-COPY --from=build /src/build/umskt.exe /umskt.exe
+COPY --from=build /src/build/umskt.exe /
 
 # invoke via
-# docker build -f Dockerfile.djgpp  -o type=tar,dest=umskt-dos.tar .
+# docker build -f Dockerfile.djgpp -o type=tar,dest=build-djgpp/umskt-dos.tar .

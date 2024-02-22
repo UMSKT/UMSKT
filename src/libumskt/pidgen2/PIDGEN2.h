@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -23,19 +23,40 @@
 #ifndef UMSKT_PIDGEN2_H
 #define UMSKT_PIDGEN2_H
 
-#include "../libumskt.h"
+#include <libumskt/pidgen.h>
 
-EXPORT class PIDGEN2 {
-public:
-    static bool isNumericString(char* input);
-    static bool isValidChannelID(char* channelID);
-    static bool isValidOEMID(char* OEMID);
-    static bool isValidYear(char* year);
-    static bool isValidDay(char* day);
-    static bool isValidRetailProductID(char* productID);
-    static int addDigits(char* input);
-    static int GenerateRetail(char* channelID, char* &keyout);
-    static int GenerateOEM(char* year, char* day, char* oem, char* &keyout);
+class EXPORT PIDGEN2 : public PIDGEN
+{
+    static const std::vector<std::string> channelIDDisallowList;
+    static const std::vector<std::string> validYears;
+
+    enum KeySize
+    {
+        FPP = 10,
+        Office = 11,
+        OEM = 17
+    };
+
+  public:
+    ~PIDGEN2() override = default;
+
+    struct KeyInfo
+    {
+        BOOL isOEM, isOffice;
+        Integer Day, Year, OEMID, ChannelID, Serial;
+    } info;
+
+    BOOL Generate(std::string &pKey) override;
+    BOOL Validate(const std::string &pKey) override;
+    std::string StringifyKey(const std::string &pKey) override;
+    std::string StringifyProductID() override;
+    BOOL ValidateKeyString(const std::string &in_key, std::string &out_key) override;
+
+    BOOL isValidSerial();
+    BOOL isValidOEMID();
+    [[nodiscard]] BOOL isValidChannelID() const;
+    [[nodiscard]] BOOL isValidOEMYear() const;
+    [[nodiscard]] BOOL isValidOEMDay() const;
 };
 
-#endif //UMSKT_PIDGEN2_H
+#endif // UMSKT_PIDGEN2_H

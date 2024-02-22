@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -16,45 +16,232 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 6/25/2023
+ * @FileCreated by Neo on 06/25/2023
  * @Maintainer Neo
  */
 
-#include "libumskt.h"
-#include "confid/confid.h"
-#include "pidgen3/PIDGEN3.h"
-#include "pidgen3/BINK1998.h"
-#include "pidgen3/BINK2002.h"
-#include "pidgen2/PIDGEN2.h"
+#include <libumskt/confid/confid.h>
+#include <libumskt/libumskt.h>
+#include <libumskt/pidgen2/PIDGEN2.h>
+#include <libumskt/pidgen3/BINK1998.h>
+#include <libumskt/pidgen3/BINK2002.h>
+#include <libumskt/pidgen3/PIDGEN3.h>
 
-FNEXPORT int ConfirmationID_Generate(const char* installation_id_str, char confirmation_id[49], int mode, std::string productid) {
-    return ConfirmationID::Generate(installation_id_str, confirmation_id, mode, productid);
-}
+std::map<UMSKT_TAG, UMSKT_Value> UMSKT::tags;
+CryptoPP::DefaultAutoSeededRNG UMSKT::rng;
 
-FNEXPORT EC_GROUP* PIDGEN3_initializeEllipticCurve(char* pSel, char* aSel, char* bSel, char* generatorXSel, char* generatorYSel, char* publicKeyXSel, char* publicKeyYSel, EC_POINT *&genPoint, EC_POINT *&pubPoint) {
-    return PIDGEN3::initializeEllipticCurve(pSel, aSel, bSel, generatorXSel, generatorYSel, publicKeyXSel, publicKeyYSel, genPoint, pubPoint);
-}
+extern "C"
+{
+    /**
+     * Sets debug output to a given C++ File stream
+     * if the memory allocated at filestream is "STDOUT" or "STDERR"
+     * simply use the global vars allocated by *this* C++ runtime.
+     * otherwise, assume that the input pointer is an ABI equivalent std::FILE
+     *
+     * @param char* or std::FILE "filestream"
+     */
+    EXPORT BOOL UMSKT_SET_DEBUG_OUTPUT(void *filestream)
+    {
+        char buffer[7];
+        memcpy(buffer, filestream, 6);
+        buffer[6] = 0;
+        auto buffstring = std::string(buffer);
+        std::transform(buffstring.begin(), buffstring.end(), buffstring.begin(), ::tolower);
 
-FNEXPORT bool PIDGEN3_BINK1998_Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *publicKey, char (&pKey)[25]) {
-    return PIDGEN3::BINK1998::Verify(eCurve, basePoint, publicKey, pKey);
-}
+        if (buffstring == "stdout")
+        {
+            UMSKT::debug = stdout;
+            return true;
+        }
+        else if (buffstring == "stderr")
+        {
+            UMSKT::debug = stderr;
+            return true;
+        }
+        else
+        {
+            UMSKT::debug = (std::FILE *)filestream;
+            return true;
+        }
 
-FNEXPORT void PIDGEN3_BINK1998_Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *genOrder, BIGNUM *privateKey, DWORD pSerial, BOOL pUpgrade,char (&pKey)[25]) {
-    return PIDGEN3::BINK1998::Generate(eCurve, basePoint, genOrder, privateKey, pSerial, pUpgrade, pKey);
-}
+        return false;
+    }
 
-FNEXPORT bool PIDGEN3_BINK2002_Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *publicKey, char (&cdKey)[25]) {
-    return PIDGEN3::BINK2002::Verify(eCurve, basePoint, publicKey, cdKey);
-}
+    // ---------------------------------------------
 
-FNEXPORT void PIDGEN3_BINK2002_Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *genOrder, BIGNUM *privateKey, DWORD pChannelID, DWORD pAuthInfo, BOOL pUpgrade, char (&pKey)[25]) {
-    return PIDGEN3::BINK2002::Generate(eCurve, basePoint, genOrder, privateKey, pChannelID, pAuthInfo, pUpgrade, pKey);
-}
+    /**
+     *
+     * @param tag
+     * @param value
+     * @param valueSize
+     * @return success
+     */
+    EXPORT BOOL UMSKT_SET_TAG(UMSKT_TAG tag, char *value, size_t valueSize)
+    {
+        if (valueSize > sizeof(UMSKT_Value))
+        {
+            return false;
+        }
 
-FNEXPORT int PIDGEN2_GenerateRetail(char* channelID, char* &keyout) {
-    return PIDGEN2::GenerateRetail(channelID, keyout);
-}
+        // wipe/set the tag
+        memset(&UMSKT::tags[tag], 0, sizeof(UMSKT_Value));
+        memcpy(&UMSKT::tags[tag], value, valueSize);
 
-FNEXPORT int PIDGEN2_GenerateOEM(char* year, char* day, char* oem, char* keyout) {
-    return PIDGEN2::GenerateOEM(year, day, oem, keyout);
-}
+        return true;
+    }
+
+    EXPORT void UMSKT_RESET_TAGS()
+    {
+        UMSKT::tags.clear();
+    }
+
+    // ---------------------------------------------
+
+    EXPORT void *CONFID_INIT()
+    {
+        auto cid = new ConfirmationID();
+
+        // cid->LoadHyperellipticCurve(0, 0, 0, 0, 0, 0, 0, 0, 0, false, false, 0);
+
+        return cid;
+    }
+
+    EXPORT BYTE CONFID_GENERATE(void *cidIn, const char *installation_id_str, char *&confirmation_id, char *productid)
+    {
+        ConfirmationID *cid;
+        try
+        {
+            cid = static_cast<ConfirmationID *>(cidIn);
+        }
+        catch (const std::bad_cast &e)
+        {
+            fmt::print(UMSKT::debug, "{}: input is not a {} - {}", __FUNCTION__, e.what());
+            return -1;
+        }
+
+        for (auto const i : UMSKT::tags)
+        {
+            switch (i.first)
+            {
+            case UMSKT_tag_InstallationID:
+                break;
+            case UMSKT_tag_ProductID:
+                break;
+            default:
+                break;
+            }
+        }
+
+        std::string str, confid(confirmation_id), productids(productid);
+        auto retval = cid->Generate(str, confid, productids);
+
+        return retval;
+    }
+
+    EXPORT void CONFID_END(void *cidIn)
+    {
+        auto *cid((ConfirmationID *)cidIn);
+        delete cid;
+        cid = nullptr;
+        cidIn = nullptr;
+    }
+
+    // ---------------------------------------------
+
+    EXPORT void *PIDGEN3_INIT(const char *binkid, const char *p, const char *a, const char *b, const char *generatorX,
+                              const char *generatorY, const char *publicKeyX, const char *publicKeyY,
+                              const char *genOrder, const char *privateKey)
+    {
+        PIDGEN3 *p3;
+
+        if (PIDGEN3::checkFieldStrIsBink1998(p))
+        {
+            p3 = new BINK1998();
+        }
+        else
+        {
+            p3 = new BINK2002();
+        }
+
+        p3->LoadEllipticCurve(binkid, p, a, b, generatorX, generatorY, publicKeyX, publicKeyY, genOrder, privateKey);
+
+        return p3;
+    }
+
+    EXPORT BOOL PIDGEN3_Generate(void *&ptrIn, char *&pKeyOut, int pKeySizeIn)
+    {
+        auto *p3((PIDGEN3 *)ptrIn);
+
+        for (auto const i : UMSKT::tags)
+        {
+            switch (i.first)
+            {
+            case UMSKT_tag_isUpgrade:
+                p3->info.isUpgrade = i.second.boolean;
+                break;
+            case UMSKT_tag_ChannelID:
+                p3->info.setChannelID(i.second.dword);
+                break;
+            case UMSKT_tag_Serial:
+                p3->info.setSerial(i.second.dword);
+                break;
+            case UMSKT_tag_AuthData:
+                p3->info.setAuthInfo(i.second.dword);
+            default:
+                break;
+            }
+        }
+
+        std::string str;
+        BOOL retval = p3->Generate(str);
+
+        assert(pKeySizeIn >= str.length() + NULL_TERMINATOR);
+
+        memcpy(pKeyOut, &str[0], str.length());
+        pKeyOut[str.length()] = 0;
+
+        return retval;
+    }
+
+    EXPORT BOOL PIDGEN3_Validate(void *&ptrIn, char *pKeyIn)
+    {
+        auto *p3((PIDGEN3 *)ptrIn);
+        std::string str(pKeyIn);
+
+        BOOL retval = p3->Validate(str);
+
+        return retval;
+    }
+
+    EXPORT void PIDGEN3_END(void *ptrIn)
+    {
+        auto *p3((PIDGEN3 *)ptrIn);
+        delete p3;
+        ptrIn = nullptr;
+        p3 = nullptr;
+    }
+
+    // ---------------------------------------------
+
+    EXPORT void *PIDGEN2_INIT()
+    {
+        auto p2 = new PIDGEN2();
+        return p2;
+    }
+
+    EXPORT BOOL PIDGEN2_GENERATE(void *ptrIn, char *&keyout)
+    {
+        auto p2 = (PIDGEN2 *)ptrIn;
+
+        return true;
+    }
+
+    EXPORT void PIDGEN2_END(void *ptrIn)
+    {
+        auto p2 = (PIDGEN2 *)ptrIn;
+        delete p2;
+        p2 = nullptr;
+        ptrIn = nullptr;
+    }
+
+} // extern "C"

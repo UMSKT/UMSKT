@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -16,26 +16,40 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 5/26/2023
+ * @FileCreated by Neo on 02/20/2024
  * @Maintainer Neo
  */
 
-#ifndef UMSKT_HEADER_H
-#define UMSKT_HEADER_H
+#include "confid.h"
+#include <libumskt/libumskt_unittest.h>
 
-#include "typedefs.h"
+/**
+ * ConfirmationID must not be an abstract class.
+ */
+TEST(TestConfirmationID, InstantiateConfirmationID)
+{
+    auto p3 = new ConfirmationID();
+    ASSERT_NE(p3, nullptr);
+    delete p3;
+}
 
-#include <iostream>
-#include <fstream>
-#include <filesystem>
-#include <string>
-#include <vector>
-#include <unordered_map>
+class TestConfirmationID : public libumsktUnitTests
+{
+  protected:
+    ConfirmationID *cid;
 
-#include <fmt/core.h>
-#include <nlohmann/json.hpp>
+    void SetUp() override
+    {
+        cid = new ConfirmationID();
+        cid->LoadHyperellipticCurve()
+    }
 
-using json = nlohmann::json;
-namespace fs = std::filesystem;
-
-#endif //UMSKT_HEADER_H
+    void TearDown() override
+    {
+        if (cid != nullptr)
+        {
+            delete cid;
+            cid = nullptr;
+        }
+    }
+};

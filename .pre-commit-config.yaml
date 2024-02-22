@@ -15,38 +15,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# @FileCreated by Neo on 06/19/2023
+# @FileCreated by Neo on 01/03/2024
 # @Maintainer Neo
 
-# Stage 1: Install Prereqisites
-FROM alpine:latest as prereqisites
+repos:
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: 'v17.0.6'  # Use the sha / tag you want to point at
+    hooks:
+      - id: clang-format
 
-# Install build dependencies
-RUN apk add --no-cache \
-  bash \
-  build-base \
-  cmake \
-  git \
-  musl-dev
-
-
-# Stage 2: Build
-FROM prereqisites as builder
-
-WORKDIR /src
-COPY . /src
-
-# Build UMSKT from the local directory
-RUN mkdir /src/build \
-  && cmake -B /src/build -DCPM_SOURCE_CACHE=/src/.cpm-cache -DCMAKE_BUILD_TYPE=Release -DUMSKT_MUSL_STATIC=ON \
-  && cmake --build /src/build -j 10
-
-# Stage 3: Output
-FROM scratch as output
-
-COPY --from=builder /src/build/umskt /
-COPY --from=builder /src/build/libumskt_static.a /
-COPY --from=builder /src/build/libumskt.so /
-
-# invoke via
-# docker build -o type=tar,dest=build-musl/umskt.tar .
+#  - repo: https://github.com/cheshirekow/cmake-format-precommit
+#    rev: v0.6.10
+#    hooks:
+#      - id: cmake-format

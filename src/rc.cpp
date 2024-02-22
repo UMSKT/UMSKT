@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -16,20 +16,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 6/25/2023
+ * @FileCreated by Neo on 01/07/2024
  * @Maintainer Neo
  */
 
-#include "libumskt.h"
+#include <cli/cli.h>
 
+#include <cmrc/cmrc.hpp>
+CMRC_DECLARE(umskt);
 
-#ifdef _WIN32
-std::FILE* UMSKT::debug = std::fopen("NUL:", "w");
-#else
-std::FILE* UMSKT::debug = std::fopen("/dev/null", "w");
-#endif
+/**
+ * load a cmrc embedded JSON file
+ *
+ * @return success
+ */
+BOOL CLI::loadEmbeddedJSON()
+{
+    auto fs = cmrc::umskt::get_filesystem();
+    auto jsonFile = fs.open("keys.json");
+    keys = json::parse(jsonFile, nullptr, false, false);
 
-
-void UMSKT::setDebugOutput(std::FILE* input) {
-    debug = input;
+    return true;
 }

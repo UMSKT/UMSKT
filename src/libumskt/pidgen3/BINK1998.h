@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @FileCreated by Neo on 6/6/2023
+ * @FileCreated by Neo on 06/06/2023
  * @Maintainer Neo
  */
 
@@ -25,40 +25,37 @@
 
 #include "PIDGEN3.h"
 
-EXPORT class PIDGEN3::BINK1998 {
-public:
-    static void Unpack(
-            QWORD (&pRaw)[2],
-             BOOL &pUpgrade,
-            DWORD &pSerial,
-            DWORD &pHash,
-            QWORD &pSignature
-    );
+class EXPORT BINK1998 : public PIDGEN3
+{
+  public:
+    using PIDGEN3::PIDGEN3;
+    BINK1998() = default;
+    explicit BINK1998(PIDGEN3 *p3)
+    {
+        privateKey = p3->privateKey;
+        genOrder = p3->genOrder;
+        genPoint = p3->genPoint;
+        pubPoint = p3->pubPoint;
+        eCurve = p3->eCurve;
+    }
 
-    static void Pack(
-            QWORD (&pRaw)[2],
-             BOOL pUpgrade,
-            DWORD pSerial,
-            DWORD pHash,
-            QWORD pSignature
-    );
+    ~BINK1998() override = default;
 
-    static bool Verify(
-            EC_GROUP *eCurve,
-            EC_POINT *basePoint,
-            EC_POINT *publicKey,
-                char (&pKey)[25]
-    );
+    static constexpr DWORD32 FieldBits = (48 * 8);
+    static constexpr DWORD32 FieldBytes = (FieldBits / 8);
+    static constexpr DWORD32 SHAMessageLength = (4 + 2 * FieldBytes);
 
-    static void Generate(
-            EC_GROUP *eCurve,
-            EC_POINT *basePoint,
-              BIGNUM *genOrder,
-              BIGNUM *privateKey,
-               DWORD pSerial,
-                BOOL pUpgrade,
-                char (&pKey)[25]
-    );
+    using PIDGEN3::Pack;
+    Integer Pack(const KeyInfo &ki) override;
+
+    using PIDGEN3::Unpack;
+    KeyInfo Unpack(const Integer &raw) override;
+
+    using PIDGEN3::Generate;
+    BOOL Generate(std::string &pKey) override;
+
+    using PIDGEN3::Validate;
+    BOOL Validate(const std::string &pKey) override;
 };
 
-#endif //UMSKT_BINK1998_H
+#endif // UMSKT_BINK1998_H

@@ -1,7 +1,7 @@
 /**
  * This file is a part of the UMSKT Project
  *
- * Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+ * Copyleft (C) 2019-2024 UMSKT Contributors (et.al.)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -20,24 +20,23 @@
  * @Maintainer Neo
  */
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 #include "resource.h"
+#include "typedefs.h"
 
-BOOLEAN WINAPI DllMain( IN HINSTANCE hDllHandle,
-        IN DWORD     nReason,
-        IN LPVOID    Reserved ) {
+BOOLEAN WINAPI DllMain(IN HINSTANCE hDllHandle, IN DWORD nReason, IN LPVOID Reserved)
+{
 
     BOOLEAN bSuccess = TRUE;
     //  Perform global initialization.
-    switch (nReason) {
-        case DLL_PROCESS_ATTACH:
-            //  For optimization.
-            DisableThreadLibraryCalls(hDllHandle);
-            break;
+    switch (nReason)
+    {
+    case DLL_PROCESS_ATTACH:
+        //  For optimization.
+        DisableThreadLibraryCalls(hDllHandle);
+        break;
 
-        case DLL_PROCESS_DETACH:
-            break;
+    case DLL_PROCESS_DETACH:
+        break;
     }
 
     return bSuccess;
