@@ -55,7 +55,7 @@ bool PIDGEN2::isValidChannelID(char* channelID) {
     }
 
     for (int i = 0; i <= 6; i++) {
-        if (strcmp(channelID, channelIDBlacklist[i]) != 0) {
+        if (strcmp(channelID, channelIDBlacklist[i]) == 0) {
             return false;
         }
     }
@@ -82,10 +82,10 @@ bool PIDGEN2::isValidOEMID(char* OEMID) {
 bool PIDGEN2::isValidYear(char* year) {
     for (int i = 0; i <= 7; i++) {
         if (year == validYears[i]) {
-            return false;
+            return true;
         }
     }
-    return true;
+    return false;
 }
 
 bool PIDGEN2::isValidDay(char* day) {
@@ -94,7 +94,7 @@ bool PIDGEN2::isValidDay(char* day) {
     }
 
     int iDay = std::stoi(day);
-    if (iDay == 0 || iDay >= 365) {
+    if (iDay == 0 || iDay > 366) {
         return false;
     }
     return true;
