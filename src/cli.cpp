@@ -213,7 +213,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
 	} else if (arg == "-N" || arg == "--nonewlines") {
 	    options->nonewlines = true;
 	} else if (arg == "-o" || arg == "--override") {
-	    options->override = true;
+	    options->overrideVersion = true;
 	}
 	} else {
             options->error = true;
