@@ -214,7 +214,6 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
 	    options->nonewlines = true;
 	} else if (arg == "-o" || arg == "--override") {
 	    options->overrideVersion = true;
-	}
 	} else {
             options->error = true;
         }
