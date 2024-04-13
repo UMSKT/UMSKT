@@ -147,6 +147,9 @@
     "Office 2007 Standard / Professional / Ultimate / Enterprise": {
       "BINK": ["82", "83"]
     },
+    "Office 2007 OEM (2007 Microsoft Office system)": {
+      "BINK": ["84"]
+    },
     "Office 2007 Home & Student": {
       "BINK": ["88", "89"]
     }
