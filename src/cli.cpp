@@ -71,7 +71,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-u --upgrade\tspecifies the Product Key will be an \"Upgrade\" version\n");
     fmt::print("\t-V --validate\tproduct key to validate signature\n");
     fmt::print("\t-N --nonewlines\tdisables newlines (for easier embedding in other apps)\n");
-    fmt::print("\t-o --override\tDisables version check for confirmation ID's, if you need this send a pull request");
+    fmt::print("\t-o --override\tDisables version check for confirmation ID's, if you need this send an issue on GitHub");
     fmt::print("\n");
 }
 
