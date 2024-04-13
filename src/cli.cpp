@@ -564,7 +564,7 @@ int CLI::BINK2002Validate() {
 
 int CLI::ConfirmationID() {
     char confirmation_id[49];
-    int err = ConfirmationID::Generate(this->options.instid.c_str(), confirmation_id, options.activationMode, options.productid);
+    int err = ConfirmationID::Generate(this->options.instid.c_str(), confirmation_id, options.activationMode, options.productid, options.overrideVersion);
 
     switch (err) {
         case ERR_TOO_SHORT:
