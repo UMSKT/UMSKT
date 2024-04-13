@@ -55,7 +55,7 @@ jobs:
       - name: Download And Install 32-bit OpenSSL 3.1.4
         run: |
           $installDir = "$Env:ProgramFiles\OpenSSL"
-          $installerURL = "https://slproweb.com/download/Win32OpenSSL-3_1_4.exe"
+          $installerURL = "https://slproweb.com/download/Win32OpenSSL-3_1_5.exe"
           $installerName = "Win32OpenSSL-3_1_4.exe"
           $installerPath = Join-Path -Path "${env:Temp}" -ChildPath "$installerName"
 
@@ -115,7 +115,7 @@ jobs:
       - name: Download And Install 64-bit OpenSSL 3.1.4
         run: |
           $installDir = "$Env:ProgramFiles\OpenSSL"
-          $installerURL = "https://slproweb.com/download/Win64OpenSSL-3_1_4.exe"
+          $installerURL = "https://slproweb.com/download/Win64OpenSSL-3_1_5.exe"
           $installerName = "Win64OpenSSL-3_1_4.exe"
           $installerPath = Join-Path -Path "${env:Temp}" -ChildPath "$installerName"
 
