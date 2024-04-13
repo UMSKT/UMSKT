@@ -68,7 +68,7 @@ struct Options {
     bool error;
     bool list;
     bool nonewlines;
-    bool override;
+    bool overrideVersion;
 
     MODE applicationMode;
     ACTIVATION_ALGORITHM activationMode;
