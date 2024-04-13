@@ -71,6 +71,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-u --upgrade\tspecifies the Product Key will be an \"Upgrade\" version\n");
     fmt::print("\t-V --validate\tproduct key to validate signature\n");
     fmt::print("\t-N --nonewlines\tdisables newlines (for easier embedding in other apps)\n");
+    fmt::print("\t-o --override\tDisables version check for confirmation ID's, if you need this send a pull request");
     fmt::print("\n");
 }
 
@@ -91,6 +92,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             false,
             false,
             false,
+	    false,
 	    false,
             MODE_BINK1998_GENERATE,
             WINDOWS
@@ -210,6 +212,9 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
 		
 	} else if (arg == "-N" || arg == "--nonewlines") {
 	    options->nonewlines = true;
+	} else if (arg == "-o" || arg == "--override") {
+	    options->override = true;
+	}
 	} else {
             options->error = true;
         }
