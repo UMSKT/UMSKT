@@ -773,7 +773,7 @@ void ConfirmationID::Unmix(unsigned char* buffer, size_t bufSize, const unsigned
 	}
 }
 
-int ConfirmationID::Generate(const char* installation_id_str, char confirmation_id[49], int mode, std::string productid)
+int ConfirmationID::Generate(const char* installation_id_str, char confirmation_id[49], int mode, std::string productid, bool overrideVersion)
 {
 	int version;
 	unsigned char hardwareID[8];
@@ -870,7 +870,7 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 			iid_key[3] = 0xF3;
 	}
 	Unmix(installation_id, totalCount == 41 ? 17 : 19, iid_key, 4);
-	if (installation_id[18] >= 0x10)
+	if (installation_id[18] >= 0x10 && overrideVersion == false)
 		return ERR_UNKNOWN_VERSION;
 
 #pragma pack(push, 1)
@@ -891,31 +891,37 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 			productID[2] = (parsed.ProductIDLow >> 27) & ((1 << 24) - 1);
 			version    = (parsed.ProductIDLow >> 51) & 15;
 			productID[3] = (parsed.ProductIDLow >> 55) | (parsed.ProductIDHigh << 9);
-			switch (activationMode) {
-				case 0:
-					if (version != (totalCount == 41 ? 9 : 10))
-						return ERR_UNKNOWN_VERSION;
-					break;
-				case 1:
-					if (version != 1)
-						return ERR_UNKNOWN_VERSION;
-					break;
-				case 3:
-					if (version != 4)
-						return ERR_UNKNOWN_VERSION;
+			if (overrideVersion == false) {
+			        switch (activationMode) {
+					case 0:
+						if (version != (totalCount == 41 ? 9 : 10))
+							return ERR_UNKNOWN_VERSION;
+						break;
+					case 1:
+						if (version != 1)
+							return ERR_UNKNOWN_VERSION;
+						break;
+					case 3:
+						if (version != 4)
+							return ERR_UNKNOWN_VERSION;
+				}
 			}
+
 			break;
 		case 2:
 		case 3:
 			decode_iid_new_version(installation_id, hardwareID, &version);
-			switch (activationMode) {
-				case 2:
-					if (version != 3)
-						return ERR_UNKNOWN_VERSION;
-					break;
-				case 3:
+			if (overrideVersion == false) {
+			    switch (activationMode) {
+			    	case 2:
+			    		if (version != 3)
+				    		return ERR_UNKNOWN_VERSION;
+			    		break;
+		                case 3:
 					if (version != 4)
 						return ERR_UNKNOWN_VERSION;
+				        break;
+			    }
 			}
 			memcpy(&parsed, hardwareID, 8);
 			productID[0] = stoi(productid.substr(0,5));
