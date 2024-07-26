@@ -55,8 +55,33 @@ jobs:
       - name: Download And Install 32-bit OpenSSL
         run: |
           $installDir = "$Env:ProgramFiles\OpenSSL"
-          $installerURL = "https://slproweb.com/download/Win32OpenSSL-3_1_6.exe"
-          $installerName = "Win32OpenSSL-3_1_5.exe"
+          # Define the URL for the JSON file containing the hashes
+          $jsonUrl = "https://raw.githubusercontent.com/slproweb/opensslhashes/master/win32_openssl_hashes.json"
+          
+          # Download the JSON data
+          $jsonData = Invoke-RestMethod -Uri $jsonUrl
+          
+          # Initialize variables for the latest version and URL
+          $latestVersion = "0.0.0"
+          $latestUrl = ""
+            
+          # Iterate through the files to find the latest 3.1.x version
+          foreach ($file in $jsonData.files.PSObject.Properties) {
+              $details = $file.Value
+              if ($details.basever -like "3.1*" -and $file.Name -like "Win32OpenSSL*") {
+                    if ([version]$details.basever -gt [version]$latestVersion) {
+                      $latestVersion = $details.basever
+                      $latestUrl = $details.url
+                   }
+              }
+          }
+
+          # Output the latest version and URL
+          Write-Output "Latest OpenSSL Win32 3.1.x version: $latestVersion"
+          Write-Output "Download link: $latestUrl"
+
+          $installerURL = $latestURL
+          $installerName = "Win32OpenSSL.exe"
           $installerPath = Join-Path -Path "${env:Temp}" -ChildPath "$installerName"
 
           (New-Object System.Net.WebClient).DownloadFile($installerURL, $installerPath)
@@ -115,8 +140,33 @@ jobs:
       - name: Download And Install 64-bit OpenSSL
         run: |
           $installDir = "$Env:ProgramFiles\OpenSSL"
-          $installerURL = "https://slproweb.com/download/Win64OpenSSL-3_1_6.exe"
-          $installerName = "Win64OpenSSL-3_1_6.exe"
+          # Define the URL for the JSON file containing the hashes
+          $jsonUrl = "https://raw.githubusercontent.com/slproweb/opensslhashes/master/win32_openssl_hashes.json"
+          
+          # Download the JSON data
+          $jsonData = Invoke-RestMethod -Uri $jsonUrl
+          
+          # Initialize variables for the latest version and URL
+          $latestVersion = "0.0.0"
+          $latestUrl = ""
+            
+          # Iterate through the files to find the latest 3.1.x version
+          foreach ($file in $jsonData.files.PSObject.Properties) {
+              $details = $file.Value
+              if ($details.basever -like "3.1*" -and $file.Name -like "Win64OpenSSL*") {
+                    if ([version]$details.basever -gt [version]$latestVersion) {
+                      $latestVersion = $details.basever
+                      $latestUrl = $details.url
+                   }
+              }
+          }
+
+          # Output the latest version and URL
+          Write-Output "Latest OpenSSL Win64 3.1.x version: $latestVersion"
+          Write-Output "Download link: $latestUrl"
+
+          $installerURL = $latestURL
+          $installerName = "Win64OpenSSL.exe"
           $installerPath = Join-Path -Path "${env:Temp}" -ChildPath "$installerName"
 
           (New-Object System.Net.WebClient).DownloadFile($installerURL, $installerPath)
