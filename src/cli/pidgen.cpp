@@ -59,7 +59,7 @@ BOOL CLI::InitPIDGEN3(PIDGEN3 *p3)
         options.channelID.Randomize(UMSKT::rng, sizeof(DWORD32) * 8);
     }
 
-    options.channelID %= 999;
+    options.channelID %= 1000;
     p3->info.ChannelID = options.channelID;
     if (options.verbose)
     {
@@ -162,7 +162,7 @@ BOOL CLI::PIDGEN3Generate(PIDGEN3 *p3)
         }
 
         // make sure it's less than 999999
-        serialRnd %= 999999;
+        serialRnd %= 1000000;
     }
 
     p3->info.isOEM = options.oem;
