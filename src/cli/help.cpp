@@ -244,13 +244,19 @@ BOOL CLI::processOptions()
         flavour = product;
     }
 
+    auto pidtype = product["meta"]["type"];
+    if (flavour["meta"].contains("type"))
+    {
+        pidtype = flavour["meta"]["type"];
+    }
+
     if (options.state != Options::STATE_PIDGEN_GENERATE && options.state != Options::STATE_PIDGEN_VALIDATE)
     {
         // exit early if we're not doing PIDGEN
         goto processOptionsExitEarly;
     }
 
-    if (product["meta"]["type"] == "PIDGEN3")
+    if (pidtype == "PIDGEN3")
     {
         options.pidgenversion = Options::PIDGEN_VERSION::PIDGEN_3;
         if (options.verbose)
@@ -272,7 +278,7 @@ BOOL CLI::processOptions()
             fmt::print("Selected BINK: {}\n", options.binkID);
         }
     }
-    else if (product["meta"]["type"] == "PIDGEN2")
+    else if (pidtype == "PIDGEN2")
     {
         options.pidgenversion = Options::PIDGEN_VERSION::PIDGEN_2;
         if (options.verbose)
