@@ -244,13 +244,19 @@ BOOL CLI::processOptions()
         flavour = product;
     }
 
+    auto pidtype = product["meta"]["type"];
+    if (flavour["meta"].contains("type"))
+    {
+        pidtype = flavour["meta"]["type"];
+    }
+
     if (options.state != Options::STATE_PIDGEN_GENERATE && options.state != Options::STATE_PIDGEN_VALIDATE)
     {
         // exit early if we're not doing PIDGEN
         goto processOptionsExitEarly;
     }
 
-    if (flavour["meta"]["type"] == "PIDGEN3")
+    if (pidtype == "PIDGEN3")
     {
         options.pidgenversion = Options::PIDGEN_VERSION::PIDGEN_3;
         if (options.verbose)
@@ -272,7 +278,7 @@ BOOL CLI::processOptions()
             fmt::print("Selected BINK: {}\n", options.binkID);
         }
     }
-    else if (flavour["meta"]["type"] == "PIDGEN2")
+    else if (pidtype == "PIDGEN2")
     {
         options.pidgenversion = Options::PIDGEN_VERSION::PIDGEN_2;
         if (options.verbose)
@@ -544,7 +550,7 @@ BOOL CLI::SetChannelIDOption(const std::string &channum)
     Integer channelID = UMSKT::IntegerS(channum);
 
     // channel ids must be between 000 and 999
-    if (channelID > PIDGEN::MaxChannelID)
+    if (channelID >= PIDGEN::MaxChannelID)
     {
         fmt::print("ERROR: refusing to create a key with a Channel ID greater than 999\n");
         return false;
@@ -588,7 +594,7 @@ BOOL CLI::SetSerialOption(const std::string &arg)
     Integer Serial = UMSKT::IntegerS(arg);
 
     // serials must be between 000000 and 999999
-    if (Serial > PIDGEN::MaxSerial)
+    if (Serial >= PIDGEN::MaxSerial)
     {
         fmt::print("ERROR: refusing to create a key with a Serial not between 000000 and 999999\n");
         return false;
