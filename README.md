@@ -4,7 +4,7 @@
 
 [![Zulip chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://umskt.zulipchat.com)
 [![libera.chat - #mspid](https://img.shields.io/badge/libera.chat-%23mspid-brightgreen)](https://web.libera.chat/gamja/?nick=Guest?#mspid)
-[![Discord](https://dcbadge.vercel.app/api/server/cUZxfNNSdt?style=flat)](https://umskt-invite.glitch.me/)
+[![Discord](https://dcbadge.vercel.app/api/server/cUZxfNNSdt?style=flat)](https://discord.gg/PpBSpuphWM)
 
 **Build status**
 
@@ -51,13 +51,12 @@ In light of the recent exponential interest in this project I've decided to put 
     * Download the latest experimental version using the Actions tab ([Windows](../../actions/workflows/windows.yml?query=branch%3Amaster+is%3Asuccess), [Linux](../../actions/workflows/linux.yml?query=branch%3Amaster+is%3Asuccess), [macOS](../../actions/workflows/macos.yml?query=branch%3Amaster+is%3Asuccess), [FreeBSD](../../actions/workflows/freebsd.yml?query=branch%3Amaster+is%3Asuccess), [DOS DJGPP](../../actions/workflows/dos-djgpp.yml?query=branch%3Amaster+is%3Asuccess))
 
 
-* ~~*(GitHub account \*not\* required)*~~
-    * ~~Download the latest release for your operating system and architecture from [the releases page](../../releases)~~
-    * No official releases right now, use the other method to get the latest version.
+* *(GitHub account \*not\* required)*
+    * Download the latest release for your operating system and architecture from [the releases page](../../releases)
 
 * **Note:** Before continuing, please ensure you have the `umskt` executable extracted and on UNIX-like systems, have execution permissions (`chmod +x umskt`).
 
-#### 2. Install OpenSSL 3.1.2. 
+#### 2. Install OpenSSL. 
 For Windows, click [here](https://slproweb.com/products/Win32OpenSSL.html) and choose the right version. For other operating systems, consult your package manager.
 *Note: This only applies if the build you download has OpenSSL embedded (static library) or not. You can usually tell if the download size is measured in KB or MB. If it's MB, you don't need this.*
 

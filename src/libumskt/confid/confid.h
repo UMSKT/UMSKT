@@ -66,7 +66,7 @@ EXPORT class ConfirmationID {
     static void Unmix(unsigned char* buffer, size_t bufSize, const unsigned char* key, size_t keySize);
 
 public:
-    static int Generate(const char* installation_id_str, char confirmation_id[49], int mode, std::string productid);
+    static int Generate(const char* installation_id_str, char confirmation_id[49], int mode, std::string productid, bool overrideVersion);
     //EXPORT static int CLIRun();
 };
 
