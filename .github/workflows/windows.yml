@@ -91,7 +91,7 @@ jobs:
           Start-Process -FilePath $installerPath -ArgumentList $installerArgs -Wait -PassThru
 
       - name: Checkout Source Tree
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
