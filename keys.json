@@ -132,11 +132,17 @@
     "Windows Longhorn (6.0.4039.0 -> Pre PIDGENX)": {
       "BINK": ["74", "75"]
     },
+    "Expression Web 2007 / Sharepoint Server 2007": {
+      "BINK": ["76", "77"]
+    },
     "Identity Lifecycle Manager 2007": {
       "BINK": ["78", "79"]
     },
     "Visual Studio 2008": {
       "BINK": ["78", "79"]
+    },
+    "Sharepoint Designer 2007": {
+      "BINK": ["7C", "7D"]
     },
     "Office 2007 Applications": {
       "BINK": ["7E", "7F"]
@@ -147,8 +153,8 @@
     "Office 2007 Standard / Professional / Ultimate / Enterprise": {
       "BINK": ["82", "83"]
     },
-    "Office 2007 OEM (2007 MS Office system)": {
-      "BINK": ["84"]
+    "Office 2007 Hybrid": {
+      "BINK": ["84", "85"]
     },
     "Office 2007 Home & Student": {
       "BINK": ["88", "89"]
