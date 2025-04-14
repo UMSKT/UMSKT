@@ -21,12 +21,12 @@
  name: C/C++ CI (FreeBSD) 
   
  on: 
-  push:
-    branches: [ "*" ]
-    paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
-  pull_request:
-    branches: [ "*" ]
-    paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
+  #push:
+  #  branches: [ "*" ]
+  #  paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
+  #pull_request:
+  #  branches: [ "*" ]
+  #  paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
 
   workflow_dispatch:
   
