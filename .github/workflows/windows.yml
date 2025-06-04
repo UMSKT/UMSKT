@@ -72,6 +72,7 @@ jobs:
         shell: msys2 {0}
         run: |
           export PATH="/c/TDM-GCC-64/bin:$PATH"
+          export OPENSSL_PREFIX="${GITHUB_WORKSPACE}/openssl-install-64"
           git clone --branch openssl-${OPENSSL_VERSION} https://github.com/openssl/openssl.git
           cd openssl
           ./Configure mingw64 no-shared --prefix="${OPENSSL_PREFIX}"
@@ -82,23 +83,25 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure UMSKT (TDM-GCC 64-bit)
-        shell: msys2 {0}
+        shell: pwsh
         run: |
-          export PATH="/c/TDM-GCC-64/bin:$PATH"
-          cmake -G "MinGW Makefiles" \
-            -DCMAKE_C_COMPILER="mingw-w64-x86_64-gcc" \
-            -DCMAKE_CXX_COMPILER="mingw-w64-x86_64-g++" \
-            -DOPENSSL_ROOT_DIR="${OPENSSL_PREFIX}" \
-            -DOPENSSL_INCLUDE_DIR="${OPENSSL_PREFIX}/include" \
-            -DOPENSSL_CRYPTO_LIBRARY="${OPENSSL_PREFIX}/lib/libcrypto.a" \
-            -DOPENSSL_SSL_LIBRARY="${OPENSSL_PREFIX}/lib/libssl.a" \
-            -DCMAKE_C_FLAGS="-m64" \
-            -DCMAKE_CXX_FLAGS="-m64" \
+          $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
+          cmake -G "MinGW Makefiles" `
+            -DCMAKE_C_COMPILER="gcc" `
+            -DCMAKE_CXX_COMPILER="g++" `
+            -DOPENSSL_ROOT_DIR="${env:GITHUB_WORKSPACE}/openssl-install-64" `
+            -DOPENSSL_INCLUDE_DIR="${env:GITHUB_WORKSPACE}/openssl-install-64/include" `
+            -DOPENSSL_CRYPTO_LIBRARY="${env:GITHUB_WORKSPACE}/openssl-install-64/lib/libcrypto.a" `
+            -DOPENSSL_SSL_LIBRARY="${env:GITHUB_WORKSPACE}/openssl-install-64/lib/libssl.a" `
+            -DCMAKE_C_FLAGS="-m64" `
+            -DCMAKE_CXX_FLAGS="-m64" `
             .
 
       - name: Build UMSKT (TDM-GCC 64-bit)
-        shell: msys2 {0}
-        run: make
+        shell: pwsh
+        run: |
+          $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
+          mingw32-make
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.6.2
