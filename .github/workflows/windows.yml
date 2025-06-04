@@ -40,6 +40,9 @@ jobs:
           cd $ProjectDir
           portablemsvc install --channel release --msvc-version 14.44 --host x64 --target all --accept-license
           portablemsvc register
+          cd C:\Users\runneradmin\AppData\Local\portable\msvc\msvc-14.44.17.14_sdk-26100
+          tree /f
+          throw "Testing"
           
           
       #- name: Install Windows XP Support for Visual Studio
