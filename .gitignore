@@ -253,3 +253,9 @@ CMakeSettings.json
 
 # Visual Studio
 .vs/
+
+CPM_modules
+CPM_*.cmake
+cpm-package-lock.cmake
+*.a
+*_cmrc*

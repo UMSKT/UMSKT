@@ -23,176 +23,138 @@ name: C/C++ CI (Windows)
 on:
   push:
     branches: [ "*" ]
-    paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**']
   workflow_dispatch:
 
 jobs:
-  build-32bit:
+  build-tdm64:
     runs-on: windows-latest
+    env:
+      OPENSSL_VERSION: "3.1.8"
+      OPENSSL_PREFIX: "${{ github.workspace }}/openssl-install-64"
     steps:
-      # https://github.com/actions/runner-images/issues/6067#issuecomment-1213069040
-      - name: Install Windows XP Support for Visual Studio
+      - name: Install MSYS2 and dependencies
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: >-
+            git
+            make
+            perl
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-pkg-config
+            nasm
+
+      - name: Cache OpenSSL 64-bit build
+        id: cache-openssl
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.OPENSSL_PREFIX }}
+          key: openssl-${{ env.OPENSSL_VERSION }}-msys2-mingw64
+
+      - name: Build OpenSSL 64-bit (if not cached)
+        if: steps.cache-openssl.outputs.cache-hit != 'true'
+        shell: msys2 {0}
         run: |
-          Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
-          $InstallPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
-          $componentsToAdd = @(
-            "Microsoft.VisualStudio.Component.WinXP"
-          )
-          [string]$workloadArgs = $componentsToAdd | ForEach-Object {" --add " +  $_}
-          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"",$workloadArgs, '--quiet', '--norestart', '--nocache')
-          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
-          if ($process.ExitCode -eq 0)
-          {
-              Write-Host "components have been successfully added"
-              Get-ChildItem C:\ProgramData\Microsoft\VisualStudio\Packages\Microsoft.Windows.XPSupport.*
-          }
-          else
-          {
-              Write-Host "components were not installed"
-              exit 1
-          }
-
-      - name: Download And Install 32-bit OpenSSL
-        run: |
-          $installDir = "$Env:ProgramFiles\OpenSSL"
-          # Define the URL for the JSON file containing the hashes
-          $jsonUrl = "https://raw.githubusercontent.com/slproweb/opensslhashes/master/win32_openssl_hashes.json"
-          
-          # Download the JSON data
-          $jsonData = Invoke-RestMethod -Uri $jsonUrl
-          
-          # Initialize variables for the latest version and URL
-          $latestVersion = "0.0.0"
-          $latestUrl = ""
-            
-          # Iterate through the files to find the latest 3.1.x version
-          foreach ($file in $jsonData.files.PSObject.Properties) {
-              $details = $file.Value
-              if ($details.basever -like "3.1*" -and $file.Name -like "Win32OpenSSL*") {
-                    if ([version]$details.basever -gt [version]$latestVersion) {
-                      $latestVersion = $details.basever
-                      $latestUrl = $details.url
-                   }
-              }
-          }
-
-          # Output the latest version and URL
-          Write-Output "Latest OpenSSL Win32 3.1.x version: $latestVersion"
-          Write-Output "Download link: $latestUrl"
-
-          $installerURL = $latestURL
-          $installerName = "Win32OpenSSL.exe"
-          $installerPath = Join-Path -Path "${env:Temp}" -ChildPath "$installerName"
-
-          (New-Object System.Net.WebClient).DownloadFile($installerURL, $installerPath)
-          
-          Remove-Item "$installDir" -Force -Recurse
-          $installerArgs = '/silent', '/sp-', '/suppressmsgboxes', "/DIR=`"$installDir`""
-          Start-Process -FilePath $installerPath -ArgumentList $installerArgs -Wait -PassThru
+          git clone --branch openssl-${OPENSSL_VERSION} https://github.com/openssl/openssl.git
+          cd openssl
+          ./Configure mingw64 no-shared --prefix="${OPENSSL_PREFIX}"
+          make -j$(nproc)
+          make install
 
       - name: Checkout Source Tree
         uses: actions/checkout@v4
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1
+      - name: Configure UMSKT (TDM-GCC 64-bit)
+        shell: msys2 {0}
+        run: |
+          cmake -G "MinGW Makefiles" \
+            -DCMAKE_C_COMPILER="mingw-w64-x86_64-gcc" \
+            -DCMAKE_CXX_COMPILER="mingw-w64-x86_64-g++" \
+            -DOPENSSL_ROOT_DIR="${OPENSSL_PREFIX}" \
+            -DOPENSSL_INCLUDE_DIR="${OPENSSL_PREFIX}/include" \
+            -DOPENSSL_CRYPTO_LIBRARY="${OPENSSL_PREFIX}/lib/libcrypto.a" \
+            -DOPENSSL_SSL_LIBRARY="${OPENSSL_PREFIX}/lib/libssl.a" \
+            -DCMAKE_C_FLAGS="-m64" \
+            -DCMAKE_CXX_FLAGS="-m64" \
+            .
 
-      - name: Configure UMSKT
-        uses: threeal/cmake-action@v1.2.0
-        with:
-          generator: "Visual Studio 17 2022"
-          options: CMAKE_SYSTEM_VERSION="5.1.2600"
-          args: -A "Win32" -T v141_xp
-
-      - name: Build UMSKT
-        working-directory: build
-        run: msbuild ALL_BUILD.vcxproj /P:Configuration=Release
+      - name: Build UMSKT (TDM-GCC 64-bit)
+        shell: msys2 {0}
+        run: make
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: UMSKT-Win32
-          path: build/Release
+          name: UMSKT-TDM64
+          path: ./Release/*
 
-  build-64bit:
+  build-tdm32:
     runs-on: windows-latest
+    env:
+      OPENSSL_VERSION: "3.1.8"
+      OPENSSL_PREFIX: "${{ github.workspace }}/openssl-install-32"
     steps:
-      - name: Install Windows XP Support for Visual Studio
+      - name: Install MSYS2 and dependencies
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: >-
+            git
+            make
+            perl
+            mingw-w64-i686-gcc
+            nasm
+
+      - name: Download and Install TDM-GCC-64
         run: |
-          Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
-          $InstallPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
-          $componentsToAdd = @(
-            "Microsoft.VisualStudio.Component.WinXP"
-          )
-          [string]$workloadArgs = $componentsToAdd | ForEach-Object {" --add " +  $_}
-          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"",$workloadArgs, '--quiet', '--norestart', '--nocache')
-          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
-          if ($process.ExitCode -eq 0)
-          {
-              Write-Host "components have been successfully added"
-              Get-ChildItem C:\ProgramData\Microsoft\VisualStudio\Packages\Microsoft.Windows.XPSupport.*
-          }
-          else
-          {
-              Write-Host "components were not installed"
-              exit 1
-          }
-    
-      - name: Download And Install 64-bit OpenSSL
+          Invoke-WebRequest -Uri "https://jmeubank.github.io/tdm-gcc/download/tdm64-gcc-10.3.0.exe" -OutFile "$env:TEMP\tdm64-gcc.exe"
+          Start-Process -FilePath "$env:TEMP\tdm64-gcc.exe" -ArgumentList "/VERYSILENT", "/DIR=C:\TDM-GCC-64" -Wait
+
+      - name: Cache OpenSSL 32-bit build
+        id: cache-openssl
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.OPENSSL_PREFIX }}
+          key: openssl-${{ env.OPENSSL_VERSION }}-msys2-tdmgcc32
+
+      - name: Build OpenSSL 32-bit (if not cached)
+        if: steps.cache-openssl.outputs.cache-hit != 'true'
+        shell: msys2 {0}
         run: |
-          $installDir = "$Env:ProgramFiles\OpenSSL"
-          # Define the URL for the JSON file containing the hashes
-          $jsonUrl = "https://raw.githubusercontent.com/slproweb/opensslhashes/master/win32_openssl_hashes.json"
-          
-          # Download the JSON data
-          $jsonData = Invoke-RestMethod -Uri $jsonUrl
-          
-          # Initialize variables for the latest version and URL
-          $latestVersion = "0.0.0"
-          $latestUrl = ""
-            
-          # Iterate through the files to find the latest 3.1.x version
-          foreach ($file in $jsonData.files.PSObject.Properties) {
-              $details = $file.Value
-              if ($details.basever -like "3.1*" -and $file.Name -like "Win64OpenSSL*") {
-                    if ([version]$details.basever -gt [version]$latestVersion) {
-                      $latestVersion = $details.basever
-                      $latestUrl = $details.url
-                   }
-              }
-          }
-
-          # Output the latest version and URL
-          Write-Output "Latest OpenSSL Win64 3.1.x version: $latestVersion"
-          Write-Output "Download link: $latestUrl"
-
-          $installerURL = $latestURL
-          $installerName = "Win64OpenSSL.exe"
-          $installerPath = Join-Path -Path "${env:Temp}" -ChildPath "$installerName"
-
-          (New-Object System.Net.WebClient).DownloadFile($installerURL, $installerPath)
-          
-          Remove-Item "$installDir" -Force -Recurse
-          $installerArgs = '/silent', '/sp-', '/suppressmsgboxes', "/DIR=`"$installDir`""
-          Start-Process -FilePath $installerPath -ArgumentList $installerArgs -Wait -PassThru
+          export PATH="/c/TDM-GCC-64/bin:$PATH"
+          git clone --branch openssl-${OPENSSL_VERSION} https://github.com/openssl/openssl.git
+          cd openssl
+          ./Configure mingw no-shared --prefix="${OPENSSL_PREFIX}" CFLAGS="-m32" CXXFLAGS="-m32"
+          make -j$(nproc)
+          make install
 
       - name: Checkout Source Tree
         uses: actions/checkout@v4
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1
+      - name: Configure UMSKT (TDM-GCC 32-bit)
+        shell: msys2 {0}
+        run: |
+          export PATH="/c/TDM-GCC-64/bin:$PATH"
+          cmake -G "MinGW Makefiles" \
+            -DCMAKE_C_COMPILER="gcc" \
+            -DCMAKE_CXX_COMPILER="g++" \
+            -DOPENSSL_ROOT_DIR="${OPENSSL_PREFIX}" \
+            -DOPENSSL_INCLUDE_DIR="${OPENSSL_PREFIX}/include" \
+            -DOPENSSL_CRYPTO_LIBRARY="${OPENSSL_PREFIX}/lib/libcrypto.a" \
+            -DOPENSSL_SSL_LIBRARY="${OPENSSL_PREFIX}/lib/libssl.a" \
+            -DCMAKE_C_FLAGS="-m32" \
+            -DCMAKE_CXX_FLAGS="-m32" \
+            .
 
-      - name: Configure UMSKT
-        uses: threeal/cmake-action@v1.2.0
-        with:
-          generator: "Visual Studio 17 2022"
-          args: -A "x64" -T "v141_xp"
-
-      - name: Build UMSKT
-        working-directory: build
-        run: msbuild ALL_BUILD.vcxproj /P:Configuration=Release
+      - name: Build UMSKT (TDM-GCC 32-bit)
+        shell: msys2 {0}
+        run: |
+          export PATH="/c/TDM-GCC-64/bin:$PATH"
+          make
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: UMSKT-Win64
-          path: build/Release
+          name: UMSKT-TDM32
+          path: ./Release/*
