@@ -31,6 +31,17 @@ jobs:
     runs-on: windows-latest
     steps:
       # https://github.com/actions/runner-images/issues/6067#issuecomment-1213069040
+      - name: Set up v141_xp
+        run: |
+          $ProjectDir = Get-Location
+          git clone https://github.com/tgbender/portablemsvc D:\dependencies\portablemsvc
+          cd D:\dependencies\portablemsvc
+          pip install .
+          cd $ProjectDir
+          portablemsvc show-versions --channel release
+          throw "Testing rn"
+          
+          
       - name: Install Windows XP Support for Visual Studio
         run: |
           Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
