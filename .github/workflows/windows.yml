@@ -42,6 +42,7 @@ jobs:
             make
             perl
             nasm
+            mingw-w64-x86_64-tree
 
       - name: Cache OpenSSL 64-bit build
         id: cache-openssl
@@ -80,7 +81,6 @@ jobs:
           make -j$(nproc)
           make install_sw
           
-          # list files in the directory recursively (this is in msys2)
           tree $OPENSSL_PREFIX
 
       - name: Checkout Source Tree
