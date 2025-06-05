@@ -29,20 +29,7 @@ on:
 jobs:
   build-tdm64:
     runs-on: windows-latest
-    env:
-      OPENSSL_VERSION: "3.1.8"
-      OPENSSL_PREFIX: "${{ github.workspace }}/openssl-install-64"
     steps:
-      - name: Install MSYS2 and dependencies
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: >-
-            git
-            make
-            perl
-            nasm
-            tree
 
       - name: Setup TDM-GCC
         run: |
