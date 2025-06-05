@@ -73,11 +73,15 @@ jobs:
         run: |
           export PATH="/c/TDM-GCC-64/bin:$PATH"
           export OPENSSL_PREFIX="$(pwd)/openssl-install-64"
+          echo "OPENSSL_PREFIX is: $OPENSSL_PREFIX"
           git clone --branch openssl-${OPENSSL_VERSION} https://github.com/openssl/openssl.git
           cd openssl
           ./Configure mingw64 no-shared --prefix="${OPENSSL_PREFIX}"
           make -j$(nproc)
           make install_sw
+          ls -l "$OPENSSL_PREFIX"
+          ls -l "$OPENSSL_PREFIX/lib"
+          ls -l "$OPENSSL_PREFIX/include"
 
       - name: Checkout Source Tree
         uses: actions/checkout@v4
@@ -89,7 +93,7 @@ jobs:
           $OPENSSL_ROOT = "$env:GITHUB_WORKSPACE/openssl-install-64"
           $OPENSSL_LIB = "$OPENSSL_ROOT"
           $OPENSSL_INC = "$OPENSSL_ROOT/include"
-          tree /f D:\
+          Get-ChildItem -Recurse $env:GITHUB_WORKSPACE\openssl-install-64
           throw "Testing"
 
           cmake -G "MinGW Makefiles" `
