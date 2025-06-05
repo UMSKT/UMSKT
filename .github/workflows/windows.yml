@@ -42,7 +42,7 @@ jobs:
             make
             perl
             nasm
-            mingw-w64-x86_64-tree
+            tree
 
       - name: Cache OpenSSL 64-bit build
         id: cache-openssl
