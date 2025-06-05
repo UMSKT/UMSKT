@@ -44,12 +44,11 @@ jobs:
             nasm
             tree
 
-      - name: Cache OpenSSL 64-bit build
-        id: cache-openssl
-        uses: actions/cache@v4
+      - name: Download OpenSSL-TDM binaries
+        uses: actions/checkout@v4
         with:
-          path: ${{ env.OPENSSL_PREFIX }}
-          key: openssl-${{ env.OPENSSL_VERSION }}-msys2-mingw64
+          repository: UMSKT/winactiontest
+          path: OpenSSL-TDM
 
       - name: Setup TDM-GCC
         run: |
@@ -67,22 +66,6 @@ jobs:
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
           [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
 
-          
-      - name: Build OpenSSL 64-bit (if not cached)
-        if: steps.cache-openssl.outputs.cache-hit != 'true'
-        shell: msys2 {0}
-        run: |
-          export PATH="/c/TDM-GCC-64/bin:$PATH"
-          export OPENSSL_PREFIX="$(cygpath -m "$GITHUB_WORKSPACE")\\openssl-install-64"
-          echo "OPENSSL_PREFIX is: $OPENSSL_PREFIX"
-          git clone --branch openssl-${OPENSSL_VERSION} https://github.com/openssl/openssl.git
-          cd openssl
-          ./Configure mingw64 no-shared --prefix="${OPENSSL_PREFIX}"
-          make -j$(nproc)
-          make install_sw
-          
-          tree $OPENSSL_PREFIX
-
       - name: Checkout Source Tree
         uses: actions/checkout@v4
 
@@ -90,7 +73,7 @@ jobs:
         shell: pwsh
         run: |
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
-          $OPENSSL_ROOT = "$env:GITHUB_WORKSPACE/openssl-install-64"
+          $OPENSSL_ROOT = "$env:GITHUB_WORKSPACE/OpenSSL-TDM"
           $OPENSSL_LIB = "$OPENSSL_ROOT/lib64"
           $OPENSSL_INC = "$OPENSSL_ROOT/include"
 
