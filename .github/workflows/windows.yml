@@ -27,10 +27,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-tdm64:
+  build-tdm:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x64, x86]
     steps:
-
       - name: Setup TDM-GCC
         run: |
           Write-Host Downloading TDM-GCC v10.3.0...
@@ -50,19 +52,34 @@ jobs:
       - name: Checkout Source Tree
         uses: actions/checkout@v4
 
-      - name: Download OpenSSL-TDM-64 release asset
+      - name: Download OpenSSL-TDM release asset
         shell: pwsh
         run: |
-          $url = "https://github.com/UMSKT/winactiontest/releases/download/openssl/OpenSSL-TDM-64.zip"
-          Invoke-WebRequest -Uri $url -OutFile "OpenSSL-TDM-64.zip"
-          Expand-Archive -Path "OpenSSL-TDM-64.zip" -DestinationPath "$env:GITHUB_WORKSPACE"
+          if ('${{ matrix.arch }}' -eq 'x64') {
+            $url = "https://github.com/UMSKT/winactiontest/releases/download/openssl/OpenSSL-TDM-64.zip"
+            $dest = "$env:GITHUB_WORKSPACE/OpenSSL-TDM-64"
+            $libdir = "lib64"
+            $cmake_flags = "-m64"
+            $openssl_root = "$env:GITHUB_WORKSPACE/OpenSSL-TDM-64"
+          } else {
+            $url = "https://github.com/UMSKT/winactiontest/releases/download/openssl/OpenSSL-TDM-32.zip"
+            $dest = "$env:GITHUB_WORKSPACE/OpenSSL-TDM-32"
+            $libdir = "lib32"
+            $cmake_flags = "-m32"
+            $openssl_root = "$env:GITHUB_WORKSPACE/OpenSSL-TDM-32"
+          }
+          Invoke-WebRequest -Uri $url -OutFile "OpenSSL-TDM.zip"
+          Expand-Archive -Path "OpenSSL-TDM.zip" -DestinationPath $env:GITHUB_WORKSPACE
+          echo "OPENSSL_ROOT=$openssl_root" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "OPENSSL_LIBDIR=$libdir" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "CMAKE_FLAGS=$cmake_flags" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Configure UMSKT (TDM-GCC 64-bit)
+      - name: Configure UMSKT (TDM-GCC ${{ matrix.arch }})
         shell: pwsh
         run: |
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
-          $OPENSSL_ROOT = "$env:GITHUB_WORKSPACE/OpenSSL-TDM-64"
-          $OPENSSL_LIB = "$OPENSSL_ROOT/lib64"
+          $OPENSSL_ROOT = "$env:OPENSSL_ROOT"
+          $OPENSSL_LIB = "$OPENSSL_ROOT/$env:OPENSSL_LIBDIR"
           $OPENSSL_INC = "$OPENSSL_ROOT/include"
           cmake -G "MinGW Makefiles" `
             -DCMAKE_C_COMPILER="gcc" `
@@ -71,11 +88,11 @@ jobs:
             -DOPENSSL_INCLUDE_DIR="$OPENSSL_INC" `
             -DOPENSSL_CRYPTO_LIBRARY="$OPENSSL_LIB/libcrypto.a" `
             -DOPENSSL_SSL_LIBRARY="$OPENSSL_LIB/libssl.a" `
-            -DCMAKE_C_FLAGS="-m64" `
-            -DCMAKE_CXX_FLAGS="-m64" `
+            -DCMAKE_C_FLAGS="$env:CMAKE_FLAGS" `
+            -DCMAKE_CXX_FLAGS="$env:CMAKE_FLAGS" `
             .
 
-      - name: Build UMSKT (TDM-GCC 64-bit)
+      - name: Build UMSKT (TDM-GCC ${{ matrix.arch }})
         shell: pwsh
         run: |
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
@@ -84,7 +101,5 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: UMSKT-TDM64
+          name: UMSKT-TDM${{ matrix.arch }}
           path: umskt.exe
-
-# 32-bit support will happen when everything's all good
