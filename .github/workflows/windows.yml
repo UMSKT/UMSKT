@@ -44,12 +44,6 @@ jobs:
             nasm
             tree
 
-      - name: Download OpenSSL-TDM binaries
-        uses: actions/checkout@v4
-        with:
-          repository: UMSKT/winactiontest
-          path: OpenSSL-TDM
-
       - name: Setup TDM-GCC
         run: |
           Write-Host Downloading TDM-GCC v10.3.0...
@@ -69,16 +63,20 @@ jobs:
       - name: Checkout Source Tree
         uses: actions/checkout@v4
 
+      - name: Download OpenSSL-TDM-64 release asset
+        shell: pwsh
+        run: |
+          $url = "https://github.com/UMSKT/winactiontest/releases/download/openssl/OpenSSL-TDM-64.zip"
+          Invoke-WebRequest -Uri $url -OutFile "OpenSSL-TDM-64.zip"
+          Expand-Archive -Path "OpenSSL-TDM-64.zip" -DestinationPath "$env:GITHUB_WORKSPACE"
+
       - name: Configure UMSKT (TDM-GCC 64-bit)
         shell: pwsh
         run: |
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
-          $OPENSSL_ROOT = "$env:GITHUB_WORKSPACE/OpenSSL-TDM"
+          $OPENSSL_ROOT = "$env:GITHUB_WORKSPACE/OpenSSL-TDM-64"
           $OPENSSL_LIB = "$OPENSSL_ROOT/lib64"
           $OPENSSL_INC = "$OPENSSL_ROOT/include"
-
-          Get-ChildItem -Recurse D:\
-
           cmake -G "MinGW Makefiles" `
             -DCMAKE_C_COMPILER="gcc" `
             -DCMAKE_CXX_COMPILER="g++" `
