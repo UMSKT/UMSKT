@@ -89,6 +89,8 @@ jobs:
           $OPENSSL_ROOT = "$env:GITHUB_WORKSPACE/openssl-install-64"
           $OPENSSL_LIB = "$OPENSSL_ROOT"
           $OPENSSL_INC = "$OPENSSL_ROOT/include"
+          tree /f $OPENSSL_ROOT
+          throw "Testing"
 
           cmake -G "MinGW Makefiles" `
             -DCMAKE_C_COMPILER="gcc" `
