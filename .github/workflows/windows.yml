@@ -79,6 +79,9 @@ jobs:
           ./Configure mingw64 no-shared --prefix="${OPENSSL_PREFIX}"
           make -j$(nproc)
           make install_sw
+          
+          # list files in the directory recursively (this is in msys2)
+          tree $OPENSSL_PREFIX
 
       - name: Checkout Source Tree
         uses: actions/checkout@v4
