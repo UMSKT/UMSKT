@@ -94,7 +94,7 @@ jobs:
           $OPENSSL_LIB = "$OPENSSL_ROOT/lib64"
           $OPENSSL_INC = "$OPENSSL_ROOT/include"
 
-          Get-ChildItem -Recurse $OPENSSL_ROOT
+          Get-ChildItem -Recurse D:\
 
           cmake -G "MinGW Makefiles" `
             -DCMAKE_C_COMPILER="gcc" `
