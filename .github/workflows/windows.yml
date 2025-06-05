@@ -73,7 +73,7 @@ jobs:
         shell: msys2 {0}
         run: |
           export PATH="/c/TDM-GCC-64/bin:$PATH"
-          export OPENSSL_PREFIX="$(pwd)/openssl-install-64"
+          export OPENSSL_PREFIX="$(cygpath -w "$GITHUB_WORKSPACE")\\openssl-install-64"
           echo "OPENSSL_PREFIX is: $OPENSSL_PREFIX"
           git clone --branch openssl-${OPENSSL_VERSION} https://github.com/openssl/openssl.git
           cd openssl
