@@ -85,6 +85,6 @@ jobs:
         uses: actions/upload-artifact@v4.6.2
         with:
           name: UMSKT-TDM64
-          path: ./Release/*
+          path: umskt.exe
 
 # 32-bit support will happen when everything's all good
