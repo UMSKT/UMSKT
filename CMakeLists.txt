@@ -21,6 +21,13 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.12)
 PROJECT(UMSKT)
 
+# Force TDM-GCC on Windows if not using MSVC
+if (WIN32 AND NOT MSVC)
+    set(CMAKE_C_COMPILER "C:/TDM-GCC-64/bin/gcc.exe" CACHE FILEPATH "C Compiler" FORCE)
+    set(CMAKE_CXX_COMPILER "C:/TDM-GCC-64/bin/g++.exe" CACHE FILEPATH "C++ Compiler" FORCE)
+    message(STATUS "[UMSKT] Forcing use of TDM-GCC in C:/TDM-GCC-64")
+endif()
+
 SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_OSX_SYSROOT "macosx" CACHE PATH "macOS SDK path")
 
@@ -207,6 +214,12 @@ ELSE()
     TARGET_INCLUDE_DIRECTORIES(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
     TARGET_LINK_LIBRARIES(umskt _umskt ${OPENSSL_CRYPTO_LIBRARIES} ${ZLIB_LIBRARIES} fmt nlohmann_json::nlohmann_json umskt::rc ${UMSKT_LINK_LIBS})
     TARGET_LINK_DIRECTORIES(umskt PUBLIC ${UMSKT_LINK_DIRS})
+
+    # Link required Windows system libraries for OpenSSL
+    if (WIN32)
+        target_link_libraries(umskt crypt32 ws2_32)
+    endif()
+
     IF(MSVC AND MSVC_MSDOS_STUB)
         SET_PROPERTY(TARGET umskt APPEND PROPERTY LINK_FLAGS /STUB:${MSVC_MSDOS_STUB})
     ENDIF()
