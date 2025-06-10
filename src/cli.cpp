@@ -423,7 +423,7 @@ int CLI::BINK1998Generate() {
     } else {
         // generate a random number to use as a serial
         BIGNUM *bnrand = BN_new();
-        BN_rand(bnrand, 19, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
+        UMSKT::umskt_bn_rand(bnrand, 19, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
 
         int oRaw;
         char *cRaw = BN_bn2dec(bnrand);
@@ -484,7 +484,7 @@ int CLI::BINK2002Generate() {
     // generate a key
     for (int i = 0; i < this->total; i++) {
         DWORD pAuthInfo;
-        RAND_bytes((BYTE *)&pAuthInfo, 4);
+        UMSKT::umskt_rand_bytes((BYTE *)&pAuthInfo, 4);
         pAuthInfo &= BITMASK(10);
 
         if (this->options.verbose) {
