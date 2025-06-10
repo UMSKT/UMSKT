@@ -38,6 +38,10 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 
+#ifdef __DJGPP__
+#include <sys/time.h>
+#endif
+
 // Algorithm macros
 #define PK_LENGTH               25
 #define NULL_TERMINATOR         1
@@ -59,6 +63,17 @@
 #define BYDWORD(n)                     (DWORD)(*((n) + 0) | *((n) + 1) << 8 | *((n) + 2) << 16 | *((n) + 3) << 24)
 #define BITMASK(n)                     ((1ULL << (n)) - 1)
 
+// RNG utility functions
+#ifdef __DJGPP__
+#define UMSKT_RNG_DJGPP 1
+extern "C" {
+    long int random(void);
+    int srandom(int seed);
+}
+#else
+#define UMSKT_RNG_DJGPP 0
+#endif
+
 class UMSKT {
 public:
     static std::FILE* debug;
@@ -67,7 +82,10 @@ public:
     class ConfigurationID;
 
     static void setDebugOutput(std::FILE* input);
-};
 
+    // RNG utility functions
+    static int umskt_rand_bytes(unsigned char *buf, int num);
+    static int umskt_bn_rand(BIGNUM *rnd, int bits, int top, int bottom);
+};
 
 #endif //UMSKT_LIBUMSKT_H

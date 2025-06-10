@@ -201,7 +201,7 @@ void PIDGEN3::BINK1998::Generate(
         EC_POINT *r = EC_POINT_new(eCurve);
 
         // Generate a random number c consisting of 384 bits without any constraints.
-        BN_rand(c, FIELD_BITS, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
+        UMSKT::umskt_bn_rand(c, FIELD_BITS, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
 
         // Pick a random derivative of the base point on the elliptic curve.
         // R = cG;
