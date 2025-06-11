@@ -71,10 +71,10 @@ IF(DJGPP_WATT32)
     SET(UMSKT_LINK_LIBS ${UMSKT_LINK_LIBS} ${DJGPP_WATT32})
     SET(UMSKT_LINK_DIRS ${UMSKT_LINK_DIRS} ${WATT_ROOT}/lib)
     
-    # Disable SSE, SSE2, and MMX for DOS compatibility
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mno-sse -mno-sse2 -mno-mmx")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mno-sse -mno-sse2 -mno-mmx")
-    MESSAGE(STATUS "[UMSKT] Disabled SSE, SSE2, and MMX for DJGPP/DOS compilation")
+    # Maximum compatibility flags for DOS/NTVDM
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=i386 -mtune=i386 -mno-sse -mno-sse2 -mno-mmx -mno-3dnow -mno-ssse3 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -mno-fma -mno-fma4")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=i386 -mtune=i386 -mno-sse -mno-sse2 -mno-mmx -mno-3dnow -mno-ssse3 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -mno-fma -mno-fma4")
+    MESSAGE(STATUS "[UMSKT] Using i386 target for DOS DGJPP")
 ENDIF()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
