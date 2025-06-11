@@ -64,7 +64,7 @@ jobs:
           git clone https://github.com/UMSKT/openssl.git openssl
           pushd openssl
           source ${{ github.workspace }}/djgpp/setenv
-          ./Configure no-threads no-tests no-sse2 no-asm no-thread-pool -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -prefix=${{ github.workspace }}/djgpp DJGPP
+          ./Configure no-threads no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -prefix=${{ github.workspace }}/djgpp DJGPP
           make && make install_sw
           popd
 
