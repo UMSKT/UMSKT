@@ -70,6 +70,11 @@ IF(DJGPP_WATT32)
     SET(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
     SET(UMSKT_LINK_LIBS ${UMSKT_LINK_LIBS} ${DJGPP_WATT32})
     SET(UMSKT_LINK_DIRS ${UMSKT_LINK_DIRS} ${WATT_ROOT}/lib)
+    
+    # Disable SSE, SSE2, and MMX for DOS compatibility
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mno-sse -mno-sse2 -mno-mmx")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mno-sse -mno-sse2 -mno-mmx")
+    MESSAGE(STATUS "[UMSKT] Disabled SSE, SSE2, and MMX for DJGPP/DOS compilation")
 ENDIF()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
