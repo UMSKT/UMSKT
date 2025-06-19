@@ -69,6 +69,7 @@ struct Options {
     bool list;
     bool nonewlines;
     bool overrideVersion;
+    bool nodashes;
 
     MODE applicationMode;
     ACTIVATION_ALGORITHM activationMode;
