@@ -72,7 +72,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-V --validate\tproduct key to validate signature\n");
     fmt::print("\t-N --nonewlines\tdisables newlines (for easier embedding in other apps)\n");
     fmt::print("\t-o --override\tDisables version check for confirmation IDs, if you need this send an issue on GitHub\n");
-    fmt::print("\t-D --nodashes\tDisables dashes in product keys (for easier copy-pasting)");
+    fmt::print("\t-D --nodashes\tDisables dashes in product keys and confirmation IDs (for easier copy-pasting)");
     fmt::print("\n");
 }
 
@@ -600,7 +600,17 @@ int CLI::ConfirmationID() {
             return 1;
 
         case SUCCESS:
-            fmt::print(confirmation_id);
+	    if (this->options.nodashes == true) {
+		int j = 0;
+		for (int i = 0; confirmation_id[i] != '\0'; ++i) {
+		    if (confirmation_id[i] != '-') {
+			confirmation_id[j++] = confirmation_id[i];
+		    }
+		}
+		confirmation_id[j] = '\0';
+	    }
+	    fmt::print(confirmation_id);
+
     	    if (this->options.nonewlines == false) {
 	        fmt::print("\n"); 
     	    }
