@@ -71,7 +71,8 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-u --upgrade\tspecifies the Product Key will be an \"Upgrade\" version\n");
     fmt::print("\t-V --validate\tproduct key to validate signature\n");
     fmt::print("\t-N --nonewlines\tdisables newlines (for easier embedding in other apps)\n");
-    fmt::print("\t-o --override\tDisables version check for confirmation ID's, if you need this send an issue on GitHub");
+    fmt::print("\t-o --override\tDisables version check for confirmation IDs, if you need this send an issue on GitHub");
+    fmt::print("\t-D --nodashes\tDisables dashes in product keys (for easier copy-pasting)");
     fmt::print("\n");
 }
 
@@ -92,6 +93,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             false,
             false,
             false,
+	    false,
 	    false,
 	    false,
             MODE_BINK1998_GENERATE,
@@ -214,6 +216,8 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
 	    options->nonewlines = true;
 	} else if (arg == "-o" || arg == "--override") {
 	    options->overrideVersion = true;
+	} else if (arg == "-D" || arg == "--nodashes") {
+	    options->nodashes = true;
 	} else {
             options->error = true;
         }
@@ -327,7 +331,11 @@ void CLI::printID(DWORD *pid) {
 
 void CLI::printKey(char *pk) {
     assert(strlen(pk) >= PK_LENGTH);
-
+    std::string keyFormat = "{}-{}-{}-{}-{}";
+    if (this->options.nodashes == true) {
+	keyFormat = "{}{}{}{}{}";
+    }
+	
     std::string spk = pk;
     fmt::print("{}-{}-{}-{}-{}",
                spk.substr(0,5),
