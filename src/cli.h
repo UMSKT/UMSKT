@@ -93,7 +93,7 @@ public:
     static int parseCommandLine(int argc, char* argv[], Options *options);
     static int validateCommandLine(Options* options, char *argv[], json *keys);
     static void printID(DWORD *pid);
-    static void printKey(char *pk);
+    void printKey(char *pk);
     static bool stripKey(const char *in_key, char out_key[PK_LENGTH]);
 
     int BINK1998Generate();
