@@ -37,6 +37,15 @@ jobs:
       - name: Checkout Source Tree
         uses: actions/checkout@v4
 
+      - name: Install Rosetta
+        run: |
+          sudo softwareupdate --install-rosetta --agree-to-license || true
+          
+      - name: Instal Homebrew for x86_64
+        env: { NONINTERACTIVE: 1 }
+        run: |
+          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
       - name: Install x86_64 OpenSSL
         run: |
           arch -x86_64 /usr/local/bin/brew install openssl@3
