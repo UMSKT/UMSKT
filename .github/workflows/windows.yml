@@ -111,7 +111,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE
-          $env:VCPKG_ROOT/vcpkg.exe install openssl:arm64-windows-static --clean-after-build
+          & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:arm64-windows-static --clean-after-build
 
       - name: Configure UMSKT (TDM-GCC ${{ matrix.arch }})
         if: matrix.arch != 'arm64'
