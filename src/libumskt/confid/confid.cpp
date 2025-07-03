@@ -68,13 +68,19 @@ QWORD ConfirmationID::residue_sub(QWORD x, QWORD y)
 	return z;
 }
 
-#if defined(__x86_64__) || defined(_M_AMD64) || defined(__aarch64__) || defined(_M_ARM64) || (defined(__arm64__) && defined(__APPLE__))
+#if defined(__x86_64__) || defined(_M_AMD64) || defined(__aarch64__) || (defined(__arm64__) && defined(__APPLE__))
 #ifdef __GNUC__
 inline QWORD ConfirmationID::__umul128(QWORD a, QWORD b, QWORD* hi)
 {
     OWORD r = (OWORD)a * (OWORD)b;
     *hi = r >> 64;
     return (QWORD) r;
+}
+#elif defined(_M_ARM64) // Microsoft implementation of ARM64
+inline QWORD ConfirmationID::__umul128(QWORD a, QWORD b, QWORD* hi)
+{
+    *hi = __umulh(a, b);
+    return a * b;
 }
 #else
 #define __umul128 _umul128
