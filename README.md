@@ -61,7 +61,7 @@ For Windows, click [here](https://slproweb.com/products/Win32OpenSSL.html) and c
 *Note: This only applies if the build you download has OpenSSL embedded (static library) or not. You can usually tell if the download size is measured in KB or MB. If it's MB, you don't need this.*
 
 #### 3. Run `umskt` to generate a key, or add `--help` or `-h` to see more options.
-
+*Note: on macOS, like all unsigned executables, you'll need to hold Ctrl while right clicking and selecting Open to actually open it.*
 #### 4. *(Activation step for `Retail` and `OEM` only)*
 * After installation, you will be prompted to activate Windows.
 
