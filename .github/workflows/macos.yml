@@ -43,7 +43,7 @@ jobs:
         run: |
           sudo softwareupdate --install-rosetta --agree-to-license || true
           
-      - name: Instal Homebrew for x86_64
+      - name: Install Homebrew for x86_64
         if: matrix.arch == 'x86_64'
         env: { NONINTERACTIVE: 1 }
         run: |
@@ -60,7 +60,7 @@ jobs:
       - name: Configure and build UMSKT
         run: |
           cd build
-          cmake -DCMAKE_BUILD_TYPE=Release .. -DCMAKE_OSX_ARCHITECTURES={{matrix.arch}} -DOPENSSL_ROOT_DIR=$OPENSSL_ROOT_DIR -DOPENSSL_INCLUDE_DIR=$OPENSSL_INCLUDE_DIR
+          cmake -DCMAKE_BUILD_TYPE=Release .. -DCMAKE_OSX_ARCHITECTURES=${{matrix.arch}} -DOPENSSL_ROOT_DIR=$OPENSSL_ROOT_DIR -DOPENSSL_INCLUDE_DIR=$OPENSSL_INCLUDE_DIR
           make
 
       - name: Move files to correct directory
