@@ -156,6 +156,12 @@ jobs:
         run: |
           cmake --build . --config Release
 
+      - name: Run tests
+        shell: pwsh
+        run: |
+          ${{ matrix.arch == 'arm64' && 'Release/umskt.exe' || 'umskt.exe' }} -b 2C -c 365 -s 069420
+          ${{ matrix.arch == 'arm64' && 'Release/umskt.exe' || 'umskt.exe' }} -i 253286028742154311079061239762245184619981623171292574
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.6.2
         with:
