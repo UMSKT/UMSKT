@@ -70,6 +70,7 @@ jobs:
           cd build
           cmake -DCMAKE_BUILD_TYPE=Release .. -DCMAKE_OSX_ARCHITECTURES=${{matrix.arch}} -DOPENSSL_ROOT_DIR=$OPENSSL_ROOT_DIR -DOPENSSL_INCLUDE_DIR=$OPENSSL_INCLUDE_DIR
           make
+          install_name_tool -change @rpath/lib_umskt.dylib @loader_path/lib_umskt.dylib build/umskt
 
       - name: Move files to correct directory
         run: |
