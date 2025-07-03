@@ -89,8 +89,29 @@ jobs:
           git clone https://github.com/Microsoft/vcpkg.git
           cd vcpkg
           .\bootstrap-vcpkg.bat
-          .\vcpkg.exe install openssl:arm64-windows-static
           echo "VCPKG_ROOT=$env:GITHUB_WORKSPACE/vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "VCPKG_DEFAULT_BINARY_CACHE=$env:GITHUB_WORKSPACE/vcpkg/bincache" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "VCPKG_BINARY_SOURCES=clear;default,readwrite" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Cache vcpkg packages
+        if: matrix.arch == 'arm64'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/vcpkg/bincache
+            ${{ github.workspace }}/vcpkg/installed
+            ${{ github.workspace }}/vcpkg/packages
+          key: vcpkg-arm64-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
+          restore-keys: |
+            vcpkg-arm64-${{ hashFiles('**/CMakeLists.txt') }}-
+            vcpkg-arm64-
+
+      - name: Install OpenSSL for ARM64
+        if: matrix.arch == 'arm64'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE
+          $env:VCPKG_ROOT/vcpkg.exe install openssl:arm64-windows-static --clean-after-build
 
       - name: Configure UMSKT (TDM-GCC ${{ matrix.arch }})
         if: matrix.arch != 'arm64'
