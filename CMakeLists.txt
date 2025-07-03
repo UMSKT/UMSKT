@@ -77,10 +77,10 @@ IF(DJGPP_WATT32)
     MESSAGE(STATUS "[UMSKT] Using i386 target for DOS DGJPP")
 ENDIF()
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  SET(BUILD_SHARED_LIBS ON)
-  MESSAGE(STATUS "[UMSKT] macOS has no static library - Shared library forced on")
-endif()
+##if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+##  SET(BUILD_SHARED_LIBS ON)
+##  MESSAGE(STATUS "[UMSKT] macOS has no static library - Shared library forced on")
+##endif()
 
 # if we're compiling with MSVC, respect the DEBUG compile option
 IF(MSVC)
@@ -167,6 +167,7 @@ CPMAddPackage(
         GITHUB_REPOSITORY fmtlib/fmt
         GIT_TAG 10.0.0
         VERSION 10.0.0
+	#OPTIONS "FMT_INSTALL YES" "BUILD_SHARED_LIBS OFF"
 )
 
 # Include cmrc resource compiler

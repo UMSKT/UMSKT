@@ -73,6 +73,7 @@ jobs:
 
       - name: Move files to correct directory
         run: |
+          ls -a build
           mkdir -p build/actions_upload
           mv build/umskt build/actions_upload/umskt
 
@@ -111,4 +112,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with: 
           name: UMSKT-macOS-universal
-          path: fat/umskt
+          path: fat
