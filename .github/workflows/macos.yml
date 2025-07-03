@@ -108,7 +108,7 @@ jobs:
         run: |
           mkdir fat
           lipo -create x86/umskt arm/umskt -output fat/umskt
-          lipo -create x86/lib_umskt.dylib arm/lib_umskt.dylib fat/lib_umskt.dylib
+          lipo -create x86/lib_umskt.dylib arm/lib_umskt.dylib -output fat/lib_umskt.dylib
           lipo -info fat/umskt
           lipo -info fat/lib_umskt.dylib
       - name: Upload universal build
