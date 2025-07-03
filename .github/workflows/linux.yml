@@ -28,13 +28,16 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - arch: x86
+            runner: ubuntu-latest
           - arch: x86_64
+            runner: ubuntu-latest
           - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{matrix.runner}}
     steps:
     - name: Checkout Source Tree
       uses: actions/checkout@v4
