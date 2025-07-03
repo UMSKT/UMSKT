@@ -36,6 +36,7 @@ OPTION(UMSKT_USE_SHARED_OPENSSL "Force linking against the system-wide OpenSSL l
 OPTION(MUSL_STATIC "Enable fully static builds in a muslc environment (i.e. Alpine Linux)" OFF)
 OPTION(DJGPP_WATT32 "Enable compilation and linking with DJGPP/WATT32/OpenSSL" OFF)
 OPTION(MSVC_MSDOS_STUB "Specify a custom MS-DOS stub for a 32-bit MSVC compilation" OFF)
+OPTION(WINDOWS_ARM "Enable compilation for Windows on ARM (requires appropriate toolchain)" OFF)
 
 SET(UMSKT_LINK_LIBS ${UMSKT_LINK_LIBS})
 SET(UMSKT_LINK_DIRS ${UMSKT_LINK_DIRS})
@@ -60,7 +61,22 @@ ELSE()
     MESSAGE(STATUS "[UMSKT] Requesting static version of OpenSSL")
 ENDIF()
 
-
+# Configure ARM-specific settings if enabled
+if (WINDOWS_ARM)
+    if (MSVC)
+        # MSVC ARM64 settings
+        set(CMAKE_SYSTEM_PROCESSOR ARM64)
+        set(CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE ARM64)
+    else()
+        # MinGW/GCC ARM settings
+        set(CMAKE_SYSTEM_PROCESSOR arm)
+        if (CMAKE_CROSSCOMPILING)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv8-a")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8-a")
+        endif()
+    endif()
+    message(STATUS "[UMSKT] Configuring for Windows on ARM")
+endif()
 
 IF(DJGPP_WATT32)
     SET(CMAKE_SYSTEM_NAME MSDOS)

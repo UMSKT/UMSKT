@@ -31,9 +31,10 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        arch: [x64, x86]
+        arch: [x64, x86, arm64]
     steps:
       - name: Setup TDM-GCC
+        if: matrix.arch != 'arm64'
         run: |
           Write-Host Downloading TDM-GCC v10.3.0...
           Invoke-WebRequest -Uri 'https://github.com/jmeubank/tdm-gcc/releases/download/v10.3.0-tdm64-2/tdm64-gcc-10.3.0-2.exe' -OutFile 'C:\Windows\temp\TDM-GCC-64.exe'
@@ -49,10 +50,17 @@ jobs:
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
           [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
 
+      - name: Setup MSVC for ARM64
+        if: matrix.arch == 'arm64'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: arm64
+
       - name: Checkout Source Tree
         uses: actions/checkout@v4
 
       - name: Download OpenSSL-TDM release asset
+        if: matrix.arch != 'arm64'
         shell: pwsh
         run: |
           if ('${{ matrix.arch }}' -eq 'x64') {
@@ -74,7 +82,18 @@ jobs:
           echo "OPENSSL_LIBDIR=$libdir" | Out-File -FilePath $env:GITHUB_ENV -Append
           echo "CMAKE_FLAGS=$cmake_flags" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Setup vcpkg for ARM64
+        if: matrix.arch == 'arm64'
+        shell: pwsh
+        run: |
+          git clone https://github.com/Microsoft/vcpkg.git
+          cd vcpkg
+          .\bootstrap-vcpkg.bat
+          .\vcpkg.exe install openssl:arm64-windows-static
+          echo "VCPKG_ROOT=$env:GITHUB_WORKSPACE/vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       - name: Configure UMSKT (TDM-GCC ${{ matrix.arch }})
+        if: matrix.arch != 'arm64'
         shell: pwsh
         run: |
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
@@ -92,14 +111,32 @@ jobs:
             -DCMAKE_CXX_FLAGS="$env:CMAKE_FLAGS" `
             .
 
+      - name: Configure UMSKT (MSVC ARM64)
+        if: matrix.arch == 'arm64'
+        shell: pwsh
+        run: |
+          cmake -G "Visual Studio 17 2022" `
+            -A ARM64 `
+            -DWINDOWS_ARM=ON `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=arm64-windows-static `
+            .
+
       - name: Build UMSKT (TDM-GCC ${{ matrix.arch }})
+        if: matrix.arch != 'arm64'
         shell: pwsh
         run: |
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
           mingw32-make
 
+      - name: Build UMSKT (MSVC ARM64)
+        if: matrix.arch == 'arm64'
+        shell: pwsh
+        run: |
+          cmake --build . --config Release
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: UMSKT-TDM${{ matrix.arch }}
-          path: umskt.exe
+          name: UMSKT-${{ matrix.arch }}
+          path: ${{ matrix.arch == 'arm64' && 'Release/umskt.exe' || 'umskt.exe' }}
