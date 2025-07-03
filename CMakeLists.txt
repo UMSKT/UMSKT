@@ -32,6 +32,14 @@ if (WIN32 AND NOT MSVC)
     set(CMAKE_RC_COMPILER_INIT windres)
     enable_language(RC)
     set(CMAKE_RC_FLAGS "--use-temp-file -c65001")
+    
+    # Match resource architecture with target architecture
+    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+        set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} -F pe-i386")
+    else()
+        set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} -F pe-x86-64")
+    endif()
+    
     set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> <FLAGS> -O coff -I${CMAKE_CURRENT_SOURCE_DIR}/src/windows <DEFINES> -i <SOURCE> -o <OBJECT>")
     
     # Set the Windows resource file for GCC builds
