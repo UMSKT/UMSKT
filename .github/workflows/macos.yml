@@ -68,7 +68,12 @@ jobs:
       - name: Configure and build UMSKT
         run: |
           cd build
-          cmake -DCMAKE_BUILD_TYPE=Release .. -DCMAKE_OSX_ARCHITECTURES=${{matrix.arch}} -DOPENSSL_ROOT_DIR=$OPENSSL_ROOT_DIR -DOPENSSL_INCLUDE_DIR=$OPENSSL_INCLUDE_DIR
+          cmake -DCMAKE_BUILD_TYPE=Release .. \
+            -DCMAKE_OSX_ARCHITECTURES=${{matrix.arch}} \
+            -DOPENSSL_ROOT_DIR=$OPENSSL_ROOT_DIR \
+            -DOPENSSL_INCLUDE_DIR=$OPENSSL_INCLUDE_DIR \
+            -DOPENSSL_USE_STATIC_LIBS=TRUE \
+            -DBUILD_SHARED_LIBS=OFF
           make
 
       - name: Move files to correct directory
