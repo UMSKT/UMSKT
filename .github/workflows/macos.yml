@@ -77,9 +77,7 @@ jobs:
           mkdir -p build/actions_upload
           mv build/umskt build/actions_upload/umskt
           mv build/lib_umskt.dylib build/actions_upload/lib_umskt.dylib
-          mv build/libfmt.10.dylib build/actions_upload/libfmt.10.dylib
           install_name_tool -change @rpath/lib_umskt.dylib @loader_path/lib_umskt.dylib build/actions_upload/umskt
-          install_name_tool -change @rpath/libfmt.10.dylib @loader_path/libfmt.10.dylib build/actions_upload/umskt
 
       - name: Run tests
         run: |
@@ -112,7 +110,6 @@ jobs:
           mkdir fat
           lipo -create x86/umskt arm/umskt -output fat/umskt
           lipo -create x86/lib_umskt.dylib arm/lib_umskt.dylib -output fat/lib_umskt.dylib
-          lipi -create x86/libfmt.10.dylib arm/libfmt.10.dylib -output fat/libfmt.10.dylib
           lipo -info fat/umskt
           lipo -info fat/lib_umskt.dylib
       - name: Upload universal build
