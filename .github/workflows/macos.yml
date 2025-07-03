@@ -27,20 +27,48 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-x86:
+  build:
     runs-on: macos-latest
     strategy:
       matrix:
         include:
           - arch: x86_64
+          - arch: arm64
     steps:
       - name: Checkout Source Tree
         uses: actions/checkout@v4
 
+      - name: Install Rosetta
+        if: matrix.arch == 'x86_64'
+        run: |
+          sudo softwareupdate --install-rosetta --agree-to-license || true
+          
+      - name: Install Homebrew for x86_64
+        if: matrix.arch == 'x86_64'
+        env: { NONINTERACTIVE: 1 }
+        run: |
+          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+      - name: Install x86_64 OpenSSL
+        if: matrix.arch == 'x86_64'
+        run: |
+          arch -x86_64 /usr/local/bin/brew install openssl@3
+          echo "OPENSSL_ROOT_DIR=/usr/local/opt/openssl@3" >> $GITHUB_ENV
+          echo "OPENSSL_INCLUDE_DIR=/usr/local/opt/openssl@3/include" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=/usr/local/opt/openssl@3/lib/pkgconfig" >> $GITHUB_ENV
+
+      - name: Install arm64 OpenSSL
+        if: matrix.arch == 'arm64'
+        run: |
+          brew install openssl@3
+          echo "OPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3" >> $GITHUB_ENV
+          echo "OPENSSL_INCLUDE_DIR=/opt/homebrew/opt/openssl@3/include" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=/opt/homebrew/opt/openssl@3/lib/pkgconfig" >> $GITHUB_ENV
+
       - name: Configure and build UMSKT
         run: |
           cd build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake -DCMAKE_BUILD_TYPE=Release .. -DCMAKE_OSX_ARCHITECTURES=${{matrix.arch}} -DOPENSSL_ROOT_DIR=$OPENSSL_ROOT_DIR -DOPENSSL_INCLUDE_DIR=$OPENSSL_INCLUDE_DIR
           make
 
       - name: Move files to correct directory
@@ -53,8 +81,34 @@ jobs:
           cd build/actions_upload
           ./umskt
 
-      - name: Upload build artifact
+      - name: Upload platform-specific build
         uses: actions/upload-artifact@v4.6.2
         with:
           name: UMSKT-macOS-${{ matrix.arch }}
           path: build/actions_upload
+  
+  universal:
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - name: Download x86_64 slice
+        uses: actions/download-artifact@v4
+        with:
+          name: UMSKT-macOS-x86_64
+          path: x86
+      - name: Download arm64 slice
+        uses: actions/download-artifact@v4
+        with:
+          name: UMSKT-macOS-arm64
+          path: arm
+      - name: Create universal binary
+        shell: bash
+        run: |
+          mkdir fat
+          lipo -create x86/umskt arm/umskt -output fat/umskt
+          lipo -info fat/umskt
+      - name: Upload universal build
+        uses: actions/upload-artifact@v4
+        with: 
+          name: UMSKT-macOS-universal
+          path: fat/umskt
