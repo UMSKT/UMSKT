@@ -64,7 +64,7 @@ QWORD ConfirmationID::residue_sub(QWORD x, QWORD y)
 	return z;
 }
 
-#if defined(__x86_64__) || defined(_M_AMD64) || defined(__aarch64__) || (defined(__arm64__) && defined(__APPLE__))
+#if defined(__x86_64__) || defined(_M_AMD64) || defined(__aarch64__) || (defined(__arm64__) && defined(__APPLE__)) || defined(_M_ARM64)
 #ifdef __GNUC__
 inline QWORD ConfirmationID::__umul128(QWORD a, QWORD b, QWORD* hi)
 {
