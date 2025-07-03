@@ -76,15 +76,15 @@ inline QWORD ConfirmationID::__umul128(QWORD a, QWORD b, QWORD* hi)
     *hi = r >> 64;
     return (QWORD) r;
 }
+#else
+#define __umul128 _umul128
+#endif
 #elif defined(_M_ARM64) // Microsoft implementation of ARM64
 inline QWORD ConfirmationID::__umul128(QWORD a, QWORD b, QWORD* hi)
 {
     *hi = __umulh(a, b);
     return a * b;
 }
-#else
-#define __umul128 _umul128
-#endif
 #elif defined(__i386__) || defined(_M_IX86) || defined(__arm__) || defined(__EMSCRIPTEN__)
 inline QWORD ConfirmationID::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi) {
     // multiplier   = ab = a * 2^32 + b
