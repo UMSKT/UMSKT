@@ -40,9 +40,9 @@ OPTION(MSVC_MSDOS_STUB "Specify a custom MS-DOS stub for a 32-bit MSVC compilati
 SET(UMSKT_LINK_LIBS ${UMSKT_LINK_LIBS})
 SET(UMSKT_LINK_DIRS ${UMSKT_LINK_DIRS})
 
-# macOS does not support static build
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    SET(UMSKT_USE_SHARED_OPENSSL ON)
+    SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-dead_strip")
 endif()
 
 # neither does dos idk i'm trying random stuff
