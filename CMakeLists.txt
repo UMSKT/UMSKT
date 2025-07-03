@@ -31,7 +31,7 @@ if (WIN32 AND NOT MSVC)
     set(CMAKE_RC_COMPILER "C:/TDM-GCC-64/bin/windres.exe")
     set(CMAKE_RC_COMPILER_INIT windres)
     enable_language(RC)
-    set(CMAKE_RC_FLAGS "--use-temp-file -c1200")
+    set(CMAKE_RC_FLAGS "--use-temp-file -c65001")
     set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> <FLAGS> -O coff -I${CMAKE_CURRENT_SOURCE_DIR}/src/windows <DEFINES> -i <SOURCE> -o <OBJECT>")
     
     # Set the Windows resource file for GCC builds
