@@ -85,7 +85,8 @@ jobs:
       - name: Run tests
         run: |
           cd build/actions_upload
-          ./umskt
+          ./umskt -b 2C -c 365 -c 069420
+          ./umskt -i 253286028742154311079061239762245184619981623171292574
 
       - name: Upload platform-specific build
         uses: actions/upload-artifact@v4.6.2
