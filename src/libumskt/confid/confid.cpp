@@ -29,6 +29,10 @@
 
 #include "confid.h"
 
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
+
 QWORD MOD = 0;
 QWORD NON_RESIDUE = 0;
 QWORD f[6] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
