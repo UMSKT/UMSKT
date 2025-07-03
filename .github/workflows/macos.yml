@@ -37,10 +37,17 @@ jobs:
       - name: Checkout Source Tree
         uses: actions/checkout@v4
 
+      - name: Install x86_64 OpenSSL
+        run: |
+          arch -x86_64 /usr/local/bin/brew install openssl@3
+          echo "OPENSSL_ROOT_DIR=/usr/local/opt/openssl@3" >> $GITHUB_ENV
+          echo "OPENSSL_INCLUDE_DIR=/usr/local/opt/openssl@3/include" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=/usr/local/opt/openssl@3/lib/pkgconfig" >> $GITHUB_ENV
+
       - name: Configure and build UMSKT
         run: |
           cd build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake -DCMAKE_BUILD_TYPE=Release .. -DCMAKE_OSX_ARCHITECTURES=x86_64 -DOPENSSL_ROOT_DIR=$OPENSSL_ROOT_DIR -DOPENSSL_INCLUDE_DIR=$OPENSSL_INCLUDE_DIR
           make
 
       - name: Move files to correct directory
