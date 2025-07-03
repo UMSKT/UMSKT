@@ -167,7 +167,7 @@ CPMAddPackage(
         GITHUB_REPOSITORY fmtlib/fmt
         GIT_TAG 10.0.0
         VERSION 10.0.0
-	OPTIONS "FMT_INSTALL YES" "BUILD_SHARED_LIBS OFF"
+	#OPTIONS "FMT_INSTALL YES" "BUILD_SHARED_LIBS OFF"
 )
 
 # Include cmrc resource compiler
