@@ -75,7 +75,6 @@ jobs:
         run: |
           mkdir -p build/actions_upload
           mv build/umskt build/actions_upload/umskt
-          mv build/libfmt.dylib build/actions_upload/libfmt.dylib
           mv build/lib_umskt.dylib build/actions_upload/lib_umskt.dylib
 
       - name: Run tests
@@ -108,10 +107,8 @@ jobs:
         run: |
           mkdir fat
           lipo -create x86/umskt arm/umskt -output fat/umskt
-          lipo -create x86/libfmt.dylib arm/libfmt.dylib fat/libfmt.dylib
           lipo -create x86/lib_umskt.dylib arm/lib_umskt.dylib fat/lib_umskt.dylib
           lipo -info fat/umskt
-          lipo -info fat/libfmt.dylib
           lipo -info fat/lib_umskt.dylib
       - name: Upload universal build
         uses: actions/upload-artifact@v4
