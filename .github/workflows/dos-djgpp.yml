@@ -42,7 +42,7 @@ jobs:
       - name: Setup build environment
         run: |
           sudo apt -y update
-          sudo apt -y install build-essential cmake wget 7zip git flex libfl-dev nasm libslang2-dev pkg-config libslang2-modules gcc-multilib
+          sudo apt -y install build-essential cmake wget 7zip git flex libfl-dev nasm libslang2-dev pkg-config libslang2-modules gcc-multilib dosbox
 
       - name: Download and Setup DJGPP Toolchain
         run: |
@@ -59,7 +59,16 @@ jobs:
           make -f djgpp.mak
           ln -s ${WATT_ROOT}/lib/libwatt.a ${{ github.workspace }}/djgpp/lib
 
+      - name: Cache OpenSSL 3.1.2
+        uses: actions/cache/restore@v4
+        id: cache-openssl
+        with:
+          path: |
+            ${{ github.workspace }}/djgpp
+          key: openssl-3.1.2-${{ hashFiles('**/CMakeLists.txt') }}
+
       - name: Checkout and Cross Compile OpenSSL 3.1.2
+        if: steps.cache-openssl.outputs.cache-hit != 'true'
         run: |
           git clone https://github.com/UMSKT/openssl.git openssl
           pushd openssl
@@ -68,12 +77,98 @@ jobs:
           make && make install_sw
           popd
 
+      - name: Save OpenSSL 3.1.2
+        if: steps.cache-openssl.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ github.workspace }}/djgpp
+          key: openssl-3.1.2-${{ hashFiles('**/CMakeLists.txt') }}
+
       - name: Build
         run: |
           source ${{ github.workspace }}/djgpp/setenv
           pushd build
           cmake ../ -D DJGPP_WATT32=${WATT_ROOT}/lib/libwatt.a -D CMAKE_FIND_ROOT_PATH=${CMAKE_FIND_ROOT_PATH}
           make
+
+      - name: Setup DOSBox test environment
+        run: |
+          mkdir -p dosbox_test
+          cp build/umskt.exe dosbox_test/
+          # Download DPMI server directly
+          wget https://github.com/UMSKT/winactiontest/raw/refs/heads/main/CWSDPMI.EXE -O dosbox_test/CWSDPMI.EXE
+          # Create test batch file
+          cat > dosbox_test/test.bat << EOL
+          @echo off
+          echo Running test 1...
+          umskt.exe -b 2C -c 365 -s 069420 > TEST1.TXT
+          if errorlevel 1 goto error
+          echo Running test 2...
+          umskt.exe -i 253286028742154311079061239762245184619981623171292574 > TEST2.TXT
+          if errorlevel 1 goto error
+          echo Tests completed > DONE.TXT
+          goto end
+          :error
+          echo Test failed > ERROR.TXT
+          :end
+          exit
+          EOL
+          # Create DOSBox configuration
+          cat > dosbox_test/dosbox.conf << EOL
+          [sdl]
+          nosound=true
+          [cpu]
+          core=dynamic
+          cycles=max
+          [autoexec]
+          mount c .
+          c:
+          test.bat
+          exit
+          EOL
+
+      - name: Run tests in DOSBox
+        run: |
+          cd dosbox_test
+          timeout 30s dosbox -conf dosbox.conf -nogui -exit
+          # Check if the test completed successfully
+          if [ ! -f DONE.TXT ]; then
+            echo "Tests did not complete successfully"
+            if [ -f ERROR.TXT ]; then
+              echo "Test execution failed"
+            fi
+            if [ -f TEST1.TXT ]; then
+              echo "Test 1 output:"
+              cat TEST1.TXT
+            fi
+            if [ -f TEST2.TXT ]; then
+              echo "Test 2 output:"
+              cat TEST2.TXT
+            fi
+            exit 1
+          fi
+          # Verify test outputs
+          if [ ! -f TEST1.TXT ] || [ ! -f TEST2.TXT ]; then
+            echo "Test output files missing"
+            exit 1
+          fi
+          # Check test results - looking for key format patterns
+          if ! grep -qE '[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}' TEST1.TXT || \
+             ! grep -qE '[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}' TEST2.TXT; then
+            echo "Tests failed - unexpected output format"
+            echo "Test 1 output:"
+            cat TEST1.TXT
+            echo "Test 2 output:"
+            cat TEST2.TXT
+            exit 1
+          else
+            echo "All tests passed successfully"
+            echo "Test 1 output:"
+            cat TEST1.TXT
+            echo "Test 2 output:"
+            cat TEST2.TXT
+          fi
 
       - name: Move executable to upload directory
         run: |

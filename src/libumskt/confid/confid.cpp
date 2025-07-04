@@ -29,6 +29,10 @@
 
 #include "confid.h"
 
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
+
 QWORD MOD = 0;
 QWORD NON_RESIDUE = 0;
 QWORD f[6] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
@@ -75,6 +79,12 @@ inline QWORD ConfirmationID::__umul128(QWORD a, QWORD b, QWORD* hi)
 #else
 #define __umul128 _umul128
 #endif
+#elif defined(_M_ARM64) // Microsoft implementation of ARM64
+inline QWORD ConfirmationID::__umul128(QWORD a, QWORD b, QWORD* hi)
+{
+    *hi = __umulh(a, b);
+    return a * b;
+}
 #elif defined(__i386__) || defined(_M_IX86) || defined(__arm__) || defined(__EMSCRIPTEN__)
 inline QWORD ConfirmationID::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi) {
     // multiplier   = ab = a * 2^32 + b

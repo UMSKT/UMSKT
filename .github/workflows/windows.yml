@@ -27,13 +27,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-tdm:
+  build:
     runs-on: windows-latest
     strategy:
       matrix:
-        arch: [x64, x86]
+        arch: [x64, x86, arm64]
     steps:
       - name: Setup TDM-GCC
+        if: matrix.arch != 'arm64'
         run: |
           Write-Host Downloading TDM-GCC v10.3.0...
           Invoke-WebRequest -Uri 'https://github.com/jmeubank/tdm-gcc/releases/download/v10.3.0-tdm64-2/tdm64-gcc-10.3.0-2.exe' -OutFile 'C:\Windows\temp\TDM-GCC-64.exe'
@@ -49,10 +50,17 @@ jobs:
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
           [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
 
+      - name: Setup MSVC for ARM64
+        if: matrix.arch == 'arm64'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: arm64
+
       - name: Checkout Source Tree
         uses: actions/checkout@v4
 
       - name: Download OpenSSL-TDM release asset
+        if: matrix.arch != 'arm64'
         shell: pwsh
         run: |
           if ('${{ matrix.arch }}' -eq 'x64') {
@@ -74,7 +82,39 @@ jobs:
           echo "OPENSSL_LIBDIR=$libdir" | Out-File -FilePath $env:GITHUB_ENV -Append
           echo "CMAKE_FLAGS=$cmake_flags" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Setup vcpkg for ARM64
+        if: matrix.arch == 'arm64'
+        shell: pwsh
+        run: |
+          git clone https://github.com/Microsoft/vcpkg.git
+          cd vcpkg
+          .\bootstrap-vcpkg.bat
+          echo "VCPKG_ROOT=$env:GITHUB_WORKSPACE/vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "VCPKG_DEFAULT_BINARY_CACHE=$env:GITHUB_WORKSPACE/vcpkg/bincache" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "VCPKG_BINARY_SOURCES=clear;default,readwrite" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Cache vcpkg packages
+        if: matrix.arch == 'arm64'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/vcpkg/bincache
+            ${{ github.workspace }}/vcpkg/installed
+            ${{ github.workspace }}/vcpkg/packages
+          key: vcpkg-arm64-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
+          restore-keys: |
+            vcpkg-arm64-${{ hashFiles('**/CMakeLists.txt') }}-
+            vcpkg-arm64-
+
+      - name: Install OpenSSL for ARM64
+        if: matrix.arch == 'arm64'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE
+          & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:arm64-windows-static --clean-after-build
+
       - name: Configure UMSKT (TDM-GCC ${{ matrix.arch }})
+        if: matrix.arch != 'arm64'
         shell: pwsh
         run: |
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
@@ -92,14 +132,60 @@ jobs:
             -DCMAKE_CXX_FLAGS="$env:CMAKE_FLAGS" `
             .
 
+      - name: Configure UMSKT (MSVC ARM64)
+        if: matrix.arch == 'arm64'
+        shell: pwsh
+        run: |
+          cmake -G "Visual Studio 17 2022" `
+            -A ARM64 `
+            -DWINDOWS_ARM=ON `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=arm64-windows-static `
+            .
+
       - name: Build UMSKT (TDM-GCC ${{ matrix.arch }})
+        if: matrix.arch != 'arm64'
         shell: pwsh
         run: |
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
           mingw32-make
 
+      - name: Build UMSKT (MSVC ARM64)
+        if: matrix.arch == 'arm64'
+        shell: pwsh
+        run: |
+          cmake --build . --config Release
+
+      - name: Run tests (x86/x64)
+        if: matrix.arch != 'arm64'
+        shell: pwsh
+        run: |
+          Write-Host Test 1 - generating key
+          .\umskt.exe -b 2C -c 365 -s 069420 -v
+          Write-Host Test 2 - generatng confid
+          .\umskt.exe -i 253286028742154311079061239762245184619981623171292574
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: UMSKT-TDM${{ matrix.arch }}
-          path: umskt.exe
+          name: UMSKT-${{ matrix.arch }}
+          path: ${{ matrix.arch == 'arm64' && 'Release/umskt.exe' || 'umskt.exe' }}
+
+  test-arm64:
+    needs: build
+    if: success()
+    runs-on: windows-11-arm
+    steps:
+      - name: Download ARM64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: UMSKT-arm64
+          path: .
+
+      - name: Run tests (ARM64)
+        shell: pwsh
+        run: |
+          Write-Host Test 1 - generating key
+          .\umskt.exe -b 2C -c 365 -s 069420 -v
+          Write-Host Test 2 - generatng confid
+          .\umskt.exe -i 253286028742154311079061239762245184619981623171292574

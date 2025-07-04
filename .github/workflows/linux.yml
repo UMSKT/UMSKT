@@ -28,18 +28,25 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - arch: x86
+            runner: ubuntu-latest
+            use_alpine: true
           - arch: x86_64
+            runner: ubuntu-latest
+            use_alpine: true
           - arch: aarch64
+            runner: ubuntu-24.04-arm
+            use_alpine: false
+    runs-on: ${{ matrix.runner }}
     steps:
     - name: Checkout Source Tree
       uses: actions/checkout@v4
 
-    - name: Setup latest Alpine Linux for ${{ matrix.arch }}
+    - name: Setup latest Alpine Linux
+      if: ${{ matrix.use_alpine }}
       uses: jirutka/setup-alpine@v1
       with:
         packages: >
@@ -54,12 +61,45 @@ jobs:
         arch: ${{ matrix.arch }}
         shell-name: alpine-target.sh
 
-    - name: Configure and build UMSKT
+    - name: Install Dependencies (Ubuntu ARM64)
+      if: ${{ !matrix.use_alpine }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake git libssl-dev zlib1g-dev
+
+    - name: Configure and build UMSKT (Alpine)
+      if: ${{ matrix.use_alpine }}
       uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
       with:
         options: MUSL_STATIC=ON
         run-build: true
         shell: alpine-target.sh {0}
+
+    - name: Configure and build UMSKT (Ubuntu)
+      if: ${{ !matrix.use_alpine }}
+      uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
+      with:
+        options: MUSL_STATIC=ON
+        run-build: true
+
+    - name: Test UMSKT (Alpine)
+      if: ${{ matrix.use_alpine }}
+      run: |
+        cd build
+        echo Test 1 - generating key
+        ./umskt -b 2C -c 365 -s 069420 -v
+        echo Test 2 - generating confid
+        ./umskt -i 253286028742154311079061239762245184619981623171292574
+      shell: alpine-target.sh {0}
+
+    - name: Test UMSKT (Ubuntu)
+      if: ${{ !matrix.use_alpine }}
+      run: |
+        cd build
+        echo Test 1 - generating key
+        ./umskt -b 2C -c 365 -s 069420 -v
+        echo Test 2 - generating confid
+        ./umskt -i 253286028742154311079061239762245184619981623171292574
 
     - name: Move files to correct directory
       run: |
@@ -72,16 +112,70 @@ jobs:
         name: UMSKT-linux-${{ matrix.arch }}-static
         path: build/actions_upload
 
-    - name: Configure and build static internal deps UMSKT
+    - name: Configure and build static internal deps UMSKT (Alpine)
+      if: ${{ matrix.use_alpine }}
       uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
       with:
         options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=OFF
         run-build: true
         shell: alpine-target.sh {0}
 
-    - name: Configure and build shared deps UMSKT
+    - name: Configure and build static internal deps UMSKT (Ubuntu)
+      if: ${{ !matrix.use_alpine }}
+      uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
+      with:
+        options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=OFF
+        run-build: true
+
+    - name: Test static internal deps UMSKT (Alpine)
+      if: ${{ matrix.use_alpine }}
+      run: |
+        cd build
+        echo Test 1 - generating key
+        ./umskt -b 2C -c 365 -s 069420 -v
+        echo Test 2 - generating confid
+        ./umskt -i 253286028742154311079061239762245184619981623171292574
+      shell: alpine-target.sh {0}
+
+    - name: Test static internal deps UMSKT (Ubuntu)
+      if: ${{ !matrix.use_alpine }}
+      run: |
+        cd build
+        echo Test 1 - generating key
+        ./umskt -b 2C -c 365 -s 069420 -v
+        echo Test 2 - generating confid
+        ./umskt -i 253286028742154311079061239762245184619981623171292574
+
+    - name: Configure and build shared deps UMSKT (Alpine)
+      if: ${{ matrix.use_alpine }}
       uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
       with:
         options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=ON
         run-build: true
         shell: alpine-target.sh {0}
+
+    - name: Configure and build shared deps UMSKT (Ubuntu)
+      if: ${{ !matrix.use_alpine }}
+      uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
+      with:
+        options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=ON
+        run-build: true
+
+    - name: Test shared deps UMSKT (Alpine)
+      if: ${{ matrix.use_alpine }}
+      run: |
+        cd build
+        echo Test 1 - generating key
+        ./umskt -b 2C -c 365 -s 069420 -v
+        echo Test 2 - generating confid
+        ./umskt -i 253286028742154311079061239762245184619981623171292574
+      shell: alpine-target.sh {0}
+
+    - name: Test shared deps UMSKT (Ubuntu)
+      if: ${{ !matrix.use_alpine }}
+      run: |
+        cd build
+        echo Test 1 - generating key
+        ./umskt -b 2C -c 365 -s 069420 -v
+        echo Test 2 - generating confid
+        ./umskt -i 253286028742154311079061239762245184619981623171292574
