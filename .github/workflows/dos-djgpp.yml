@@ -42,7 +42,7 @@ jobs:
       - name: Setup build environment
         run: |
           sudo apt -y update
-          sudo apt -y install build-essential cmake wget 7zip git flex libfl-dev nasm libslang2-dev pkg-config libslang2-modules gcc-multilib dosbox unzip
+          sudo apt -y install build-essential cmake wget 7zip git flex libfl-dev nasm libslang2-dev pkg-config libslang2-modules gcc-multilib dosbox
 
       - name: Download and Setup DJGPP Toolchain
         run: |
@@ -97,9 +97,8 @@ jobs:
         run: |
           mkdir -p dosbox_test
           cp build/umskt.exe dosbox_test/
-          # Download and extract DPMI server
-          wget http://mirrors.meowr.net/djgpp/v2misc/csdpmi7b.zip
-          unzip -j csdpmi7b.zip bin/cwsdpmi.exe -d dosbox_test/
+          # Download DPMI server directly
+          wget https://github.com/UMSKT/winactiontest/raw/refs/heads/main/CWSDPMI.EXE -O dosbox_test/CWSDPMI.EXE
           # Create test batch file
           cat > dosbox_test/test.bat << EOL
           @echo off
