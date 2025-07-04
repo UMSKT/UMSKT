@@ -160,7 +160,9 @@ jobs:
         if: matrix.arch != 'arm64'
         shell: pwsh
         run: |
+          Write-Host Test 1 - generating key
           .\umskt.exe -b 2C -c 365 -s 069420
+          Write-Host Test 2 - generatng confid
           .\umskt.exe -i 253286028742154311079061239762245184619981623171292574
 
       - name: Upload build artifact
