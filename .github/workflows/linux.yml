@@ -82,6 +82,21 @@ jobs:
         options: MUSL_STATIC=ON
         run-build: true
 
+    - name: Test UMSKT (Alpine)
+      if: ${{ matrix.use_alpine }}
+      run: |
+        cd build
+        ./umskt -b 2C -c 365 -s 069420
+        ./umskt -i 253286028742154311079061239762245184619981623171292574
+      shell: alpine-target.sh {0}
+
+    - name: Test UMSKT (Ubuntu)
+      if: ${{ !matrix.use_alpine }}
+      run: |
+        cd build
+        ./umskt -b 2C -c 365 -s 069420
+        ./umskt -i 253286028742154311079061239762245184619981623171292574
+
     - name: Move files to correct directory
       run: |
           mkdir -p build/actions_upload
@@ -108,6 +123,21 @@ jobs:
         options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=OFF
         run-build: true
 
+    - name: Test static internal deps UMSKT (Alpine)
+      if: ${{ matrix.use_alpine }}
+      run: |
+        cd build
+        ./umskt -b 2C -c 365 -s 069420
+        ./umskt -i 253286028742154311079061239762245184619981623171292574
+      shell: alpine-target.sh {0}
+
+    - name: Test static internal deps UMSKT (Ubuntu)
+      if: ${{ !matrix.use_alpine }}
+      run: |
+        cd build
+        ./umskt -b 2C -c 365 -s 069420
+        ./umskt -i 253286028742154311079061239762245184619981623171292574
+
     - name: Configure and build shared deps UMSKT (Alpine)
       if: ${{ matrix.use_alpine }}
       uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
@@ -122,3 +152,18 @@ jobs:
       with:
         options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=ON
         run-build: true
+
+    - name: Test shared deps UMSKT (Alpine)
+      if: ${{ matrix.use_alpine }}
+      run: |
+        cd build
+        ./umskt -b 2C -c 365 -s 069420
+        ./umskt -i 253286028742154311079061239762245184619981623171292574
+      shell: alpine-target.sh {0}
+
+    - name: Test shared deps UMSKT (Ubuntu)
+      if: ${{ !matrix.use_alpine }}
+      run: |
+        cd build
+        ./umskt -b 2C -c 365 -s 069420
+        ./umskt -i 253286028742154311079061239762245184619981623171292574
