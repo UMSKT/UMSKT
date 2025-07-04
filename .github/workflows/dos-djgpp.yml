@@ -63,9 +63,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            ${{ github.workspace }}/djgpp/openssl
-            ${{ github.workspace }}/djgpp/openssl/include
-            ${{ github.workspace }}/djgpp/openssl/lib
+            ${{ github.workspace }}/djgpp
           key: openssl-3.1.2-${{ hashFiles('**/CMakeLists.txt') }}
 
       - name: Checkout and Cross Compile OpenSSL 3.1.2
@@ -81,9 +79,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
-            ${{ github.workspace }}/djgpp/openssl
-            ${{ github.workspace }}/djgpp/openssl/include
-            ${{ github.workspace }}/djgpp/openssl/lib
+            ${{ github.workspace }}/djgpp
           key: openssl-3.1.2-${{ hashFiles('**/CMakeLists.txt') }}
 
       - name: Build
