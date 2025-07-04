@@ -59,6 +59,15 @@ jobs:
           make -f djgpp.mak
           ln -s ${WATT_ROOT}/lib/libwatt.a ${{ github.workspace }}/djgpp/lib
 
+      - name: Cache OpenSSL 3.1.2
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ github.workspace }}/djgpp/openssl
+            ${{ github.workspace }}/djgpp/openssl/include
+            ${{ github.workspace }}/djgpp/openssl/lib
+          key: openssl-3.1.2-${{ hashFiles('**/CMakeLists.txt') }}
+
       - name: Checkout and Cross Compile OpenSSL 3.1.2
         run: |
           git clone https://github.com/UMSKT/openssl.git openssl
@@ -67,6 +76,15 @@ jobs:
           ./Configure 386 no-threads no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386 --prefix=${{ github.workspace }}/djgpp DJGPP
           make && make install_sw
           popd
+
+      - name: Save OpenSSL 3.1.2
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ github.workspace }}/djgpp/openssl
+            ${{ github.workspace }}/djgpp/openssl/include
+            ${{ github.workspace }}/djgpp/openssl/lib
+          key: openssl-3.1.2-${{ hashFiles('**/CMakeLists.txt') }}
 
       - name: Build
         run: |
@@ -80,7 +98,7 @@ jobs:
           mkdir -p dosbox_test
           cp build/umskt.exe dosbox_test/
           # Download and extract DPMI server
-          wget https://github.com/andrewwutw/build-djgpp/raw/master/archives/csdpmi7b.zip
+          wget http://mirrors.meowr.net/djgpp/v2misc/csdpmi7b.zip
           unzip -j csdpmi7b.zip bin/cwsdpmi.exe -d dosbox_test/
           # Create test batch file
           cat > dosbox_test/test.bat << EOL
