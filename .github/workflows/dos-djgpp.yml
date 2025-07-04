@@ -61,12 +61,14 @@ jobs:
 
       - name: Cache OpenSSL 3.1.2
         uses: actions/cache/restore@v4
+        id: cache-openssl
         with:
           path: |
             ${{ github.workspace }}/djgpp
           key: openssl-3.1.2-${{ hashFiles('**/CMakeLists.txt') }}
 
       - name: Checkout and Cross Compile OpenSSL 3.1.2
+        if: steps.cache-openssl.outputs.cache-hit != 'true'
         run: |
           git clone https://github.com/UMSKT/openssl.git openssl
           pushd openssl
