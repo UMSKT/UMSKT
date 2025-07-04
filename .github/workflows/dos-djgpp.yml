@@ -178,5 +178,5 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: UMSKT-DOS
+          name: UMSKT-DOS-x86
           path: build/actions_upload
