@@ -42,7 +42,7 @@ jobs:
       - name: Setup build environment
         run: |
           sudo apt -y update
-          sudo apt -y install build-essential cmake wget 7zip git flex libfl-dev nasm libslang2-dev pkg-config libslang2-modules gcc-multilib
+          sudo apt -y install build-essential cmake wget 7zip git flex libfl-dev nasm libslang2-dev pkg-config libslang2-modules gcc-multilib dosbox
 
       - name: Download and Setup DJGPP Toolchain
         run: |
@@ -74,6 +74,39 @@ jobs:
           pushd build
           cmake ../ -D DJGPP_WATT32=${WATT_ROOT}/lib/libwatt.a -D CMAKE_FIND_ROOT_PATH=${CMAKE_FIND_ROOT_PATH}
           make
+
+      - name: Setup DOSBox test environment
+        run: |
+          mkdir -p dosbox_test
+          cp build/umskt.exe dosbox_test/
+          # Create DOSBox configuration
+          cat > dosbox_test/dosbox.conf << EOL
+          [autoexec]
+          mount c .
+          c:
+          umskt.exe -b 2C -c 365 -s 069420 > test1.txt
+          umskt.exe -i 253286028742154311079061239762245184619981623171292574 > test2.txt
+          exit
+          EOL
+
+      - name: Run tests in DOSBox
+        run: |
+          cd dosbox_test
+          timeout 30s dosbox -conf dosbox.conf -exit
+          # Check if the test output files exist and contain expected output
+          if [ ! -f test1.txt ] || [ ! -f test2.txt ]; then
+            echo "Test output files not found"
+            exit 1
+          fi
+          # Check test results (grep for success indicators or error messages)
+          if ! grep -q "Key:" test1.txt || ! grep -q "Valid" test2.txt; then
+            echo "Tests failed - unexpected output"
+            echo "Test 1 output:"
+            cat test1.txt
+            echo "Test 2 output:"
+            cat test2.txt
+            exit 1
+          fi
 
       - name: Move executable to upload directory
         run: |
