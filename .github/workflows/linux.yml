@@ -86,7 +86,9 @@ jobs:
       if: ${{ matrix.use_alpine }}
       run: |
         cd build
-        ./umskt -b 2C -c 365 -s 069420
+        echo Test 1 - generating key
+        ./umskt -b 2C -c 365 -s 069420 -v
+        echo Test 2 - generating confid
         ./umskt -i 253286028742154311079061239762245184619981623171292574
       shell: alpine-target.sh {0}
 
@@ -94,7 +96,9 @@ jobs:
       if: ${{ !matrix.use_alpine }}
       run: |
         cd build
-        ./umskt -b 2C -c 365 -s 069420
+        echo Test 1 - generating key
+        ./umskt -b 2C -c 365 -s 069420 -v
+        echo Test 2 - generating confid
         ./umskt -i 253286028742154311079061239762245184619981623171292574
 
     - name: Move files to correct directory
@@ -127,7 +131,9 @@ jobs:
       if: ${{ matrix.use_alpine }}
       run: |
         cd build
-        ./umskt -b 2C -c 365 -s 069420
+        echo Test 1 - generating key
+        ./umskt -b 2C -c 365 -s 069420 -v
+        echo Test 2 - generating confid
         ./umskt -i 253286028742154311079061239762245184619981623171292574
       shell: alpine-target.sh {0}
 
@@ -135,7 +141,9 @@ jobs:
       if: ${{ !matrix.use_alpine }}
       run: |
         cd build
-        ./umskt -b 2C -c 365 -s 069420
+        echo Test 1 - generating key
+        ./umskt -b 2C -c 365 -s 069420 -v
+        echo Test 2 - generating confid
         ./umskt -i 253286028742154311079061239762245184619981623171292574
 
     - name: Configure and build shared deps UMSKT (Alpine)
@@ -157,7 +165,9 @@ jobs:
       if: ${{ matrix.use_alpine }}
       run: |
         cd build
-        ./umskt -b 2C -c 365 -s 069420
+        echo Test 1 - generating key
+        ./umskt -b 2C -c 365 -s 069420 -v
+        echo Test 2 - generating confid
         ./umskt -i 253286028742154311079061239762245184619981623171292574
       shell: alpine-target.sh {0}
 
@@ -165,5 +175,7 @@ jobs:
       if: ${{ !matrix.use_alpine }}
       run: |
         cd build
-        ./umskt -b 2C -c 365 -s 069420
+        echo Test 1 - generating key
+        ./umskt -b 2C -c 365 -s 069420 -v
+        echo Test 2 - generating confid
         ./umskt -i 253286028742154311079061239762245184619981623171292574
