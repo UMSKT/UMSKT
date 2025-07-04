@@ -154,9 +154,10 @@ jobs:
             echo "Test output files missing"
             exit 1
           fi
-          # Check test results
-          if ! grep -q "Key:" TEST1.TXT || ! grep -q "Valid" TEST2.TXT; then
-            echo "Tests failed - unexpected output"
+          # Check test results - looking for key format patterns
+          if ! grep -qE '^[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$' TEST1.TXT || \
+             ! grep -qE '^[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}$' TEST2.TXT; then
+            echo "Tests failed - unexpected output format"
             echo "Test 1 output:"
             cat TEST1.TXT
             echo "Test 2 output:"
