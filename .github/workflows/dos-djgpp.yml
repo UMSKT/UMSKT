@@ -162,8 +162,13 @@ jobs:
             echo "Test 2 output:"
             cat TEST2.TXT
             exit 1
+          else
+            echo "All tests passed successfully"
+            echo "Test 1 output:"
+            cat TEST1.TXT
+            echo "Test 2 output:"
+            cat TEST2.TXT
           fi
-          echo "All tests passed successfully"
 
       - name: Move executable to upload directory
         run: |
