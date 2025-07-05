@@ -204,7 +204,7 @@ CPMAddPackage(
 )
 
 # Build fmt separately first if we're building shared libraries, CPM doesn't include shared
-if(BUILD_SHARED_LIBS)
+if(BUILD_SHARED_LIBS AND NOT (WINDOWS_ARM AND MSVC))
     include(ExternalProject)
     set(FMT_INSTALL_DIR ${CMAKE_BINARY_DIR}/fmt_install)
     ExternalProject_Add(fmt_external
@@ -222,22 +222,28 @@ endif()
 
 # Include fmt development library
 if(BUILD_SHARED_LIBS)
-    ExternalProject_Get_Property(fmt_external INSTALL_DIR)
-    add_library(fmt::fmt SHARED IMPORTED GLOBAL)
-    file(MAKE_DIRECTORY ${INSTALL_DIR}/include)
-    if(WIN32)
-        set_target_properties(fmt::fmt PROPERTIES
-            IMPORTED_IMPLIB ${INSTALL_DIR}/lib/libfmt.dll.a
-            IMPORTED_LOCATION ${INSTALL_DIR}/bin/libfmt.dll
-            INTERFACE_INCLUDE_DIRECTORIES ${INSTALL_DIR}/include
-        )
+    if(WINDOWS_ARM AND MSVC)
+        # For ARM64 MSVC shared builds, use vcpkg's fmt
+        find_package(fmt CONFIG REQUIRED)
     else()
-        set_target_properties(fmt::fmt PROPERTIES
-            IMPORTED_LOCATION ${INSTALL_DIR}/lib/libfmt.so
-            INTERFACE_INCLUDE_DIRECTORIES ${INSTALL_DIR}/include
-        )
+        # For other shared builds, use our custom build
+        ExternalProject_Get_Property(fmt_external INSTALL_DIR)
+        add_library(fmt::fmt SHARED IMPORTED GLOBAL)
+        file(MAKE_DIRECTORY ${INSTALL_DIR}/include)
+        if(WIN32)
+            set_target_properties(fmt::fmt PROPERTIES
+                IMPORTED_IMPLIB ${INSTALL_DIR}/lib/libfmt.dll.a
+                IMPORTED_LOCATION ${INSTALL_DIR}/bin/libfmt.dll
+                INTERFACE_INCLUDE_DIRECTORIES ${INSTALL_DIR}/include
+            )
+        else()
+            set_target_properties(fmt::fmt PROPERTIES
+                IMPORTED_LOCATION ${INSTALL_DIR}/lib/libfmt.so
+                INTERFACE_INCLUDE_DIRECTORIES ${INSTALL_DIR}/include
+            )
+        endif()
+        add_dependencies(fmt::fmt fmt_external)
     endif()
-    add_dependencies(fmt::fmt fmt_external)
 else()
     CPMAddPackage(
         NAME fmt
