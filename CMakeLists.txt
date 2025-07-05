@@ -27,23 +27,31 @@ if (WIN32 AND NOT MSVC)
     set(CMAKE_CXX_COMPILER "C:/TDM-GCC-64/bin/g++.exe" CACHE FILEPATH "C++ Compiler" FORCE)
     message(STATUS "[UMSKT] Forcing use of TDM-GCC in C:/TDM-GCC-64")
     
-    # Configure windres for resource compilation
-    set(CMAKE_RC_COMPILER "C:/TDM-GCC-64/bin/windres.exe")
-    set(CMAKE_RC_COMPILER_INIT windres)
-    enable_language(RC)
-    set(CMAKE_RC_FLAGS "--use-temp-file -c65001")
+    # Set up resource compilation for Windows
+    set(RC_COMPILER "C:/TDM-GCC-64/bin/windres.exe")
+    set(RC_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/umskt_res.o")
     
-    # Match resource architecture with target architecture
     if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} -F pe-i386")
+        set(RC_TARGET "pe-i386")
     else()
-        set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} -F pe-x86-64")
+        set(RC_TARGET "pe-x86-64")
     endif()
     
-    set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> <FLAGS> -O coff -I${CMAKE_CURRENT_SOURCE_DIR}/src/windows <DEFINES> -i <SOURCE> -o <OBJECT>")
+    add_custom_command(
+        OUTPUT ${RC_OUTPUT}
+        COMMAND ${RC_COMPILER}
+        ARGS    --input-format=rc
+                --output-format=coff
+                --target=${RC_TARGET}
+                -I${CMAKE_CURRENT_SOURCE_DIR}/src/windows
+                -i${CMAKE_CURRENT_SOURCE_DIR}/src/windows/umskt.rc
+                -o${RC_OUTPUT}
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/windows/umskt.rc
+        COMMENT "Compiling Windows resources"
+    )
     
     # Set the Windows resource file for GCC builds
-    set(UMSKT_EXE_WINDOWS_EXTRA src/windows/umskt.rc)
+    set(UMSKT_EXE_WINDOWS_EXTRA ${RC_OUTPUT})
 endif()
 
 SET(CMAKE_CXX_STANDARD 17)
@@ -195,14 +203,44 @@ CPMAddPackage(
         VERSION 3.11.2
 )
 
+# Build fmt separately first if we're building shared libraries, CPM doesn't include shared
+if(BUILD_SHARED_LIBS)
+    include(ExternalProject)
+    set(FMT_INSTALL_DIR ${CMAKE_BINARY_DIR}/fmt_install)
+    ExternalProject_Add(fmt_external
+        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+        GIT_TAG 10.0.0
+        CMAKE_ARGS
+            -DCMAKE_INSTALL_PREFIX=${FMT_INSTALL_DIR}
+            -DBUILD_SHARED_LIBS=ON
+            -DFMT_TEST=OFF
+            -DFMT_DOC=OFF
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        INSTALL_DIR ${FMT_INSTALL_DIR}
+    )
+endif()
+
 # Include fmt development library
-CPMAddPackage(
+if(BUILD_SHARED_LIBS)
+    ExternalProject_Get_Property(fmt_external INSTALL_DIR)
+    add_library(fmt::fmt SHARED IMPORTED GLOBAL)
+    file(MAKE_DIRECTORY ${INSTALL_DIR}/include)
+    if(WIN32)
+        set_target_properties(fmt::fmt PROPERTIES
+            IMPORTED_IMPLIB ${INSTALL_DIR}/lib/libfmt.dll.a
+            IMPORTED_LOCATION ${INSTALL_DIR}/bin/libfmt.dll
+            INTERFACE_INCLUDE_DIRECTORIES ${INSTALL_DIR}/include
+        )
+    endif()
+    add_dependencies(fmt::fmt fmt_external)
+else()
+    CPMAddPackage(
         NAME fmt
         GITHUB_REPOSITORY fmtlib/fmt
         GIT_TAG 10.0.0
         VERSION 10.0.0
-	#OPTIONS "FMT_INSTALL YES" "BUILD_SHARED_LIBS OFF"
-)
+    )
+endif()
 
 # Include cmrc resource compiler
 CPMAddPackage(
@@ -244,16 +282,45 @@ IF (EMSCRIPTEN)
     SET_TARGET_PROPERTIES(umskt PROPERTIES COMPILE_FLAGS "-Os -sEXPORTED_RUNTIME_METHODS=ccall,cwrap")
     SET_TARGET_PROPERTIES(umskt PROPERTIES LINK_FLAGS    "-Os -sWASM=1 -sEXPORT_ALL=1 -sEXPORTED_RUNTIME_METHODS=ccall,cwrap --no-entry")
 ELSE()
-    ADD_LIBRARY(_umskt ${LIBUMSKT_SRC} ${UMSKT_EXE_WINDOWS_EXTRA} ${UMSKT_EXE_WINDOWS_DLL})
-    TARGET_INCLUDE_DIRECTORIES(_umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
+    # Library target - no resource file needed here
+    ADD_LIBRARY(_umskt ${LIBUMSKT_SRC} ${UMSKT_EXE_WINDOWS_DLL})
+    TARGET_INCLUDE_DIRECTORIES(_umskt PUBLIC 
+        ${OPENSSL_INCLUDE_DIR}
+        $<$<BOOL:${BUILD_SHARED_LIBS}>:${FMT_INSTALL_DIR}/include>
+    )
     TARGET_LINK_DIRECTORIES(_umskt PUBLIC ${UMSKT_LINK_DIRS})
-    TARGET_LINK_LIBRARIES(_umskt ${OPENSSL_CRYPTO_LIBRARIES} fmt ${UMSKT_LINK_LIBS})
+    if(BUILD_SHARED_LIBS)
+        TARGET_LINK_LIBRARIES(_umskt ${OPENSSL_CRYPTO_LIBRARIES} fmt::fmt ${UMSKT_LINK_LIBS})
+    else()
+        TARGET_LINK_LIBRARIES(_umskt ${OPENSSL_CRYPTO_LIBRARIES} fmt ${UMSKT_LINK_LIBS})
+    endif()
 
-    ### UMSKT executable compilation
+    # Add Windows system libraries for shared library builds
+    if (WIN32)
+        if (BUILD_SHARED_LIBS)
+            target_link_libraries(_umskt ws2_32 crypt32 wsock32 advapi32)
+        endif()
+    endif()
+
+    ### UMSKT executable compilation - include resource file here
     ADD_EXECUTABLE(umskt src/main.cpp src/cli.cpp ${UMSKT_EXE_WINDOWS_EXTRA})
-    TARGET_INCLUDE_DIRECTORIES(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
-    TARGET_LINK_LIBRARIES(umskt _umskt ${OPENSSL_CRYPTO_LIBRARIES} ${ZLIB_LIBRARIES} fmt nlohmann_json::nlohmann_json umskt::rc ${UMSKT_LINK_LIBS})
-    TARGET_LINK_DIRECTORIES(umskt PUBLIC ${UMSKT_LINK_DIRS})
+    TARGET_INCLUDE_DIRECTORIES(umskt PUBLIC 
+        ${OPENSSL_INCLUDE_DIR}
+        $<$<BOOL:${BUILD_SHARED_LIBS}>:${FMT_INSTALL_DIR}/include>
+    )
+    if(BUILD_SHARED_LIBS)
+        TARGET_LINK_LIBRARIES(umskt _umskt ${OPENSSL_CRYPTO_LIBRARIES} ${ZLIB_LIBRARIES} fmt::fmt nlohmann_json::nlohmann_json umskt::rc ${UMSKT_LINK_LIBS})
+        
+        # Copy fmt DLL to build directory
+        add_custom_command(TARGET umskt POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${FMT_INSTALL_DIR}/bin/libfmt.dll"
+            "${CMAKE_BINARY_DIR}/libfmt.dll"
+            COMMENT "Copying fmt DLL to build directory"
+        )
+    else()
+        TARGET_LINK_LIBRARIES(umskt _umskt ${OPENSSL_CRYPTO_LIBRARIES} ${ZLIB_LIBRARIES} fmt nlohmann_json::nlohmann_json umskt::rc ${UMSKT_LINK_LIBS})
+    endif()
 
     # Link required Windows system libraries for OpenSSL
     if (WIN32)

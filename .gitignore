@@ -259,3 +259,7 @@ CPM_*.cmake
 cpm-package-lock.cmake
 *.a
 *_cmrc*
+fmt_install/
+fmt_external-prefix/
+*.dll
+*.o
