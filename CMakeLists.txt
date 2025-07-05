@@ -225,8 +225,6 @@ if(BUILD_SHARED_LIBS)
     ExternalProject_Get_Property(fmt_external INSTALL_DIR)
     add_library(fmt::fmt SHARED IMPORTED GLOBAL)
     file(MAKE_DIRECTORY ${INSTALL_DIR}/include)
-    
-    # Set platform-specific properties
     if(WIN32)
         set_target_properties(fmt::fmt PROPERTIES
             IMPORTED_IMPLIB ${INSTALL_DIR}/lib/libfmt.dll.a
