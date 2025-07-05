@@ -33,6 +33,9 @@ jobs:
       matrix:
         arch: [x64, x86, arm64]
         binary_type: [static, shared]
+    outputs:
+      binary_type: ${{ matrix.binary_type }}
+      arch: ${{ matrix.arch }}
     steps:
       - name: Setup TDM-GCC
         if: matrix.arch != 'arm64'
@@ -122,6 +125,7 @@ jobs:
           $OPENSSL_ROOT = "$env:OPENSSL_ROOT"
           $OPENSSL_LIB = "$OPENSSL_ROOT/$env:OPENSSL_LIBDIR"
           $OPENSSL_INC = "$OPENSSL_ROOT/include"
+          $SHARED = if ('${{ matrix.binary_type }}' -eq 'shared') { 'ON' } else { 'OFF' }
           cmake -G "MinGW Makefiles" `
             -DCMAKE_C_COMPILER="gcc" `
             -DCMAKE_CXX_COMPILER="g++" `
@@ -131,17 +135,20 @@ jobs:
             -DOPENSSL_SSL_LIBRARY="$OPENSSL_LIB/libssl.a" `
             -DCMAKE_C_FLAGS="$env:CMAKE_FLAGS" `
             -DCMAKE_CXX_FLAGS="$env:CMAKE_FLAGS" `
+            -DBUILD_SHARED_LIBS="$SHARED" `
             .
 
       - name: Configure UMSKT (MSVC ARM64)
         if: matrix.arch == 'arm64'
         shell: pwsh
         run: |
+          $SHARED = if ('${{ matrix.binary_type }}' -eq 'shared') { 'ON' } else { 'OFF' }
           cmake -G "Visual Studio 17 2022" `
             -A ARM64 `
             -DWINDOWS_ARM=ON `
             -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
-            -DVCPKG_TARGET_TRIPLET=arm64-windows-static `
+            -DVCPKG_TARGET_TRIPLET=arm64-windows-${{ matrix.binary_type }} `
+            -DBUILD_SHARED_LIBS="$SHARED" `
             .
 
       - name: Build UMSKT (TDM-GCC ${{ matrix.arch }})
@@ -169,21 +176,48 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: UMSKT-WinNT-${{ matrix.arch }}
-          path: ${{ matrix.arch == 'arm64' && 'Release/umskt.exe' || 'umskt.exe' }}
+          name: UMSKT-WinNT-${{ matrix.arch }}-${{ matrix.binary_type }}
+          path: |
+            ${{ matrix.arch == 'arm64' && 'Release/umskt.exe' || 'umskt.exe' }}
+            ${{ matrix.binary_type == 'shared' && (matrix.arch == 'arm64' && 'Release/*.dll' || '*.dll') || '' }}
 
   test-arm64:
     needs: build
-    if: success()
+    if: success() && needs.build.outputs.binary_type == 'static' && needs.build.outputs.arch == 'arm64'
     runs-on: windows-11-arm
     steps:
       - name: Download ARM64 artifact
         uses: actions/download-artifact@v4
         with:
-          name: UMSKT-WinNT-arm64
+          name: UMSKT-WinNT-arm64-static
           path: .
 
       - name: Run tests (ARM64)
+        shell: pwsh
+        run: |
+          Write-Host Test 1 - generating key
+          .\umskt.exe -b 2C -c 365 -s 069420 -v
+          Write-Host Test 2 - generatng confid
+          .\umskt.exe -i 253286028742154311079061239762245184619981623171292574
+
+  test-arm64-shared:
+    needs: build
+    if: success() && needs.build.outputs.binary_type == 'shared' && needs.build.outputs.arch == 'arm64'
+    runs-on: windows-11-arm
+    steps:
+      - name: Download ARM64 shared artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: UMSKT-WinNT-arm64-shared
+          path: .
+
+      - name: Setup shared library environment
+        shell: pwsh
+        run: |
+          # Add current directory to PATH so Windows can find the DLLs
+          $env:PATH = "$pwd;" + $env:PATH
+
+      - name: Run tests (ARM64 Shared)
         shell: pwsh
         run: |
           Write-Host Test 1 - generating key
