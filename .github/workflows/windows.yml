@@ -32,6 +32,7 @@ jobs:
     strategy:
       matrix:
         arch: [x64, x86, arm64]
+        binary_type: [static, shared]
     steps:
       - name: Setup TDM-GCC
         if: matrix.arch != 'arm64'

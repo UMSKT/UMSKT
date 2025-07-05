@@ -225,10 +225,17 @@ if(BUILD_SHARED_LIBS)
     ExternalProject_Get_Property(fmt_external INSTALL_DIR)
     add_library(fmt::fmt SHARED IMPORTED GLOBAL)
     file(MAKE_DIRECTORY ${INSTALL_DIR}/include)
+    
+    # Set platform-specific properties
     if(WIN32)
         set_target_properties(fmt::fmt PROPERTIES
             IMPORTED_IMPLIB ${INSTALL_DIR}/lib/libfmt.dll.a
             IMPORTED_LOCATION ${INSTALL_DIR}/bin/libfmt.dll
+            INTERFACE_INCLUDE_DIRECTORIES ${INSTALL_DIR}/include
+        )
+    else()
+        set_target_properties(fmt::fmt PROPERTIES
+            IMPORTED_LOCATION ${INSTALL_DIR}/lib/libfmt.so
             INTERFACE_INCLUDE_DIRECTORIES ${INSTALL_DIR}/include
         )
     endif()
@@ -311,13 +318,22 @@ ELSE()
     if(BUILD_SHARED_LIBS)
         TARGET_LINK_LIBRARIES(umskt _umskt ${OPENSSL_CRYPTO_LIBRARIES} ${ZLIB_LIBRARIES} fmt::fmt nlohmann_json::nlohmann_json umskt::rc ${UMSKT_LINK_LIBS})
         
-        # Copy fmt DLL to build directory
-        add_custom_command(TARGET umskt POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${FMT_INSTALL_DIR}/bin/libfmt.dll"
-            "${CMAKE_BINARY_DIR}/libfmt.dll"
-            COMMENT "Copying fmt DLL to build directory"
-        )
+        # Copy shared libraries to build directory
+        if(WIN32)
+            add_custom_command(TARGET umskt POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${FMT_INSTALL_DIR}/bin/libfmt.dll"
+                "${CMAKE_BINARY_DIR}/libfmt.dll"
+                COMMENT "Copying fmt DLL to build directory"
+            )
+        else()
+            add_custom_command(TARGET umskt POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${FMT_INSTALL_DIR}/lib/libfmt.so"
+                "${CMAKE_BINARY_DIR}/libfmt.so"
+                COMMENT "Copying fmt shared library to build directory"
+            )
+        endif()
     else()
         TARGET_LINK_LIBRARIES(umskt _umskt ${OPENSSL_CRYPTO_LIBRARIES} ${ZLIB_LIBRARIES} fmt nlohmann_json::nlohmann_json umskt::rc ${UMSKT_LINK_LIBS})
     endif()
