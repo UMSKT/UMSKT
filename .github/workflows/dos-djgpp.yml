@@ -96,10 +96,8 @@ jobs:
         run: |
           
           wget https://www.ibiblio.org/pub/micro/pc-stuff/freedos/files/util/system/cwsdpmi/csdpmi7b.zip -O CSDPMI7B.ZIP
-          7z e CSDPMI7B.ZIP bin\CWSDSTUB.EXE
-          tree . -s
-          throw "test"
-          
+          7z e CSDPMI7B.ZIP bin/CWSDSTUB.EXE
+          stubify -s CWSDSTUB.EXE build/umskt.exe
 
       - name: Setup DOSBox test environment
         run: |
