@@ -110,8 +110,6 @@ IF(DJGPP_WATT32)
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=i386 -mtune=i386 -mno-sse -mno-sse2 -mno-mmx -mno-3dnow -mno-ssse3 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -mno-fma -mno-fma4")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=i386 -mtune=i386 -mno-sse -mno-sse2 -mno-mmx -mno-3dnow -mno-ssse3 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -mno-fma -mno-fma4")
     
-    # Configure linker flags for DOS
-    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--stub,${CWSDSTUB_LOCATION}")
     MESSAGE(STATUS "[UMSKT] Using i386 target for DOS DGJPP with stub: ${CWSDSTUB_LOCATION}")
 ENDIF()
 
@@ -276,5 +274,9 @@ ELSE()
     IF (OPENSSL_CRYPTO_SHARED)
         GET_FILENAME_COMPONENT(OPENSSL_CRYPTO_LIBRARY_FILENAME ${OPENSSL_CRYPTO_LIBRARY} NAME)
         CONFIGURE_FILE(${OPENSSL_CRYPTO_LIBRARY} "${CMAKE_CURRENT_BINARY_DIR}/${OPENSSL_CRYPTO_LIBRARY_FILENAME}" COPYONLY)
+    ENDIF()
+
+    IF (DJGPP_WATT32)
+        add_custom_command(TARGET umskt POST_BUILD COMMAND ${STUBIFY_LOCATION} ${CWSDSTUB_LOCATION} $<TARGET_FILE:umskt> $<TARGET_FILE_DIR:umskt>/umskt.exe)
     ENDIF()
 ENDIF()
