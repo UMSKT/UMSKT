@@ -43,7 +43,7 @@ jobs:
         run: |
           sudo apt -y update
           sudo apt -y install build-essential cmake wget 7zip git flex libfl-dev nasm libslang2-dev pkg-config libslang2-modules gcc-multilib dosbox tree software-properties-common
-          sudo add-apt-repository -y ppa:step/dj64
+          sudo add-apt-repository -y ppa:stsp/dj64
           sudo apt -y update
           sudo apt -y install djstub
 
