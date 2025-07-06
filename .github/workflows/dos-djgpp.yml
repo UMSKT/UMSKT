@@ -126,6 +126,7 @@ jobs:
           [sdl]
           nosound=true
           [cpu]
+          cputype=386
           core=dynamic
           cycles=max
           [autoexec]
