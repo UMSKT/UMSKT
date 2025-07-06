@@ -108,7 +108,8 @@ IF(DJGPP_WATT32)
     # Maximum compatibility flags for DOS/NTVDM
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=i386 -mtune=i386 -mno-sse -mno-sse2 -mno-mmx -mno-3dnow -mno-ssse3 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -mno-fma -mno-fma4")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=i386 -mtune=i386 -mno-sse -mno-sse2 -mno-mmx -mno-3dnow -mno-ssse3 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -mno-fma -mno-fma4")
-    MESSAGE(STATUS "[UMSKT] Using i386 target for DOS DGJPP")
+    
+    MESSAGE(STATUS "[UMSKT] Using i386 target for DOS DGJPP with stub: ${CWSDSTUB_LOCATION}")
 ENDIF()
 
 ##if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -272,5 +273,22 @@ ELSE()
     IF (OPENSSL_CRYPTO_SHARED)
         GET_FILENAME_COMPONENT(OPENSSL_CRYPTO_LIBRARY_FILENAME ${OPENSSL_CRYPTO_LIBRARY} NAME)
         CONFIGURE_FILE(${OPENSSL_CRYPTO_LIBRARY} "${CMAKE_CURRENT_BINARY_DIR}/${OPENSSL_CRYPTO_LIBRARY_FILENAME}" COPYONLY)
+    ENDIF()
+
+    IF (DJGPP_WATT32)
+        message(STATUS "[UMSKT] Configuring DJGPP post-build commands")
+        # Set .exe suffix for DJGPP builds
+        set_target_properties(umskt PROPERTIES SUFFIX ".exe")
+        add_custom_command(TARGET umskt POST_BUILD 
+            # Convert exe to coff, removing the default stub
+            COMMAND ${DJGPP_BIN_LOCATION}/exe2coff $<TARGET_FILE:umskt>
+            # Concatenate CWSDSTUB with the COFF file
+            COMMAND ${CMAKE_COMMAND} -E cat ${CWSDSTUB_LOCATION} $<TARGET_FILE_DIR:umskt>/umskt > $<TARGET_FILE:umskt>
+            # Clean up the COFF file
+            COMMAND ${CMAKE_COMMAND} -E rm $<TARGET_FILE_DIR:umskt>/umskt
+        )
+        message(STATUS "[UMSKT] STUBIFY_LOCATION set to: ${STUBIFY_LOCATION}")
+        message(STATUS "[UMSKT] CWSDSTUB_LOCATION set to: ${CWSDSTUB_LOCATION}")
+        message(STATUS "[UMSKT] DJGPP_BIN_LOCATION set to: ${DJGPP_BIN_LOCATION}")
     ENDIF()
 ENDIF()
