@@ -279,9 +279,15 @@ ELSE()
     IF (DJGPP_WATT32)
         message(STATUS "[UMSKT] Configuring DJGPP post-build commands")
         add_custom_command(TARGET umskt POST_BUILD 
-            COMMAND ${STUBIFY_LOCATION} -s ${CWSDSTUB_LOCATION} $<TARGET_FILE:umskt>
+            # Convert exe to coff, removing the default stub
+            COMMAND ${DJGPP_BIN_LOCATION}/exe2coff $<TARGET_FILE:umskt>
+            # Concatenate CWSDSTUB with the COFF file
+            COMMAND ${CMAKE_COMMAND} -E cat ${CWSDSTUB_LOCATION} $<TARGET_FILE_DIR:umskt>/umskt > $<TARGET_FILE:umskt>
+            # Clean up the COFF file
+            COMMAND ${CMAKE_COMMAND} -E rm $<TARGET_FILE_DIR:umskt>/umskt
         )
         message(STATUS "[UMSKT] STUBIFY_LOCATION set to: ${STUBIFY_LOCATION}")
         message(STATUS "[UMSKT] CWSDSTUB_LOCATION set to: ${CWSDSTUB_LOCATION}")
+        message(STATUS "[UMSKT] DJGPP_BIN_LOCATION set to: ${DJGPP_BIN_LOCATION}")
     ENDIF()
 ENDIF()
