@@ -96,7 +96,7 @@ jobs:
         run: |
           source ${{ github.workspace }}/djgpp/setenv
           pushd build
-          cmake ../ -D DJGPP_WATT32=${WATT_ROOT}/lib/libwatt.a -D CMAKE_FIND_ROOT_PATH=${CMAKE_FIND_ROOT_PATH} -D CWSDSTUB_LOCATION=/home/runner/dpmibin/CWSDSTUB.EXE -D STUBIFY_LOCATION=/home/runner/djgpp/i586-pc-msdosdjgpp/bin/stubify
+          cmake ../ -D DJGPP_WATT32=${WATT_ROOT}/lib/libwatt.a -D CMAKE_FIND_ROOT_PATH=${CMAKE_FIND_ROOT_PATH} -D CWSDSTUB_LOCATION=/home/runner/dpmibin/CWSDSTUB.EXE -D STUBIFY_LOCATION=/home/runner/work/UMSKT/UMSKT/djgpp/i586-pc-msdosdjgpp/bin/stubify
           make
 
       - name: Setup DOSBox test environment
