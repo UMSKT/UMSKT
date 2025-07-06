@@ -42,10 +42,7 @@ jobs:
       - name: Setup build environment
         run: |
           sudo apt -y update
-          sudo apt -y install build-essential cmake wget 7zip git flex libfl-dev nasm libslang2-dev pkg-config libslang2-modules gcc-multilib dosbox tree software-properties-common
-          sudo add-apt-repository -y ppa:stsp/dj64
-          sudo apt -y update
-          sudo apt -y install djstub
+          sudo apt -y install build-essential cmake wget 7zip git flex libfl-dev nasm libslang2-dev pkg-config libslang2-modules gcc-multilib dosbox tree
 
       - name: Download and Setup DJGPP Toolchain
         run: |
@@ -79,6 +76,13 @@ jobs:
           ./Configure 386 no-threads no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386 --prefix=${{ github.workspace }}/djgpp DJGPP
           make && make install_sw
           popd
+
+      - name: Checkout and compile DJGPP tools
+        run: |
+          git clone https://github.com/stsp/djstub.git
+          cd djstub
+          make
+          sudo make install
 
       - name: Save OpenSSL 3.1.2
         if: steps.cache-openssl.outputs.cache-hit != 'true'
