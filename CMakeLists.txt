@@ -281,12 +281,12 @@ ELSE()
         add_custom_command(TARGET umskt POST_BUILD 
             COMMAND ${CMAKE_COMMAND} -E echo "Starting post-build process for DJGPP"
             COMMAND ${CMAKE_COMMAND} -E echo "Verifying executable exists"
-            COMMAND ${CMAKE_COMMAND} -E ls $<TARGET_FILE:umskt>
+            COMMAND ${CMAKE_COMMAND} -E sha256sum $<TARGET_FILE:umskt>
             COMMAND ${CMAKE_COMMAND} -E sleep 1
             COMMAND ${CMAKE_COMMAND} -E echo "Copying executable to temporary file"
-            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:umskt> $<TARGET_FILE_DIR:umskt>/umskt.tmp
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:umskt> $<TARGET_FILE_DIR:umskt>/umskt.tmp
             COMMAND ${CMAKE_COMMAND} -E echo "Verifying temporary file"
-            COMMAND ${CMAKE_COMMAND} -E ls $<TARGET_FILE_DIR:umskt>/umskt.tmp
+            COMMAND ${CMAKE_COMMAND} -E sha256sum $<TARGET_FILE_DIR:umskt>/umskt.tmp
             COMMAND ${CMAKE_COMMAND} -E sleep 1
             COMMAND ${CMAKE_COMMAND} -E echo "Running stubify command"
             COMMAND ${CMAKE_COMMAND} -E echo "STUBIFY_LOCATION=${STUBIFY_LOCATION}"
@@ -294,12 +294,12 @@ ELSE()
             COMMAND ${CMAKE_COMMAND} -E echo "Target file: $<TARGET_FILE:umskt>"
             COMMAND ${CMAKE_COMMAND} -E echo "Target directory: $<TARGET_FILE_DIR:umskt>"
             COMMAND ${CMAKE_COMMAND} -E sleep 1
-            COMMAND ${STUBIFY_LOCATION} -v ${CWSDSTUB_LOCATION} $<TARGET_FILE_DIR:umskt>/umskt.tmp $<TARGET_FILE:umskt>.new
+            COMMAND ${STUBIFY_LOCATION} -v ${CWSDSTUB_LOCATION} $<TARGET_FILE_DIR:umskt>/umskt.tmp $<TARGET_FILE:umskt>.new || ${CMAKE_COMMAND} -E echo "Stubify command failed"
             COMMAND ${CMAKE_COMMAND} -E echo "Verifying new executable"
-            COMMAND ${CMAKE_COMMAND} -E ls $<TARGET_FILE:umskt>.new
-            COMMAND ${CMAKE_COMMAND} -E rename $<TARGET_FILE:umskt>.new $<TARGET_FILE:umskt>
+            COMMAND ${CMAKE_COMMAND} -E sha256sum $<TARGET_FILE:umskt>.new || ${CMAKE_COMMAND} -E echo "New executable verification failed"
+            COMMAND ${CMAKE_COMMAND} -E rename $<TARGET_FILE:umskt>.new $<TARGET_FILE:umskt> || ${CMAKE_COMMAND} -E echo "Rename failed"
             COMMAND ${CMAKE_COMMAND} -E echo "Cleaning up temporary file"
-            COMMAND ${CMAKE_COMMAND} -E remove $<TARGET_FILE_DIR:umskt>/umskt.tmp
+            COMMAND ${CMAKE_COMMAND} -E rm -f $<TARGET_FILE_DIR:umskt>/umskt.tmp
             COMMAND ${CMAKE_COMMAND} -E echo "Post-build process complete"
         )
         message(STATUS "[UMSKT] STUBIFY_LOCATION set to: ${STUBIFY_LOCATION}")
