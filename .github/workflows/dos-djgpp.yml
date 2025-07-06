@@ -97,7 +97,7 @@ jobs:
           
           wget https://web.archive.org/web/20250308092209/https://www.ibiblio.org/pub/micro/pc-stuff/freedos/files/util/system/cwsdpmi/csdpmi7b.zip -O CSDPMI7B.ZIP
           7z e CSDPMI7B.ZIP bin/CWSDSTUB.EXE
-          i386-pc-msdosdjgpp-exe2coff build/umskt.exe
+          i586-pc-msdosdjgpp-exe2coff build/umskt.exe
           cat CWSDSTUB.EXE umskt > umskt.exe
 
       - name: Setup DOSBox test environment
