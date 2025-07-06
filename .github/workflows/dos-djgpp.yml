@@ -81,7 +81,7 @@ jobs:
         run: |
           git clone https://github.com/stsp/djstub.git
           cd djstub
-          make
+          make CC=gcc HOST_CC=gcc
           sudo make install
 
       - name: Save OpenSSL 3.1.2
