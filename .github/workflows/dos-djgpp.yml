@@ -42,7 +42,10 @@ jobs:
       - name: Setup build environment
         run: |
           sudo apt -y update
-          sudo apt -y install build-essential cmake wget 7zip git flex libfl-dev nasm libslang2-dev pkg-config libslang2-modules gcc-multilib dosbox tree djstub
+          sudo apt -y install build-essential cmake wget 7zip git flex libfl-dev nasm libslang2-dev pkg-config libslang2-modules gcc-multilib dosbox tree software-properties-common
+          sudo add-apt-repository -y ppa:step/dj64
+          sudo apt -y update
+          sudo apt -y install djstub
 
       - name: Download and Setup DJGPP Toolchain
         run: |
