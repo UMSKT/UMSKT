@@ -88,13 +88,14 @@ jobs:
       - name: Download stub
         run: |
           wget https://web.archive.org/web/20250308092209/https://www.ibiblio.org/pub/micro/pc-stuff/freedos/files/util/system/cwsdpmi/csdpmi7b.zip -O CSDPMI7B.ZIP
-          7z e CSDPMI7B.ZIP bin/CWSDSTUB.EXE
+          mkdir /home/runner/dpmibin
+          7z e CSDPMI7B.ZIP bin/CWSDSTUB.EXE -o/home/runner/dpmibin/CWSDSTUB.EXE
           
       - name: Build
         run: |
           source ${{ github.workspace }}/djgpp/setenv
           pushd build
-          cmake ../ -D DJGPP_WATT32=${WATT_ROOT}/lib/libwatt.a -D CMAKE_FIND_ROOT_PATH=${CMAKE_FIND_ROOT_PATH}
+          cmake ../ -D DJGPP_WATT32=${WATT_ROOT}/lib/libwatt.a -D CMAKE_FIND_ROOT_PATH=${CMAKE_FIND_ROOT_PATH} -D CWSDSTUB_LOCATION=/home/runner/dpmibin/CWSDSTUB.EXE
           make
 
       - name: Setup DOSBox test environment
