@@ -89,7 +89,7 @@ jobs:
         run: |
           wget https://web.archive.org/web/20250308092209/https://www.ibiblio.org/pub/micro/pc-stuff/freedos/files/util/system/cwsdpmi/csdpmi7b.zip -O CSDPMI7B.ZIP
           mkdir /home/runner/dpmibin
-          7z e CSDPMI7B.ZIP bin/CWSDSTUB.EXE -o/home/runner/dpmibin/CWSDSTUB.EXE
+          7z e CSDPMI7B.ZIP bin/CWSDSTUB.EXE -o/home/runner/dpmibin
           
       - name: Build
         run: |
