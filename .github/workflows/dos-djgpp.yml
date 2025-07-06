@@ -50,6 +50,7 @@ jobs:
           wget https://github.com/andrewwutw/build-djgpp/releases/download/v3.4/djgpp-linux64-gcc1220.tar.bz2
           tar xjf djgpp-linux64-gcc1220.tar.bz2
           cd ${{ github.workspace }}/djgpp
+          tree . -S
           git clone https://github.com/UMSKT/Watt-32.git watt32
           cd watt32/util
           make clean && make linux
