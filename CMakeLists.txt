@@ -277,6 +277,10 @@ ELSE()
     ENDIF()
 
     IF (DJGPP_WATT32)
-        add_custom_command(TARGET umskt POST_BUILD COMMAND ${STUBIFY_LOCATION} ${CWSDSTUB_LOCATION} $<TARGET_FILE:umskt> $<TARGET_FILE_DIR:umskt>/umskt.exe)
+        add_custom_command(TARGET umskt POST_BUILD 
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:umskt> $<TARGET_FILE_DIR:umskt>/umskt.tmp
+            COMMAND ${STUBIFY_LOCATION} ${CWSDSTUB_LOCATION} $<TARGET_FILE_DIR:umskt>/umskt.tmp $<TARGET_FILE:umskt>
+            COMMAND ${CMAKE_COMMAND} -E remove $<TARGET_FILE_DIR:umskt>/umskt.tmp
+        )
     ENDIF()
 ENDIF()
