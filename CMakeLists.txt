@@ -97,7 +97,6 @@ if (WINDOWS_ARM)
 endif()
 
 IF(DJGPP_WATT32)
-    SET(ENV{STUBIFY} ":")
     SET(CMAKE_SYSTEM_NAME MSDOS)
     SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
     SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -279,12 +278,14 @@ ELSE()
     IF (DJGPP_WATT32)
         message(STATUS "[UMSKT] Configuring DJGPP post-build commands")
         add_custom_command(TARGET umskt POST_BUILD 
+            # First rename to ensure .exe extension
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:umskt> $<TARGET_FILE_DIR:umskt>/umskt.exe
             # Convert exe to coff, removing the default stub
-            COMMAND ${DJGPP_BIN_LOCATION}/exe2coff $<TARGET_FILE:umskt>
+            COMMAND ${DJGPP_BIN_LOCATION}/exe2coff $<TARGET_FILE_DIR:umskt>/umskt.exe
             # Concatenate CWSDSTUB with the COFF file
             COMMAND ${CMAKE_COMMAND} -E cat ${CWSDSTUB_LOCATION} $<TARGET_FILE_DIR:umskt>/umskt > $<TARGET_FILE:umskt>
-            # Clean up the COFF file
-            COMMAND ${CMAKE_COMMAND} -E rm $<TARGET_FILE_DIR:umskt>/umskt
+            # Clean up temporary files
+            COMMAND ${CMAKE_COMMAND} -E rm $<TARGET_FILE_DIR:umskt>/umskt $<TARGET_FILE_DIR:umskt>/umskt.exe
         )
         message(STATUS "[UMSKT] STUBIFY_LOCATION set to: ${STUBIFY_LOCATION}")
         message(STATUS "[UMSKT] CWSDSTUB_LOCATION set to: ${CWSDSTUB_LOCATION}")
