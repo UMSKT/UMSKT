@@ -276,6 +276,6 @@ ELSE()
     ENDIF()
 
     IF (DJGPP_WATT32)
-        add_custom_command(TARGET umskt POST_BUILD COMMAND ${CMAKE_COMMAND} -E cat ${CMAKE_SOURCE_DIR}/cwsdstub.exe $<TARGET_FILE:umskt> > $<TARGET_FILE_DIR:umskt>/umskt.exe)
+        add_custom_command(TARGET umskt POST_BUILD COMMAND ${CMAKE_COMMAND} -E cat ${CWSDSTUB_LOCATION} $<TARGET_FILE:umskt> > $<TARGET_FILE_DIR:umskt>/umskt.exe)
     ENDIF()
 ENDIF()
