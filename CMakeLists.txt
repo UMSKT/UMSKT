@@ -277,15 +277,15 @@ ELSE()
 
     IF (DJGPP_WATT32)
         message(STATUS "[UMSKT] Configuring DJGPP post-build commands")
+        # Set .exe suffix for DJGPP builds
+        set_target_properties(umskt PROPERTIES SUFFIX ".exe")
         add_custom_command(TARGET umskt POST_BUILD 
-            # First rename to ensure .exe extension
-            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:umskt> $<TARGET_FILE_DIR:umskt>/umskt.exe
             # Convert exe to coff, removing the default stub
-            COMMAND ${DJGPP_BIN_LOCATION}/exe2coff $<TARGET_FILE_DIR:umskt>/umskt.exe
+            COMMAND ${DJGPP_BIN_LOCATION}/exe2coff $<TARGET_FILE:umskt>
             # Concatenate CWSDSTUB with the COFF file
             COMMAND ${CMAKE_COMMAND} -E cat ${CWSDSTUB_LOCATION} $<TARGET_FILE_DIR:umskt>/umskt > $<TARGET_FILE:umskt>
-            # Clean up temporary files
-            COMMAND ${CMAKE_COMMAND} -E rm $<TARGET_FILE_DIR:umskt>/umskt $<TARGET_FILE_DIR:umskt>/umskt.exe
+            # Clean up the COFF file
+            COMMAND ${CMAKE_COMMAND} -E rm $<TARGET_FILE_DIR:umskt>/umskt
         )
         message(STATUS "[UMSKT] STUBIFY_LOCATION set to: ${STUBIFY_LOCATION}")
         message(STATUS "[UMSKT] CWSDSTUB_LOCATION set to: ${CWSDSTUB_LOCATION}")
