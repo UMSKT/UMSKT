@@ -256,17 +256,15 @@ ELSE()
     ADD_EXECUTABLE(umskt src/main.cpp src/cli.cpp ${UMSKT_EXE_WINDOWS_EXTRA})
     TARGET_INCLUDE_DIRECTORIES(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
     TARGET_LINK_LIBRARIES(umskt _umskt ${OPENSSL_CRYPTO_LIBRARIES} ${ZLIB_LIBRARIES} fmt nlohmann_json::nlohmann_json umskt::rc ${UMSKT_LINK_LIBS})
-
-    # if we're on 32-bit windows, add the atomic library
-    if (WIN32 AND NOT MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 4)
-        target_link_libraries(umskt PRIVATE atomic)
-    endif()
-
     TARGET_LINK_DIRECTORIES(umskt PUBLIC ${UMSKT_LINK_DIRS})
 
     # Link required Windows system libraries for OpenSSL
     if (WIN32)
         target_link_libraries(umskt crypt32 ws2_32)
+        # if 32-bit windows, add the atomic library
+        if (CMAKE_SIZEOF_VOID_P EQUAL 4 AND NOT MSVC)
+            target_link_libraries(umskt atomic)
+        endif()
     endif()
 
     IF(MSVC AND MSVC_MSDOS_STUB)
