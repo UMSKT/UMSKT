@@ -44,6 +44,24 @@ In light of the recent exponential interest in this project I've decided to put 
 
 ------
 
+### System Requirements
+#### MS-DOS
+* i386 processor or better
+* MS-DOS 6.22 or later
+* Any DOS-based version of Windows
+* Windows NT 4.0 or later (via NTVDM)
+#### Windows
+* i686 processor or better
+* Windows XP or later
+#### macOS
+* Apple Silicon or x86_64 processor
+* Latest version of macOS
+#### Linux
+* modern ARM, x86, or x86_64 processor
+* Latest version of your Linux distro
+
+------
+
 ### **Usage**
 #### 1. Download the latest version of UMSKT
 
