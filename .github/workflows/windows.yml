@@ -112,7 +112,7 @@ jobs:
           export MSYSTEM=MINGW32
           echo "Compiling 32-bit OpenSSL..."
           cd openssl-3.1.2
-          /usr/bin/perl Configure mingw --prefix="$GITHUB_WORKSPACE/OpenSSL-TDM-32" --openssldir="$GITHUB_WORKSPACE/OpenSSL-TDM-32" no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386
+          /usr/bin/perl Configure mingw --prefix="${GITHUB_WORKSPACE}/OpenSSL-TDM-32" --openssldir="${GITHUB_WORKSPACE}/OpenSSL-TDM-32" no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386
           mingw32-make -j
           mingw32-make install_sw
           cd ..
@@ -130,7 +130,7 @@ jobs:
           export MSYSTEM=MINGW64
           echo "Compiling 64-bit OpenSSL..."
           cd openssl-3.1.2
-          /usr/bin/perl Configure mingw64 --prefix="$GITHUB_WORKSPACE/OpenSSL-TDM-64" --openssldir="$GITHUB_WORKSPACE/OpenSSL-TDM-64" no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386
+          /usr/bin/perl Configure mingw64 --prefix="${GITHUB_WORKSPACE}/OpenSSL-TDM-64" --openssldir="${GITHUB_WORKSPACE}/OpenSSL-TDM-64" no-tests no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx
           mingw32-make -j
           mingw32-make install_sw
           cd ..
