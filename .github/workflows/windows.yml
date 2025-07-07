@@ -102,10 +102,13 @@ jobs:
         if: matrix.arch == 'x86' && steps.cache-openssl-32.outputs.cache-hit != 'true'
         shell: msys2 {0}
         run: |
+          # Ensure we're using MSYS2's tools first
+          export PATH="/mingw64/bin:/usr/bin:$PATH"
           export PATH="/c/TDM-GCC-64/bin:$PATH"
+          export MSYSTEM=MINGW32
           echo "Compiling 32-bit OpenSSL..."
           cd openssl-3.1.2
-          /mingw64/bin/perl Configure mingw --prefix="$GITHUB_WORKSPACE/OpenSSL-TDM-32" --openssldir="$GITHUB_WORKSPACE/OpenSSL-TDM-32" no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386
+          perl Configure mingw --prefix="$GITHUB_WORKSPACE/OpenSSL-TDM-32" --openssldir="$GITHUB_WORKSPACE/OpenSSL-TDM-32" no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386
           mingw32-make -j
           mingw32-make install_sw
           cd ..
@@ -114,10 +117,13 @@ jobs:
         if: matrix.arch == 'x64' && steps.cache-openssl-64.outputs.cache-hit != 'true'
         shell: msys2 {0}
         run: |
+          # Ensure we're using MSYS2's tools first
+          export PATH="/mingw64/bin:/usr/bin:$PATH"
           export PATH="/c/TDM-GCC-64/bin:$PATH"
+          export MSYSTEM=MINGW64
           echo "Compiling 64-bit OpenSSL..."
           cd openssl-3.1.2
-          /mingw64/bin/perl Configure mingw64 --prefix="$GITHUB_WORKSPACE/OpenSSL-TDM-64" --openssldir="$GITHUB_WORKSPACE/OpenSSL-TDM-64" no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386
+          perl Configure mingw64 --prefix="$GITHUB_WORKSPACE/OpenSSL-TDM-64" --openssldir="$GITHUB_WORKSPACE/OpenSSL-TDM-64" no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386
           mingw32-make -j
           mingw32-make install_sw
           cd ..
