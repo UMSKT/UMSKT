@@ -112,7 +112,7 @@ jobs:
           export MSYSTEM=MINGW32
           echo "Compiling 32-bit OpenSSL..."
           cd openssl-3.1.2
-          /usr/bin/perl Configure mingw --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-32 --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-32 no-tests no-sse2 no-asm no-threads -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386 -mtune=generic
+          /usr/bin/perl Configure mingw --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-32 --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-32 no-tests no-sse2 no-asm no-threads -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i686 -mtune=generic
           mingw32-make -j
           mingw32-make install_sw
           cd ..
