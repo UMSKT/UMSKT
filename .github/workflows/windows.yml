@@ -60,7 +60,7 @@ jobs:
           install: >-
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-gcc
             mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-make
-            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-perl
+            mingw-w64-x86_64-perl
             git
 
       - name: Setup MSVC for ARM64
@@ -105,7 +105,7 @@ jobs:
           export PATH="/c/TDM-GCC-64/bin:$PATH"
           echo "Compiling 32-bit OpenSSL..."
           cd openssl-3.1.2
-          perl Configure mingw --prefix="$GITHUB_WORKSPACE/OpenSSL-TDM-32" --openssldir="$GITHUB_WORKSPACE/OpenSSL-TDM-32" no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386
+          /mingw64/bin/perl Configure mingw --prefix="$GITHUB_WORKSPACE/OpenSSL-TDM-32" --openssldir="$GITHUB_WORKSPACE/OpenSSL-TDM-32" no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386
           mingw32-make -j
           mingw32-make install_sw
           cd ..
@@ -117,7 +117,7 @@ jobs:
           export PATH="/c/TDM-GCC-64/bin:$PATH"
           echo "Compiling 64-bit OpenSSL..."
           cd openssl-3.1.2
-          perl Configure mingw64 --prefix="$GITHUB_WORKSPACE/OpenSSL-TDM-64" --openssldir="$GITHUB_WORKSPACE/OpenSSL-TDM-64" no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386
+          /mingw64/bin/perl Configure mingw64 --prefix="$GITHUB_WORKSPACE/OpenSSL-TDM-64" --openssldir="$GITHUB_WORKSPACE/OpenSSL-TDM-64" no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386
           mingw32-make -j
           mingw32-make install_sw
           cd ..
