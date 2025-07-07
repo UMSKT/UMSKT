@@ -36,6 +36,8 @@ if (WIN32 AND NOT MSVC)
     # Match resource architecture with target architecture
     if(CMAKE_SIZEOF_VOID_P EQUAL 4)
         set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} -F pe-i386")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=i386 -mtune=generic -mno-sse -mno-sse2 -mno-mmx -mno-3dnow")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=i386 -mtune=generic -mno-sse -mno-sse2 -mno-mmx -mno-3dnow")
     else()
         set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} -F pe-x86-64")
     endif()
