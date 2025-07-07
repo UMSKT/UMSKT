@@ -51,19 +51,6 @@ jobs:
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
           [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
 
-      - name: Setup MSYS2
-        if: matrix.arch != 'arm64'
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: ${{ matrix.arch == 'x86' && 'MINGW32' || 'MINGW64' }}
-          update: true
-          install: >-
-            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-gcc
-            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-make
-            mingw-w64-x86_64-perl
-            perl
-            git
-
       - name: Setup MSVC for ARM64
         if: matrix.arch == 'arm64'
         uses: ilammy/msvc-dev-cmd@v1
@@ -90,6 +77,19 @@ jobs:
           path: |
             ${{ github.workspace }}/OpenSSL-TDM-64
           key: openssl-3.1.2-x64-${{ hashFiles('**/CMakeLists.txt') }}
+
+      - name: Setup MSYS2
+        if: matrix.arch != 'arm64' && steps.cache-openssl-32.outputs.cache-hit != 'true' && steps.cache-openssl-64.outputs.cache-hit != 'true'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.arch == 'x86' && 'MINGW32' || 'MINGW64' }}
+          update: true
+          install: >-
+            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-gcc
+            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-make
+            mingw-w64-x86_64-perl
+            perl
+            git
 
       - name: Checkout and Compile OpenSSL 3.1.2
         if: matrix.arch != 'arm64' && steps.cache-openssl-32.outputs.cache-hit != 'true' && steps.cache-openssl-64.outputs.cache-hit != 'true'
