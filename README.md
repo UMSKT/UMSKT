@@ -53,6 +53,7 @@ In light of the recent exponential interest in this project I've decided to put 
 #### Windows
 * i686 processor or better
 * Windows XP or later
+*Note: Processors barely meeting the minimum system requirements for XP may not work. Use the MS-DOS version via NTVDM in that case.
 #### macOS
 * Apple Silicon or x86_64 processor
 * Latest version of macOS
