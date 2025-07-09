@@ -63,14 +63,8 @@ jobs:
       - name: Checkout and Compile OpenSSL v1.1.1
         shell: pwsh
         run: |
-            $opensslVersion = "1.1.1w"
-            $opensslDir = "openssl-src"
-            
-            # Download OpenSSL source
-            Invoke-WebRequest -Uri "https://www.openssl.org/source/openssl-$opensslVersion.tar.gz" -OutFile "openssl.tar.gz"
-            tar -xf openssl.tar.gz
-            Rename-Item -Path "openssl-$opensslVersion" -NewName $opensslDir
-            cd $opensslDir
+            git clone https://github.com/UMSKT/openssl --branch OpenSSL_1_1_1-stable --depth 1 openssl-src
+            cd openssl-src
             
             # Install Perl if needed
             choco install strawberryperl -y
