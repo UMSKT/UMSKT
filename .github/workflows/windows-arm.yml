@@ -80,7 +80,15 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE
-          & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:${{ matrix.vcpkg_arch }} --clean-after-build
+          
+          # Set OPENSSL_ROOT_DIR for vcpkg
+          echo "OPENSSL_ROOT_DIR=$env:VCPKG_ROOT/installed/${{ matrix.vcpkg_arch }}" | Out-File -FilePath $env:GITHUB_ENV -Append
+          
+          # Install OpenSSL with specific features and options
+          & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:${{ matrix.vcpkg_arch }} `
+            --clean-after-build `
+            --allow-unsupported `
+            --host-triplet=${{ matrix.vcpkg_arch }}
 
       - name: Configure UMSKT
         shell: pwsh
