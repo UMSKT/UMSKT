@@ -32,7 +32,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [x64, x86]
+        include:
+          - arch: x86
+            msystem: MINGW
+          - arch: x64
+            msystem: MINGW64
+            
     steps:
       - name: Setup TDM-GCC
         run: |
@@ -53,23 +58,13 @@ jobs:
       - name: Checkout Source Tree
         uses: actions/checkout@v4
 
-      - name: Cache OpenSSL 1.1.1 (32-bit)
+      - name: Cache OpenSSL 1.1.1
         uses: actions/cache/restore@v4
-        if: matrix.arch == 'x86'
-        id: cache-openssl-32
+        id: cache-openssl
         with:
           path: |
-            ${{ github.workspace }}/OpenSSL-TDM-32
-          key: openssl-1.1.1-x86-${{ hashFiles('**/CMakeLists.txt') }}
-
-      - name: Cache OpenSSL 1.1.1 (64-bit)
-        uses: actions/cache/restore@v4
-        if: matrix.arch == 'x64'
-        id: cache-openssl-64
-        with:
-          path: |
-            ${{ github.workspace }}/OpenSSL-TDM-64
-          key: openssl-1.1.1-x64-${{ hashFiles('**/CMakeLists.txt') }}
+            ${{ github.workspace }}/OpenSSL-TDM-${{ matrix.arch }}
+          key: openssl-1.1.1-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}
 
       - name: Setup MSYS2
         if: steps.cache-openssl-32.outputs.cache-hit != 'true' && steps.cache-openssl-64.outputs.cache-hit != 'true'
@@ -85,64 +80,37 @@ jobs:
             git
 
       - name: Checkout and Compile OpenSSL 1.1.1
-        if: steps.cache-openssl-32.outputs.cache-hit != 'true' && steps.cache-openssl-64.outputs.cache-hit != 'true'
+        if: steps.cache-openssl-32.outputs.cache-hit != 'true'
         shell: msys2 {0}
         run: |
           # Clone UMSKT's OpenSSL fork
           echo "Cloning UMSKT OpenSSL fork..."
           git clone https://github.com/UMSKT/openssl.git --branch OpenSSL_1_1_1-stable --depth 1 openssl-1.1.1
-
-      - name: Checkout and Compile OpenSSL 1.1.1 (32-bit)
-        if: matrix.arch == 'x86' && steps.cache-openssl-32.outputs.cache-hit != 'true'
-        shell: msys2 {0}
-        run: |
           # Set up proper MSYS2 environment
           export MSYS=winsymlinks:nativestrict
           export MSYS2_PATH_TYPE=strict
           export LANG=en_US.UTF-8
           export PATH="/usr/bin:/mingw64/bin:$PATH"
           export PATH="/c/TDM-GCC-64/bin:$PATH"
-          export MSYSTEM=MINGW32
-          echo "Compiling 32-bit OpenSSL..."
+          export MSYSTEM=${{ matrix.msystem }}
           cd openssl-1.1.1
-          /usr/bin/perl Configure mingw --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-32 --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-32 no-tests no-sse2 no-asm no-threads -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i686 -mtune=generic
-          mingw32-make -j
-          mingw32-make install_sw
-          cd ..
-      
-      - name: Checkout and Compile OpenSSL 3.1.2 (64-bit)
-        if: matrix.arch == 'x64' && steps.cache-openssl-64.outputs.cache-hit != 'true'
-        shell: msys2 {0}
-        run: |
-          # Set up proper MSYS2 environment
-          export MSYS=winsymlinks:nativestrict
-          export MSYS2_PATH_TYPE=strict
-          export LANG=en_US.UTF-8
-          export PATH="/usr/bin:/mingw64/bin:$PATH"
-          export PATH="/c/TDM-GCC-64/bin:$PATH"
-          export MSYSTEM=MINGW64
-          echo "Compiling 64-bit OpenSSL..."
-          cd openssl-1.1.1
-          /usr/bin/perl Configure mingw64 --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-64 --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-64 no-tests no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx
-          mingw32-make -j
-          mingw32-make install_sw
-          cd ..
-      
-      - name: Save OpenSSL 1.1.1 (32-bit)
-        if: matrix.arch == 'x86' && steps.cache-openssl-32.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ${{ github.workspace }}/OpenSSL-TDM-32
-          key: openssl-1.1.1-x86-${{ hashFiles('**/CMakeLists.txt') }}
 
-      - name: Save OpenSSL 3.1.2 (64-bit)
-        if: matrix.arch == 'x64' && steps.cache-openssl-64.outputs.cache-hit != 'true'
+          if [[ ${{ matrix.arch }} == "x86" ]]; then
+              /usr/bin/perl Configure mingw --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-${{ matrix.arch }} --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-32 no-tests no-sse2 no-asm no-threads -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i686 -mtune=generic
+          else
+              /usr/bin/perl Configure mingw64 --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-${{ matrix.arch }} --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-64 no-tests no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx
+          fi
+          mingw32-make -j
+          mingw32-make install_sw
+          cd ..
+      
+      - name: Save OpenSSL 1.1.1
+        if: steps.cache-openssl.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
-            ${{ github.workspace }}/OpenSSL-TDM-64
-          key: openssl-1.1.1-x64-${{ hashFiles('**/CMakeLists.txt') }}
+            ${{ github.workspace }}/OpenSSL-TDM-${{ matrix.arch }}
+          key: openssl-1.1.1-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}
 
       - name: Set OpenSSL Environment (32-bit)
         if: matrix.arch == 'x86'
