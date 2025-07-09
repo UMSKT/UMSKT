@@ -35,8 +35,10 @@ jobs:
         include:
           - arch: x86
             msystem: MINGW
+            cmake_flag: -m32
           - arch: x64
             msystem: MINGW64
+            cmake_flag: -m64
             
     steps:
       - name: Setup TDM-GCC
@@ -112,21 +114,12 @@ jobs:
             ${{ github.workspace }}/OpenSSL-TDM-${{ matrix.arch }}
           key: openssl-1.1.1-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}
 
-      - name: Set OpenSSL Environment (32-bit)
-        if: matrix.arch == 'x86'
+      - name: Set OpenSSL Environment
         shell: pwsh
         run: |
-          echo "OPENSSL_ROOT=$env:GITHUB_WORKSPACE/OpenSSL-TDM-32" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "OPENSSL_ROOT=$env:GITHUB_WORKSPACE/OpenSSL-TDM-${{ matrix.arch }}" | Out-File -FilePath $env:GITHUB_ENV -Append
           echo "OPENSSL_LIBDIR=lib" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "CMAKE_FLAGS=-m32" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-      - name: Set OpenSSL Environment (64-bit)
-        if: matrix.arch == 'x64'
-        shell: pwsh
-        run: |
-          echo "OPENSSL_ROOT=$env:GITHUB_WORKSPACE/OpenSSL-TDM-64" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "OPENSSL_LIBDIR=lib" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "CMAKE_FLAGS=-m64" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "CMAKE_FLAGS=-${{ matrix.cmake_flag }}" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Configure UMSKT
         shell: pwsh
