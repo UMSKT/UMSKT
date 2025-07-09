@@ -32,12 +32,22 @@ jobs:
     strategy:
         fail-fast: false
         matrix:
-            arch: [arm64]
+            arch: [arm, arm64]
+            include:
+              - arch: arm
+                vcpkg_arch: arm-windows-static
+                cmake_arch: ARM
+                sdk_version: '10.0.19041.0'
+              - arch: arm64
+                vcpkg_arch: arm64-windows-static
+                cmake_arch: ARM64
+                sdk_version: '10.0.22621.0'
     steps:
-      - name: Setup MSVC for ARM64
+      - name: Setup MSVC for ${{ matrix.arch }}
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: arm64
+          arch: ${{ matrix.arch }}
+          sdk: ${{ matrix.sdk_version }}
 
       - name: Checkout Source Tree
         uses: actions/checkout@v4
@@ -59,25 +69,25 @@ jobs:
             ${{ github.workspace }}/vcpkg/bincache
             ${{ github.workspace }}/vcpkg/installed
             ${{ github.workspace }}/vcpkg/packages
-          key: vcpkg-arm64-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
+          key: vcpkg-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
           restore-keys: |
-            vcpkg-arm64-${{ hashFiles('**/CMakeLists.txt') }}-
-            vcpkg-arm64-
+            vcpkg-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}-
+            vcpkg-${{ matrix.arch }}-
 
       - name: Install OpenSSL
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE
-          & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:arm64-windows-static --clean-after-build
+          & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:${{ matrix.vcpkg_arch }} --clean-after-build
 
       - name: Configure UMSKT
         shell: pwsh
         run: |
           cmake -G "Visual Studio 17 2022" `
-            -A ${{ matrix.arch }} `
+            -A ${{ matrix.cmake_arch }} `
             -DWINDOWS_ARM=ON `
             -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
-            -DVCPKG_TARGET_TRIPLET=${{ matrix.arch }}-windows-static `
+            -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_arch }} `
             .
 
       - name: Build UMSKT
@@ -88,18 +98,21 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: UMSKT-WinNT-arm64
+          name: UMSKT-WinNT-${{ matrix.arch }}
           path: Release/umskt.exe
 
-  test:
+  test-arm64:
     needs: build
     if: success()
     runs-on: windows-11-arm
+    strategy:
+      matrix:
+        arch: [arm64]
     steps:
       - name: Download ARM64 artifact
         uses: actions/download-artifact@v4
         with:
-          name: UMSKT-WinNT-arm64
+          name: UMSKT-WinNT-${{ matrix.arch }}
           path: .
 
       - name: Run tests
