@@ -50,11 +50,15 @@ In light of the recent exponential interest in this project I've decided to put 
 * MS-DOS 6.22 or later
 * Any DOS-based version of Windows
 * Windows NT 4.0 or later (via NTVDM)
-#### Windows
+#### Windows (x86/x64)
 * i686 processor or better
 * Windows XP or later
 
 *Note: Processors barely meeting the minimum system requirements for XP may not work. Use the MS-DOS version via NTVDM in that case.*
+#### Windows (ARM32/64)
+* Windows 11 21H2 or later
+
+*Note: This is just all we can test. Try to get it to run on Windows RT, make an issue if it doesn't run and we'll try to fix it.*
 #### macOS
 * Apple Silicon or x86_64 processor
 * Latest version of macOS
