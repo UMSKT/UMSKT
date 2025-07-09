@@ -85,7 +85,7 @@ inline QWORD ConfirmationID::__umul128(QWORD a, QWORD b, QWORD* hi)
     *hi = __umulh(a, b);
     return a * b;
 }
-#elif defined(__i386__) || defined(_M_IX86) || defined(__arm__) || defined(__EMSCRIPTEN__)
+#elif defined(__i386__) || defined(_M_IX86) || defined(__arm__) || defined(__EMSCRIPTEN__) || defined(_M_ARM)
 inline QWORD ConfirmationID::__umul128(QWORD multiplier, QWORD multiplicand, QWORD *product_hi) {
     // multiplier   = ab = a * 2^32 + b
     // multiplicand = cd = c * 2^32 + d

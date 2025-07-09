@@ -55,6 +55,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup vcpkg
+        if: ${{ matrix.arch }} == 'arm64'
         shell: pwsh
         run: |
           git clone https://github.com/Microsoft/vcpkg.git
@@ -65,6 +66,7 @@ jobs:
           echo "VCPKG_BINARY_SOURCES=clear;default,readwrite" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Cache vcpkg packages
+        if: ${{ matrix.arch }} == 'arm64'
         uses: actions/cache@v4
         with:
           path: |
