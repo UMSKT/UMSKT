@@ -18,12 +18,9 @@
 # @FileCreated by TheTank20 on 06/13/2023
 # @Maintainer Neo
 
-name: C/C++ CI (Windows)
+name: C/C++ CI (Windows) [DEPRECATED]
 
 on:
-  push:
-    branches: [ "*" ]
-    paths-ignore: [ '**.md', 'doc/**', '.idea/**']
   workflow_dispatch:
 
 jobs:
