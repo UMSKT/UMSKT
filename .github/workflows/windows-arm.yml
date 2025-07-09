@@ -83,12 +83,11 @@ jobs:
           
           if ("${{ matrix.arch }}" -eq "arm") {
             # For ARM32, use an older version of OpenSSL that's known to work
-            & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:${{ matrix.vcpkg_arch }} `
+            & "$env:VCPKG_ROOT\vcpkg.exe" install "openssl[core]:${{ matrix.vcpkg_arch }}@1.1.1" `
               --clean-after-build `
               --allow-unsupported `
               --host-triplet=x64-windows `
-              --overlay-ports="$env:VCPKG_ROOT/ports" `
-              --version=1.1.1
+              --overlay-ports="$env:VCPKG_ROOT/ports"
           } else {
             # For ARM64, use the latest version
             & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:${{ matrix.vcpkg_arch }} `
