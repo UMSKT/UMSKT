@@ -53,44 +53,16 @@ jobs:
       - name: Checkout Source Tree
         uses: actions/checkout@v4
 
-      - name: Setup vcpkg
-        if: matrix.arch == 'arm64'
-        shell: pwsh
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git
-          cd vcpkg
-          .\bootstrap-vcpkg.bat
-          echo "VCPKG_ROOT=$env:GITHUB_WORKSPACE/vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "VCPKG_DEFAULT_BINARY_CACHE=$env:GITHUB_WORKSPACE/vcpkg/bincache" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "VCPKG_BINARY_SOURCES=clear;default,readwrite" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-      - name: Cache vcpkg packages
-        if: matrix.arch == 'arm64'
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ github.workspace }}/vcpkg/bincache
-            ${{ github.workspace }}/vcpkg/installed
-            ${{ github.workspace }}/vcpkg/packages
-          key: vcpkg-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
-          restore-keys: |
-            vcpkg-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}-
-            vcpkg-${{ matrix.arch }}-
-
       - name: Cache OpenSSL Binaries
-        if: matrix.arch == 'arm32'
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
-            ${{ github.workspace }}/openssl-install
-          key: openssl-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}
-          restore-keys: |
+            ${{ github.workspace }}-OpenSSL-MSVC-${{ matrix.arch }}
+          key: openssl-1.1.1-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}
 
-      - name: Install OpenSSL
+      - name: Checkout and Compile OpenSSL v1.1.1
         shell: pwsh
         run: |
-          if ("${{ matrix.arch }}" -eq "arm32") {
-            # For ARM32, build OpenSSL from source
             $opensslVersion = "1.1.1w"
             $opensslDir = "openssl-src"
             
@@ -109,30 +81,29 @@ jobs:
             # First set up Visual Studio environment
             $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
             $vcvarsall = Join-Path $vsPath "VC\Auxiliary\Build\vcvarsall.bat"
+
+            $vcTarget = ""
+            if ("${{ matrix.arch}}" -eq "arm32") {
+              $vcTarget = "VC-WIN32-ARM"
+            } else {
+              $vcTarget = "VC-WIN64-ARM"
+            }
             
             # Configure OpenSSL
-            perl Configure VC-WIN32-ARM no-shared no-asm no-engine --prefix="$env:GITHUB_WORKSPACE/openssl-install"
+            perl Configure $vcTarget no-shared no-asm no-engine --prefix="$env:GITHUB_WORKSPACE/OpenSSL-MSVC-${{ matrix.arch }}"
             
             # Build using MSVC ARM32 tools
             cmd /c "call `"$vcvarsall`" amd64_arm && nmake && nmake install_sw"
             cd ..
-          } else {
-            # For ARM64, use vcpkg as before
-            New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE
-            & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:${{ matrix.vcpkg_arch }} --clean-after-build
-            echo "OPENSSL_ROOT_DIR=$env:VCPKG_ROOT/installed/${{ matrix.vcpkg_arch }}" | Out-File -FilePath $env:GITHUB_ENV -Append
-          }
-      
+
       - name: Save OpenSSL Binaries
-        if: matrix.arch == 'arm32'
         uses: actions/cache/save@v4
         with:
           path: |
-            ${{ github.workspace }}/openssl-install
-          key: openssl-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}
+            ${{ github.workspace }}/OpenSSL-MSVC-${{ matrix.arch }}
+          key: openssl-1.1.1-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}
 
       - name: Set OpenSSL Environment
-        if: matrix.arch == 'arm32'
         shell: pwsh
         run: |
           echo "OPENSSL_ROOT=$env:GITHUB_WORKSPACE/openssl-install" | Out-File -FilePath $env:GITHUB_ENV -Append
