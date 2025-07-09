@@ -79,22 +79,38 @@ jobs:
       - name: Install OpenSSL
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE
-          
           if ("${{ matrix.arch }}" -eq "arm") {
-            # For ARM32, try with minimal features and cross-compilation
-            & "$env:VCPKG_ROOT\vcpkg.exe" install openssl[core]:${{ matrix.vcpkg_arch }} `
-              --clean-after-build `
-              --allow-unsupported `
-              --host-triplet=x64-windows
+            # For ARM32, build OpenSSL from source
+            $opensslVersion = "1.1.1w"
+            $opensslDir = "openssl-src"
+            
+            # Download OpenSSL source
+            Invoke-WebRequest -Uri "https://www.openssl.org/source/openssl-$opensslVersion.tar.gz" -OutFile "openssl.tar.gz"
+            tar -xf openssl.tar.gz
+            Rename-Item -Path "openssl-$opensslVersion" -NewName $opensslDir
+            cd $opensslDir
+            
+            # Install Perl if needed
+            choco install strawberryperl -y
+            
+            # Configure and build OpenSSL for ARM32
+            $env:PATH = "C:\Strawberry\perl\bin;$env:PATH"
+            perl Configure VC-CE no-shared no-asm --prefix="$env:GITHUB_WORKSPACE/openssl-install"
+            
+            # Use MSVC ARM32 tools
+            $vcvarsall = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
+            cmd /c "`"$vcvarsall`" amd64_arm && nmake && nmake install"
+            
+            # Set environment variables
+            echo "OPENSSL_ROOT_DIR=$env:GITHUB_WORKSPACE/openssl-install" | Out-File -FilePath $env:GITHUB_ENV -Append
+            echo "OPENSSL_USE_STATIC_LIBS=TRUE" | Out-File -FilePath $env:GITHUB_ENV -Append
+            cd ..
           } else {
-            # For ARM64, use the latest version
-            & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:${{ matrix.vcpkg_arch }} `
-              --clean-after-build
+            # For ARM64, use vcpkg as before
+            New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE
+            & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:${{ matrix.vcpkg_arch }} --clean-after-build
+            echo "OPENSSL_ROOT_DIR=$env:VCPKG_ROOT/installed/${{ matrix.vcpkg_arch }}" | Out-File -FilePath $env:GITHUB_ENV -Append
           }
-          
-          # Set OPENSSL_ROOT_DIR for both architectures
-          echo "OPENSSL_ROOT_DIR=$env:VCPKG_ROOT/installed/${{ matrix.vcpkg_arch }}" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Configure UMSKT
         shell: pwsh
