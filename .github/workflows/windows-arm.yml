@@ -106,7 +106,7 @@ jobs:
             perl Configure VC-WIN32-ARM no-shared no-asm --prefix="$env:GITHUB_WORKSPACE/openssl-install"
             
             # Build using MSVC ARM32 tools
-            cmd /c "call `"$vcvarsall`" amd64_arm && nmake && nmake install"
+            cmd /c "call `"$vcvarsall`" amd64_arm && nmake && nmake install_sw"
             
             # Set environment variables
             echo "OPENSSL_ROOT_DIR=$env:GITHUB_WORKSPACE/openssl-install" | Out-File -FilePath $env:GITHUB_ENV -Append
