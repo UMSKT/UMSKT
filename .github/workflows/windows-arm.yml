@@ -95,11 +95,16 @@ jobs:
             
             # Configure and build OpenSSL for ARM32
             $env:PATH = "C:\Strawberry\perl\bin;$env:PATH"
+            
+            # First set up Visual Studio environment
+            $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+            $vcvarsall = Join-Path $vsPath "VC\Auxiliary\Build\vcvarsall.bat"
+            
+            # Configure OpenSSL
             perl Configure VC-WIN32-ARM no-shared no-asm --prefix="$env:GITHUB_WORKSPACE/openssl-install"
             
-            # Use MSVC ARM32 tools
-            $vcvarsall = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat"
-            cmd /c "`"$vcvarsall`" amd64_arm && nmake && nmake install"
+            # Build using MSVC ARM32 tools
+            cmd /c "call `"$vcvarsall`" amd64_arm && nmake && nmake install"
             
             # Set environment variables
             echo "OPENSSL_ROOT_DIR=$env:GITHUB_WORKSPACE/openssl-install" | Out-File -FilePath $env:GITHUB_ENV -Append
