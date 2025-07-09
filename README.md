@@ -8,7 +8,9 @@
 
 **Build status**
 
-[![C/C++ CI (Windows)](https://github.com/UMSKT/UMSKT/actions/workflows/windows.yml/badge.svg)](../../actions/workflows/windows.yml)
+[![C/C++ CI (Windows x86+64)](https://github.com/UMSKT/UMSKT/actions/workflows/windows-x86-x64.yml/badge.svg)](../../actions/workflows/windows-x86-x64.yml)
+
+[![C/C++ CI (Windows ARM)](https://github.com/UMSKT/UMSKT/actions/workflows/windows-arm.yml/badge.svg)](../../actions/workflows/windows-arm.yml)
 
 [![C/C++ CI (macOS)](https://github.com/UMSKT/UMSKT/actions/workflows/macos.yml/badge.svg)](../../actions/workflows/macos.yml)
 
