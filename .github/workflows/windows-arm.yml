@@ -81,14 +81,22 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE
           
-          # Set OPENSSL_ROOT_DIR for vcpkg
-          echo "OPENSSL_ROOT_DIR=$env:VCPKG_ROOT/installed/${{ matrix.vcpkg_arch }}" | Out-File -FilePath $env:GITHUB_ENV -Append
+          if ("${{ matrix.arch }}" -eq "arm") {
+            # For ARM32, use an older version of OpenSSL that's known to work
+            & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:${{ matrix.vcpkg_arch }} `
+              --clean-after-build `
+              --allow-unsupported `
+              --host-triplet=x64-windows `
+              --overlay-ports="$env:VCPKG_ROOT/ports" `
+              --version=1.1.1
+          } else {
+            # For ARM64, use the latest version
+            & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:${{ matrix.vcpkg_arch }} `
+              --clean-after-build
+          }
           
-          # Install OpenSSL with specific features and options
-          & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:${{ matrix.vcpkg_arch }} `
-            --clean-after-build `
-            --allow-unsupported `
-            --host-triplet=${{ matrix.vcpkg_arch }}
+          # Set OPENSSL_ROOT_DIR for both architectures
+          echo "OPENSSL_ROOT_DIR=$env:VCPKG_ROOT/installed/${{ matrix.vcpkg_arch }}" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Configure UMSKT
         shell: pwsh
