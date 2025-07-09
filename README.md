@@ -4,7 +4,7 @@
 
 [![Zulip chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://umskt.zulipchat.com)
 [![libera.chat - #mspid](https://img.shields.io/badge/libera.chat-%23mspid-brightgreen)](https://web.libera.chat/gamja/?nick=Guest?#mspid)
-[![Discord](https://img.shields.io/discord/1154155510887620729?color=%235865F2)](https://discord.gg/PpBSpuphWM)
+[![Discord](https://img.shields.io/discord/1154155510887620729?label=discord&color=%235865F2)](https://discord.gg/PpBSpuphWM)
 
 **Build status**
 
