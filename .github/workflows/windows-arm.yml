@@ -93,7 +93,7 @@ jobs:
             perl Configure $vcTarget no-shared no-asm no-engine --prefix="$env:GITHUB_WORKSPACE/OpenSSL-MSVC-${{ matrix.arch }}"
             
             # Build using MSVC ARM32 tools
-            cmd /c "call `"$vcvarsall`" amd64_arm && nmake && nmake install_sw"
+            cmd /c "call `"$vcvarsall`" ${{arch_compilename}} && nmake && nmake install_sw"
             cd ..
 
       - name: Save OpenSSL Binaries
@@ -106,7 +106,7 @@ jobs:
       - name: Set OpenSSL Environment
         shell: pwsh
         run: |
-          echo "OPENSSL_ROOT=$env:GITHUB_WORKSPACE/openssl-install" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "OPENSSL_ROOT=$env:GITHUB_WORKSPACE/OpenSSL-MSVC-${{ matrix.arch }}" | Out-File -FilePath $env:GITHUB_ENV -Append
           echo "OPENSSL_LIBDIR=lib" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Configure UMSKT
