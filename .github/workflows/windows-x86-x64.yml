@@ -69,7 +69,7 @@ jobs:
           key: openssl-1.1.1-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}
 
       - name: Setup MSYS2
-        if: steps.cache-openssl-32.outputs.cache-hit != 'true' && steps.cache-openssl-64.outputs.cache-hit != 'true'
+        if: steps.cache-openssl.outputs.cache-hit != 'true'
         uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.arch == 'x86' && 'MINGW32' || 'MINGW64' }}
@@ -82,7 +82,7 @@ jobs:
             git
 
       - name: Checkout and Compile OpenSSL 1.1.1
-        if: steps.cache-openssl-32.outputs.cache-hit != 'true'
+        if: steps.cache-openssl.outputs.cache-hit != 'true'
         shell: msys2 {0}
         run: |
           # Clone UMSKT's OpenSSL fork
