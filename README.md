@@ -50,11 +50,18 @@ In light of the recent exponential interest in this project I've decided to put 
 * MS-DOS 6.22 or later
 * Any DOS-based version of Windows
 * Windows NT 4.0 or later (via NTVDM)
-#### Windows
+#### Windows (x86/x64)
 * i686 processor or better
 * Windows XP or later
 
-*Note: Processors barely meeting the minimum system requirements for XP may not work. Use the MS-DOS version via NTVDM in that case.*
+> [!WARNING]
+> Processors barely meeting the minimum system requirements for XP may not work. Use the MS-DOS version via NTVDM in that case.
+
+#### Windows (ARM32/64)
+* Windows 11 21H2 or later
+
+> [!NOTE]
+> This is just all we can test. Try to get it to run on Windows RT, make an issue if it doesn't run and we'll try to fix it.
 #### macOS
 * Apple Silicon or x86_64 processor
 * Latest version of macOS
@@ -74,15 +81,14 @@ In light of the recent exponential interest in this project I've decided to put 
 * *(GitHub account \*not\* required)*
     * Download the latest release for your operating system and architecture from [the releases page](../../releases)
 
-* **Note:** Before continuing, please ensure you have the `umskt` executable extracted and on UNIX-like systems, have execution permissions (`chmod +x umskt`).
+> [!IMPORTANT]
+> Before continuing, please ensure you have the `umskt` executable extracted and on UNIX-like systems, have execution permissions (`chmod +x umskt`).
 
-#### 2. Install OpenSSL. 
-For Windows, click [here](https://slproweb.com/products/Win32OpenSSL.html) and choose the right version. For other operating systems, consult your package manager.
-*Note: This only applies if the build you download has OpenSSL embedded (static library) or not. You can usually tell if the download size is measured in KB or MB. If it's MB, you don't need this.*
+#### 2. Run `umskt` to generate a key, or add `--help` or `-h` to see more options.
+> [!IMPORTANT]
+> On macOS, like all unsigned executables, you'll need to hold Ctrl while right clicking and selecting Open to actually open it.
 
-#### 3. Run `umskt` to generate a key, or add `--help` or `-h` to see more options.
-*Note: on macOS, like all unsigned executables, you'll need to hold Ctrl while right clicking and selecting Open to actually open it.*
-#### 4. *(Activation step for `Retail` and `OEM` only)*
+#### 3. *(Activation step for `Retail` and `OEM` only)*
 * After installation, you will be prompted to activate Windows.
 
 
