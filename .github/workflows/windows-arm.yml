@@ -82,12 +82,11 @@ jobs:
           New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE
           
           if ("${{ matrix.arch }}" -eq "arm") {
-            # For ARM32, use an older version of OpenSSL that's known to work
-            & "$env:VCPKG_ROOT\vcpkg.exe" install "openssl[core]:${{ matrix.vcpkg_arch }}@1.1.1" `
+            # For ARM32, try with minimal features and cross-compilation
+            & "$env:VCPKG_ROOT\vcpkg.exe" install openssl[core]:${{ matrix.vcpkg_arch }} `
               --clean-after-build `
               --allow-unsupported `
-              --host-triplet=x64-windows `
-              --overlay-ports="$env:VCPKG_ROOT/ports"
+              --host-triplet=x64-windows
           } else {
             # For ARM64, use the latest version
             & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:${{ matrix.vcpkg_arch }} `
