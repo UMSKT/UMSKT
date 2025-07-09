@@ -32,7 +32,6 @@ jobs:
     strategy:
         fail-fast: false
         matrix:
-            arch: [arm, arm64]
             include:
               - arch: arm
                 arch_compilename: amd64_arm

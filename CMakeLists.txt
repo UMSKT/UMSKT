@@ -261,9 +261,9 @@ ELSE()
     # Link required Windows system libraries for OpenSSL
     if (WIN32)
         target_link_libraries(umskt crypt32 ws2_32)
-        IF (WINDOWS_ARM)
+        if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm")
             target_link_libraries(umskt advapi32)
-        ENDIF()
+        endif()
     endif()
 
     IF(MSVC AND MSVC_MSDOS_STUB)
