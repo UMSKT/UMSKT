@@ -1,0 +1,199 @@
+# This file is a part of the UMSKT Project
+#
+# Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# @FileCreated by TheTank20 on 07/08/2025
+# @Maintainer Neo
+
+name: C/C++ CI (Windows x86+64)
+
+on:
+  push:
+    branches: [ "*" ]
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    steps:
+      - name: Setup TDM-GCC
+        run: |
+          Write-Host Downloading TDM-GCC v10.3.0...
+          Invoke-WebRequest -Uri 'https://github.com/jmeubank/tdm-gcc/releases/download/v10.3.0-tdm64-2/tdm64-gcc-10.3.0-2.exe' -OutFile 'C:\Windows\temp\TDM-GCC-64.exe'
+          Write-Host Creating directory...
+          New-Item -ItemType Directory -Path 'C:\TDM-GCC-64'
+          Write-Host Copying files [Set 1/3]...
+          Start-Process '7z' -ArgumentList 'e C:\Windows\temp\TDM-GCC-64.exe -oC:\TDM-GCC-64 -y' -Wait
+          Write-Host Copying files [Set 2/3]...
+          Start-Process '7z' -ArgumentList 'e C:\TDM-GCC-64\*.tar.xz -oC:\TDM-GCC-64 -y' -Wait
+          Write-Host Copying files [Set 3/3]...
+          Start-Process '7z' -ArgumentList 'x C:\TDM-GCC-64\*.tar -oC:\TDM-GCC-64 -y' -Wait
+          Write-Host Adding environment variables...
+          $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
+          [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
+
+      - name: Checkout Source Tree
+        uses: actions/checkout@v4
+
+      - name: Cache OpenSSL 3.1.2 (32-bit)
+        uses: actions/cache/restore@v4
+        if: matrix.arch == 'x86'
+        id: cache-openssl-32
+        with:
+          path: |
+            ${{ github.workspace }}/OpenSSL-TDM-32
+          key: openssl-3.1.2-x86-${{ hashFiles('**/CMakeLists.txt') }}
+
+      - name: Cache OpenSSL 3.1.2 (64-bit)
+        uses: actions/cache/restore@v4
+        if: matrix.arch == 'x64'
+        id: cache-openssl-64
+        with:
+          path: |
+            ${{ github.workspace }}/OpenSSL-TDM-64
+          key: openssl-3.1.2-x64-${{ hashFiles('**/CMakeLists.txt') }}
+
+      - name: Setup MSYS2
+        if: steps.cache-openssl-32.outputs.cache-hit != 'true' && steps.cache-openssl-64.outputs.cache-hit != 'true'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.arch == 'x86' && 'MINGW32' || 'MINGW64' }}
+          update: true
+          install: >-
+            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-gcc
+            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-make
+            mingw-w64-x86_64-perl
+            perl
+            git
+
+      - name: Checkout and Compile OpenSSL 3.1.2
+        if: steps.cache-openssl-32.outputs.cache-hit != 'true' && steps.cache-openssl-64.outputs.cache-hit != 'true'
+        shell: msys2 {0}
+        run: |
+          # Clone UMSKT's OpenSSL fork
+          echo "Cloning UMSKT OpenSSL fork..."
+          git clone https://github.com/UMSKT/openssl.git --depth 1 openssl-3.1.2
+
+      - name: Checkout and Compile OpenSSL 3.1.2 (32-bit)
+        if: matrix.arch == 'x86' && steps.cache-openssl-32.outputs.cache-hit != 'true'
+        shell: msys2 {0}
+        run: |
+          # Set up proper MSYS2 environment
+          export MSYS=winsymlinks:nativestrict
+          export MSYS2_PATH_TYPE=strict
+          export LANG=en_US.UTF-8
+          export PATH="/usr/bin:/mingw64/bin:$PATH"
+          export PATH="/c/TDM-GCC-64/bin:$PATH"
+          export MSYSTEM=MINGW32
+          echo "Compiling 32-bit OpenSSL..."
+          cd openssl-3.1.2
+          /usr/bin/perl Configure mingw --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-32 --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-32 no-tests no-sse2 no-asm no-threads -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i686 -mtune=generic
+          mingw32-make -j
+          mingw32-make install_sw
+          cd ..
+      
+      - name: Checkout and Compile OpenSSL 3.1.2 (64-bit)
+        if: matrix.arch == 'x64' && steps.cache-openssl-64.outputs.cache-hit != 'true'
+        shell: msys2 {0}
+        run: |
+          # Set up proper MSYS2 environment
+          export MSYS=winsymlinks:nativestrict
+          export MSYS2_PATH_TYPE=strict
+          export LANG=en_US.UTF-8
+          export PATH="/usr/bin:/mingw64/bin:$PATH"
+          export PATH="/c/TDM-GCC-64/bin:$PATH"
+          export MSYSTEM=MINGW64
+          echo "Compiling 64-bit OpenSSL..."
+          cd openssl-3.1.2
+          /usr/bin/perl Configure mingw64 --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-64 --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-64 no-tests no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx
+          mingw32-make -j
+          mingw32-make install_sw
+          cd ..
+      
+      - name: Save OpenSSL 3.1.2 (32-bit)
+        if: matrix.arch == 'x86' && steps.cache-openssl-32.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ github.workspace }}/OpenSSL-TDM-32
+          key: openssl-3.1.2-x86-${{ hashFiles('**/CMakeLists.txt') }}
+
+      - name: Save OpenSSL 3.1.2 (64-bit)
+        if: matrix.arch == 'x64' && steps.cache-openssl-64.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ github.workspace }}/OpenSSL-TDM-64
+          key: openssl-3.1.2-x64-${{ hashFiles('**/CMakeLists.txt') }}
+
+      - name: Set OpenSSL Environment (32-bit)
+        if: matrix.arch == 'x86'
+        shell: pwsh
+        run: |
+          echo "OPENSSL_ROOT=$env:GITHUB_WORKSPACE/OpenSSL-TDM-32" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "OPENSSL_LIBDIR=lib" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "CMAKE_FLAGS=-m32" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Set OpenSSL Environment (64-bit)
+        if: matrix.arch == 'x64'
+        shell: pwsh
+        run: |
+          echo "OPENSSL_ROOT=$env:GITHUB_WORKSPACE/OpenSSL-TDM-64" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "OPENSSL_LIBDIR=lib" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "CMAKE_FLAGS=-m64" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Configure UMSKT
+        shell: pwsh
+        run: |
+          $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
+          $OPENSSL_ROOT = "$env:OPENSSL_ROOT"
+          $OPENSSL_LIB = "$OPENSSL_ROOT/$env:OPENSSL_LIBDIR"
+          $OPENSSL_INC = "$OPENSSL_ROOT/include"
+          cmake -G "MinGW Makefiles" `
+            -DCMAKE_C_COMPILER="gcc" `
+            -DCMAKE_CXX_COMPILER="g++" `
+            -DOPENSSL_ROOT_DIR="$OPENSSL_ROOT" `
+            -DOPENSSL_INCLUDE_DIR="$OPENSSL_INC" `
+            -DOPENSSL_CRYPTO_LIBRARY="$OPENSSL_LIB/libcrypto.a" `
+            -DOPENSSL_SSL_LIBRARY="$OPENSSL_LIB/libssl.a" `
+            -DCMAKE_C_FLAGS="$env:CMAKE_FLAGS" `
+            -DCMAKE_CXX_FLAGS="$env:CMAKE_FLAGS" `
+            .
+
+      - name: Build UMSKT
+        shell: pwsh
+        run: |
+          $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
+          mingw32-make
+
+      - name: Run tests
+        shell: pwsh
+        run: |
+          Write-Host Test 1 - generating key
+          .\umskt.exe -b 2C -c 365 -s 069420 -v
+          Write-Host Test 2 - generatng confid
+          .\umskt.exe -i 253286028742154311079061239762245184619981623171292574
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: UMSKT-WinNT-${{ matrix.arch }}
+          path: umskt.exe 

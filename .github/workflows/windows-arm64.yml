@@ -1,0 +1,111 @@
+# This file is a part of the UMSKT Project
+#
+# Copyleft (C) 2019-2023 UMSKT Contributors (et.al.)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# @FileCreated by TheTank20 on 07/08/2025
+# @Maintainer Neo
+
+name: C/C++ CI (Windows ARM)
+
+on:
+  push:
+    branches: [ "*" ]
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+        fail-fast: false
+        matrix:
+            arch: [arm64]
+    steps:
+      - name: Setup MSVC for ARM64
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: arm64
+
+      - name: Checkout Source Tree
+        uses: actions/checkout@v4
+
+      - name: Setup vcpkg
+        shell: pwsh
+        run: |
+          git clone https://github.com/Microsoft/vcpkg.git
+          cd vcpkg
+          .\bootstrap-vcpkg.bat
+          echo "VCPKG_ROOT=$env:GITHUB_WORKSPACE/vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "VCPKG_DEFAULT_BINARY_CACHE=$env:GITHUB_WORKSPACE/vcpkg/bincache" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "VCPKG_BINARY_SOURCES=clear;default,readwrite" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/vcpkg/bincache
+            ${{ github.workspace }}/vcpkg/installed
+            ${{ github.workspace }}/vcpkg/packages
+          key: vcpkg-arm64-${{ hashFiles('**/CMakeLists.txt') }}-${{ hashFiles('**/*.cmake') }}
+          restore-keys: |
+            vcpkg-arm64-${{ hashFiles('**/CMakeLists.txt') }}-
+            vcpkg-arm64-
+
+      - name: Install OpenSSL
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE
+          & "$env:VCPKG_ROOT\vcpkg.exe" install openssl:arm64-windows-static --clean-after-build
+
+      - name: Configure UMSKT
+        shell: pwsh
+        run: |
+          cmake -G "Visual Studio 17 2022" `
+            -A ${{ matrix.arch }} `
+            -DWINDOWS_ARM=ON `
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=${{ matrix.arch }}-windows-static `
+            .
+
+      - name: Build UMSKT
+        shell: pwsh
+        run: |
+          cmake --build . --config Release
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: UMSKT-WinNT-arm64
+          path: Release/umskt.exe
+
+  test:
+    needs: build
+    if: success()
+    runs-on: windows-11-arm
+    steps:
+      - name: Download ARM64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: UMSKT-WinNT-arm64
+          path: .
+
+      - name: Run tests
+        shell: pwsh
+        run: |
+          Write-Host Test 1 - generating key
+          .\umskt.exe -b 2C -c 365 -s 069420 -v
+          Write-Host Test 2 - generatng confid
+          .\umskt.exe -i 253286028742154311079061239762245184619981623171292574 
