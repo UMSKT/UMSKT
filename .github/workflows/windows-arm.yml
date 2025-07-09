@@ -35,10 +35,12 @@ jobs:
             arch: [arm, arm64]
             include:
               - arch: arm
+                arch_compilename: amd64_arm
                 vcpkg_arch: arm-windows-static
                 cmake_arch: ARM
                 sdk_version: '10.0.19041.0'
               - arch: arm64
+                arch_compilename: arm64
                 vcpkg_arch: arm64-windows-static
                 cmake_arch: ARM64
                 sdk_version: '10.0.22621.0'
@@ -46,7 +48,7 @@ jobs:
       - name: Setup MSVC for ${{ matrix.arch }}
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: ${{ matrix.arch }}
+          arch: ${{ matrix.arch_compilename }}
           sdk: ${{ matrix.sdk_version }}
 
       - name: Checkout Source Tree
