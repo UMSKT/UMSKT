@@ -119,7 +119,7 @@ jobs:
         run: |
           echo "OPENSSL_ROOT=$env:GITHUB_WORKSPACE/OpenSSL-TDM-${{ matrix.arch }}" | Out-File -FilePath $env:GITHUB_ENV -Append
           echo "OPENSSL_LIBDIR=lib" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "CMAKE_FLAGS=-${{ matrix.cmake_flag }}" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "CMAKE_FLAGS=${{ matrix.cmake_flag }}" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Configure UMSKT
         shell: pwsh
