@@ -39,7 +39,7 @@ jobs:
                 cmake_arch: ARM
                 sdk_version: '10.0.17763.0'
               - arch: arm64
-                arch_compilename: arm64
+                arch_compilename: amd64_arm64
                 vcpkg_arch: arm64-windows-static
                 cmake_arch: ARM64
                 sdk_version: '10.0.17763.0'
