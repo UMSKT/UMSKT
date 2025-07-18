@@ -97,7 +97,7 @@ jobs:
         run: |
           ls -a build
           mkdir -p build/actions_upload
-          mv build/umskt build/actions_upload/umskt
+          mv build/umskt.app build/actions_upload/umskt.app
 
       - name: Run tests
         run: |
