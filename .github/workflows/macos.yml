@@ -65,23 +65,6 @@ jobs:
           echo "OPENSSL_INCLUDE_DIR=/opt/homebrew/opt/openssl@3/include" >> $GITHUB_ENV
           echo "PKG_CONFIG_PATH=/opt/homebrew/opt/openssl@3/lib/pkgconfig" >> $GITHUB_ENV
 
-      - name: Convert PNG to ICNS
-        run: |
-          mkdir -p build/icon.iconset
-          # Generate required icon sizes
-          sips -z 16 16 src/macos/icon.png --out build/icon.iconset/icon_16x16.png
-          sips -z 32 32 src/macos/icon.png --out build/icon.iconset/icon_16x16@2x.png
-          sips -z 32 32 src/macos/icon.png --out build/icon.iconset/icon_32x32.png
-          sips -z 64 64 src/macos/icon.png --out build/icon.iconset/icon_32x32@2x.png
-          sips -z 128 128 src/macos/icon.png --out build/icon.iconset/icon_128x128.png
-          sips -z 256 256 src/macos/icon.png --out build/icon.iconset/icon_128x128@2x.png
-          sips -z 256 256 src/macos/icon.png --out build/icon.iconset/icon_256x256.png
-          sips -z 512 512 src/macos/icon.png --out build/icon.iconset/icon_256x256@2x.png
-          sips -z 512 512 src/macos/icon.png --out build/icon.iconset/icon_512x512.png
-          sips -z 1024 1024 src/macos/icon.png --out build/icon.iconset/icon_512x512@2x.png
-          # Convert to icns
-          iconutil -c icns build/icon.iconset -o build/umskt.icns
-
       - name: Configure and build UMSKT
         run: |
           cd build
@@ -97,15 +80,15 @@ jobs:
         run: |
           ls -a build
           mkdir -p build/actions_upload
-          mv build/umskt.app build/actions_upload/umskt.app
+          mv build/umskt build/actions_upload/umskt
 
       - name: Run tests
         run: |
           cd build/actions_upload
           echo Test 1 - generating key
-          open -a ./umskt.app --args -b 2C -c 365 -s 069420 -v
+          ./umskt -b 2C -c 365 -s 069420 -v
           echo Test 2 - generating confid
-          open -a ./umskt.app --args -i 253286028742154311079061239762245184619981623171292574
+          ./umskt -i 253286028742154311079061239762245184619981623171292574
 
       - name: Upload platform-specific build
         uses: actions/upload-artifact@v4.6.2

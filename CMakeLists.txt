@@ -252,26 +252,8 @@ ELSE()
     TARGET_LINK_DIRECTORIES(_umskt PUBLIC ${UMSKT_LINK_DIRS})
     TARGET_LINK_LIBRARIES(_umskt ${OPENSSL_CRYPTO_LIBRARIES} fmt ${UMSKT_LINK_LIBS})
 
-    # Set up macOS bundle icon
-    if(APPLE)
-        set(MACOSX_BUNDLE_ICON_FILE umskt.icns)
-        set(APP_ICON_MACOSX ${CMAKE_BINARY_DIR}/umskt.icns)
-        set_source_files_properties(${APP_ICON_MACOSX} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-    endif()
-
     ### UMSKT executable compilation
-    ADD_EXECUTABLE(umskt src/main.cpp src/cli.cpp ${UMSKT_EXE_WINDOWS_EXTRA} ${APP_ICON_MACOSX})
-    if(APPLE)
-        set_target_properties(umskt PROPERTIES
-            MACOSX_BUNDLE TRUE
-            MACOSX_BUNDLE_BUNDLE_NAME "UMSKT"
-            MACOSX_BUNDLE_GUI_IDENTIFIER "com.umskt.app"
-            MACOSX_BUNDLE_ICON_FILE "umskt.icns"
-            MACOSX_BUNDLE_INFO_STRING "UMSKT"
-            MACOSX_BUNDLE_LONG_VERSION_STRING "1.0.0"
-            MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0"
-            MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0"
-        )
+    ADD_EXECUTABLE(umskt src/main.cpp src/cli.cpp ${UMSKT_EXE_WINDOWS_EXTRA}
     endif()
     TARGET_INCLUDE_DIRECTORIES(umskt PUBLIC ${OPENSSL_INCLUDE_DIR})
     TARGET_LINK_LIBRARIES(umskt _umskt ${OPENSSL_CRYPTO_LIBRARIES} ${ZLIB_LIBRARIES} fmt nlohmann_json::nlohmann_json umskt::rc ${UMSKT_LINK_LIBS})
