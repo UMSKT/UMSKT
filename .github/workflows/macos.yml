@@ -103,9 +103,9 @@ jobs:
         run: |
           cd build/actions_upload
           echo Test 1 - generating key
-          ./umskt.app -b 2C -c 365 -s 069420 -v
+          open -a ./umskt.app -b 2C -c 365 -s 069420 -v
           echo Test 2 - generating confid
-          ./umskt.app -i 253286028742154311079061239762245184619981623171292574
+          open -a ./umskt.app -i 253286028742154311079061239762245184619981623171292574
 
       - name: Upload platform-specific build
         uses: actions/upload-artifact@v4.6.2
