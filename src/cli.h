@@ -96,6 +96,7 @@ public:
     static void printID(DWORD *pid);
     void printKey(char *pk);
     static bool stripKey(const char *in_key, char out_key[PK_LENGTH]);
+    static std::string readFromStdin();
 
     int BINK1998Generate();
     int BINK2002Generate();

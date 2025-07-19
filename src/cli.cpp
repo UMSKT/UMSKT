@@ -61,7 +61,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-v --verbose\tenable verbose output\n");
     fmt::print("\t-n --number\tnumber of keys to generate (defaults to 1)\n");
     fmt::print("\t-f --file\tspecify which keys file to load\n");
-    fmt::print("\t-i --instid\tinstallation ID used to generate confirmation ID\n");
+    fmt::print("\t-i --instid\tinstallation ID used to generate confirmation ID (reads from stdin if no argument provided)\n");
     fmt::print("\t-m --mode\tproduct family to activate.\n\t\t\tvalid options are \"WINDOWS\", \"OFFICEXP\", \"OFFICE2K3\", \"OFFICE2K7\" or \"PLUSDME\"\n\t\t\t(defaults to \"WINDOWS\")\n");
     fmt::print("\t-p --productid\tthe product ID of the Program to activate. only required for Office 2K3 and Office 2K7 programs\n");
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
@@ -168,14 +168,14 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             options->keysFilename = argv[i+1];
             i++;
         } else if (arg == "-i" || arg == "--instid") {
-            if (i == argc - 1) {
-                options->error = true;
-                break;
-            }
-
-            options->instid = argv[i+1];
             options->applicationMode = MODE_CONFIRMATION_ID;
-            i++;
+            if (i == argc - 1 || argv[i+1][0] == '-') {
+                // No argument provided, will read from stdin later
+                options->instid = "";
+            } else {
+                options->instid = argv[i+1];
+                i++;
+            }
         } else if (arg == "-m" || arg == "--mode") {
             std::string mode = argv[i+1];
             char *p = &mode[0];
@@ -367,6 +367,12 @@ bool CLI::stripKey(const char *in_key, char out_key[PK_LENGTH]) {
     }
     // only return true if we've handled exactly PK_LENGTH chars
     return (i == PK_LENGTH);
+}
+
+std::string CLI::readFromStdin() {
+    std::string input;
+    std::getline(std::cin, input);
+    return input;
 }
 
 CLI::CLI(Options options, json keys) {
@@ -572,7 +578,14 @@ int CLI::BINK2002Validate() {
 
 int CLI::ConfirmationID() {
     char confirmation_id[49];
-    int err = ConfirmationID::Generate(this->options.instid.c_str(), confirmation_id, options.activationMode, options.productid, options.overrideVersion);
+    std::string instid = this->options.instid;
+    
+    // If instid is empty, read from stdin
+    if (instid.empty()) {
+        instid = readFromStdin();
+    }
+    
+    int err = ConfirmationID::Generate(instid.c_str(), confirmation_id, options.activationMode, options.productid, options.overrideVersion);
 
     switch (err) {
         case ERR_TOO_SHORT:
