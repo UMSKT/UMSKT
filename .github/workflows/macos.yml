@@ -18,7 +18,7 @@
 # @FileCreated by techguy16 on 07/23/2023
 # @Maintainer techguy16
 
-name: C/C++ CI (macOS)
+name: macOS
 
 on:
   push:

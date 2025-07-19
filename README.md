@@ -15,12 +15,12 @@
 
 | CI Build status |
 | ------------ |
-| [![C/C++ CI (Windows x86+64)](https://github.com/UMSKT/UMSKT/actions/workflows/windows-x86-x64.yml/badge.svg)](../../actions/workflows/windows-x86-x64.yml) |
-| [![C/C++ CI (Windows ARM)](https://github.com/UMSKT/UMSKT/actions/workflows/windows-arm.yml/badge.svg)](../../actions/workflows/windows-arm.yml) |
-| [![C/C++ CI (macOS)](https://github.com/UMSKT/UMSKT/actions/workflows/macos.yml/badge.svg)](../../actions/workflows/macos.yml) |
-| [![C/C++ CI (Linux)](https://github.com/UMSKT/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml) |
-| [![C/C++ CI (FreeBSD)](https://github.com/UMSKT/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/freebsd.yml) |
-| [![C/C++ CI (DOS DJGPP)](https://github.com/UMSKT/UMSKT/actions/workflows/dos-djgpp.yml/badge.svg)](../../actions/workflows/dos-djgpp.yml) |
+| [![Windows x86+64](https://github.com/UMSKT/UMSKT/actions/workflows/windows-x86-x64.yml/badge.svg)](../../actions/workflows/windows-x86-x64.yml) |
+| [![Windows ARM](https://github.com/UMSKT/UMSKT/actions/workflows/windows-arm.yml/badge.svg)](../../actions/workflows/windows-arm.yml) |
+| [![macOS](https://github.com/UMSKT/UMSKT/actions/workflows/macos.yml/badge.svg)](../../actions/workflows/macos.yml) |
+| [![Linux](https://github.com/UMSKT/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml) |
+| [![FreeBSD](https://github.com/UMSKT/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/freebsd.yml) |
+| [![DOS DJGPP](https://github.com/UMSKT/UMSKT/actions/workflows/dos-djgpp.yml/badge.svg)](../../actions/workflows/dos-djgpp.yml) |
 
 ------
 

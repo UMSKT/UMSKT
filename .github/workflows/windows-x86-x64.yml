@@ -18,7 +18,7 @@
 # @FileCreated by TheTank20 on 07/08/2025
 # @Maintainer Neo
 
-name: C/C++ CI (Windows x86+64)
+name: Windows x86+64
 
 on:
   push:

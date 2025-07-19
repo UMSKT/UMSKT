@@ -18,7 +18,7 @@
 # @FileCreated by TheTank20 on 07/08/2025
 # @Maintainer Neo
 
-name: C/C++ CI (Windows ARM)
+name: Windows ARM
 
 on:
   push:
