@@ -1,24 +1,26 @@
-# Universal MS Key Toolkit (UMSKT)
+<p align="center"><img src="https://avatars.githubusercontent.com/u/135211890?s=128&c=0" alt="umskt logo"/></p>
+
+<h1 align="center"><b>U</b>niversal <b>MS</b> <b>K</b>ey <b>T</b>oolkit (UMSKT)</h1>
+
+<p align="center">An open source toolkit designed to generate licence keys for MS products circa 1998 - 2006</p>
+<hr />
 
 **Connect with us**
 
-[![Zulip chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://umskt.zulipchat.com)
-[![libera.chat - #mspid](https://img.shields.io/badge/libera.chat-%23mspid-brightgreen)](https://web.libera.chat/gamja/?nick=Guest?#mspid)
 [![Discord](https://img.shields.io/discord/1154155510887620729?label=discord&color=%235865F2)](https://discord.gg/PpBSpuphWM)
+[![libera.chat - #mspid](https://img.shields.io/badge/libera.chat-%23mspid-brightgreen)](https://web.libera.chat/gamja/?nick=Guest?#mspid)
+[![Zulip chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://umskt.zulipchat.com)
 
-**Build status**
+----
 
-[![C/C++ CI (Windows x86+64)](https://github.com/UMSKT/UMSKT/actions/workflows/windows-x86-x64.yml/badge.svg)](../../actions/workflows/windows-x86-x64.yml)
-
-[![C/C++ CI (Windows ARM)](https://github.com/UMSKT/UMSKT/actions/workflows/windows-arm.yml/badge.svg)](../../actions/workflows/windows-arm.yml)
-
-[![C/C++ CI (macOS)](https://github.com/UMSKT/UMSKT/actions/workflows/macos.yml/badge.svg)](../../actions/workflows/macos.yml)
-
-[![C/C++ CI (Linux)](https://github.com/UMSKT/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml)
-
-[![C/C++ CI (FreeBSD)](https://github.com/UMSKT/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/freebsd.yml)
-
-[![C/C++ CI (DOS DJGPP)](https://github.com/UMSKT/UMSKT/actions/workflows/dos-djgpp.yml/badge.svg)](../../actions/workflows/dos-djgpp.yml)
+| CI Build status |
+| ------------ |
+| [![C/C++ CI (Windows x86+64)](https://github.com/UMSKT/UMSKT/actions/workflows/windows-x86-x64.yml/badge.svg)](../../actions/workflows/windows-x86-x64.yml) |
+| [![C/C++ CI (Windows ARM)](https://github.com/UMSKT/UMSKT/actions/workflows/windows-arm.yml/badge.svg)](../../actions/workflows/windows-arm.yml) |
+| [![C/C++ CI (macOS)](https://github.com/UMSKT/UMSKT/actions/workflows/macos.yml/badge.svg)](../../actions/workflows/macos.yml) |
+| [![C/C++ CI (Linux)](https://github.com/UMSKT/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml) |
+| [![C/C++ CI (FreeBSD)](https://github.com/UMSKT/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/freebsd.yml) |
+| [![C/C++ CI (DOS DJGPP)](https://github.com/UMSKT/UMSKT/actions/workflows/dos-djgpp.yml/badge.svg)](../../actions/workflows/dos-djgpp.yml) |
 
 ------
 
