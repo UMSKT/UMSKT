@@ -186,18 +186,15 @@ jobs:
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
           [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
           
-      - name: Setup compression tools
+      - name: Setup UPX
         run: |
-          Invoke-WebRequest -Uri 'https://www.angusj.com/resourcehacker/resource_hacker.zip' -OutFile 'C:\Windows\temp\resource_hacker.zip'
           Invoke-WebRequest -Uri 'https://github.com/upx/upx/releases/download/v5.0.2/upx-5.0.2-win64.zip' -OutFile 'C:\Windows\temp\upx.zip'
           Write-Host Creating directory...
-          New-Item -ItemType Directory -Path 'C:\ResourceHacker'
           New-Item -ItemType Directory -Path 'C:\UPX'
           Write-Host Copying files...
-          Expand-Archive -Path 'C:\Windows\temp\resource_hacker.zip' -DestinationPath 'C:\ResourceHacker'
           Expand-Archive -Path 'C:\Windows\temp\upx.zip' -DestinationPath 'C:\UPX'
           Write-Host Adding environment variables...
-          $env:PATH = 'C:\ResourceHacker;' + 'C:\UPX\upx-5.0.2-win64;' + $env:PATH
+          $env:PATH = 'C:\UPX\upx-5.0.2-win64;' + $env:PATH
           [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
         
       - name: Download ${{matrix.arch}} artifact
@@ -210,42 +207,9 @@ jobs:
         run: |
           # Strip symbols
           strip .\umskt.exe
-  
-          # Validate input EXE exists
-          if (!(Test-Path .\umskt.exe)) {
-            throw "Input file .\umskt.exe does not exist!"
-          }
-  
-          # Prepare ResHacker script
-          $resourceHackerScript = @(
-            "[FILENAMES]",
-            "Exe=.\umskt.exe",
-            "SaveAs=.\umskt_comp.exe",
-            "",
-            "[DELETE]",
-            "Icon=*",
-            "IconGroup=*"
-          ) -join "`r`n"
 
-
-          $iniPath = "$env:TEMP\remove_icons.ini"
-          $logPath = "$env:TEMP\reshacker_log.txt"
-          $resourceHackerScript | Set-Content -Encoding ASCII $iniPath
-  
-          # Validate ResHacker path
-          $resHacker = "C:\ResourceHacker\ResourceHacker.exe"
-          if (!(Test-Path $resHacker)) {
-            throw "Resource Hacker not found at $resHacker"
-          }
-  
-          # Run Resource Hacker and capture output
-          & "$resHacker" -script "$iniPath" *> "$logPath"
-          Get-Content "$logPath"
-
-          # Check if output file was created
-          if (!(Test-Path .\umskt_comp.exe)) {
-            throw "Resource Hacker failed to create umskt_comp.exe"
-          }
+          # Remove resources
+          llvm-objcopy --remove-section .rsrc umskt.exe umskt_comp.exe
 
           # Compress with UPX
           & "C:\UPX\upx-5.0.2-win64\upx.exe" --best --ultra-brute .\umskt_comp.exe
