@@ -188,3 +188,121 @@ jobs:
         with:
           name: UMSKT-DOS-x86
           path: build/actions_upload
+  compress:
+    needs: build
+    if: success()
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Setup test environment
+        run: |
+          sudo apt -y update
+          sudo apt -y install dosbox
+          
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: UMSKT-DOS-x86
+          path: .
+
+      - name: Install UPX
+        uses: crazy-max/ghaction-upx@v3
+        with:
+          install-only: true
+          
+      - name: Compress binary
+        shell: pwsh
+        run: |
+          upx umskt.exe --best --ultra-brute -v
+          
+      - name: Setup DOSBox test environment
+        run: |
+          mkdir -p dosbox_test
+          cp umskt.exe dosbox_test/
+          # Download DPMI server directly
+          # wget https://github.com/UMSKT/winactiontest/raw/refs/heads/main/CWSDPMI.EXE -O dosbox_test/CWSDPMI.EXE
+          # Create test batch file
+          cat > dosbox_test/test.bat << EOL
+          @echo off
+          echo Running test 1...
+          umskt.exe -b 2C -c 365 -s 069420 > TEST1.TXT
+          if errorlevel 1 goto error
+          echo Running test 2...
+          umskt.exe -i 253286028742154311079061239762245184619981623171292574 > TEST2.TXT
+          if errorlevel 1 goto error
+          echo Tests completed > DONE.TXT
+          goto end
+          :error
+          echo Test failed > ERROR.TXT
+          :end
+          exit
+          EOL
+          # Create DOSBox configuration
+          cat > dosbox_test/dosbox.conf << EOL
+          [sdl]
+          nosound=true
+          [cpu]
+          cputype=386
+          core=dynamic
+          cycles=max
+          [autoexec]
+          mount c .
+          c:
+          test.bat
+          exit
+          EOL
+
+      - name: Run tests in DOSBox
+      
+        run: |
+          cd dosbox_test
+          timeout 30s dosbox -conf dosbox.conf -nogui -exit
+          # Check if the test completed successfully
+          if [ ! -f DONE.TXT ]; then
+            echo "Tests did not complete successfully"
+            if [ -f ERROR.TXT ]; then
+              echo "Test execution failed"
+            fi
+            if [ -f TEST1.TXT ]; then
+              echo "Test 1 output:"
+              cat TEST1.TXT
+            fi
+            if [ -f TEST2.TXT ]; then
+              echo "Test 2 output:"
+              cat TEST2.TXT
+            fi
+            exit 1
+          fi
+          # Verify test outputs
+          if [ ! -f TEST1.TXT ] || [ ! -f TEST2.TXT ]; then
+            echo "Test output files missing"
+            exit 1
+          fi
+          # Check test results - looking for key format patterns
+          if ! grep -qE '[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}' TEST1.TXT || \
+             ! grep -qE '[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}' TEST2.TXT; then
+            echo "Tests failed - unexpected output format"
+            echo "Test 1 output:"
+            cat TEST1.TXT
+            echo "Test 2 output:"
+            cat TEST2.TXT
+            exit 1
+          else
+            echo "All tests passed successfully"
+            echo "Test 1 output:"
+            cat TEST1.TXT
+            echo "Test 2 output:"
+            cat TEST2.TXT
+          fi
+
+      - name: Move executable to upload directory
+        run: |
+          mkdir actions_upload
+          mv umskt.exe actions_upload/
+          
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: UMSKT-DOS-x86-Compressed
+          path: actions_upload

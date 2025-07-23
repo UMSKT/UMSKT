@@ -98,9 +98,9 @@ jobs:
           cd openssl-1.1.1
 
           if [[ ${{ matrix.arch }} == "x86" ]]; then
-              /usr/bin/perl Configure mingw --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-${{ matrix.arch }} --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-32 no-tests no-sse2 no-asm no-threads -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i686 -mtune=generic
+              /usr/bin/perl Configure mingw --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-${{ matrix.arch }} --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-32 no-tests no-sse2 no-asm no-threads -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i686 -mtune=generic -Os -s -fno-exceptions -fno-rtti -fno-unwind-tables -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections -fno-stack-protector
           else
-              /usr/bin/perl Configure mingw64 --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-${{ matrix.arch }} --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-64 no-tests no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx
+              /usr/bin/perl Configure mingw64 --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-${{ matrix.arch }} --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-64 no-tests no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -Os -s -fno-exceptions -fno-rtti -fno-unwind-tables -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections -fno-stack-protector
           fi
           mingw32-make -j
           mingw32-make install_sw
@@ -158,3 +158,78 @@ jobs:
         with:
           name: UMSKT-WinNT-${{ matrix.arch }}
           path: umskt.exe 
+
+  compress:
+    needs: build
+    if: success()
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86
+          - arch: x64
+    steps:
+      - name: Setup TDM-GCC
+        run: |
+          Write-Host Downloading TDM-GCC v10.3.0...
+          Invoke-WebRequest -Uri 'https://github.com/jmeubank/tdm-gcc/releases/download/v10.3.0-tdm64-2/tdm64-gcc-10.3.0-2.exe' -OutFile 'C:\Windows\temp\TDM-GCC-64.exe'
+          Write-Host Creating directory...
+          New-Item -ItemType Directory -Path 'C:\TDM-GCC-64'
+          Write-Host Copying files [Set 1/3]...
+          Start-Process '7z' -ArgumentList 'e C:\Windows\temp\TDM-GCC-64.exe -oC:\TDM-GCC-64 -y' -Wait
+          Write-Host Copying files [Set 2/3]...
+          Start-Process '7z' -ArgumentList 'e C:\TDM-GCC-64\*.tar.xz -oC:\TDM-GCC-64 -y' -Wait
+          Write-Host Copying files [Set 3/3]...
+          Start-Process '7z' -ArgumentList 'x C:\TDM-GCC-64\*.tar -oC:\TDM-GCC-64 -y' -Wait
+          Write-Host Adding environment variables...
+          $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
+          [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
+          
+      - name: Setup UPX
+        run: |
+          Invoke-WebRequest -Uri 'https://github.com/upx/upx/releases/download/v5.0.2/upx-5.0.2-win64.zip' -OutFile 'C:\Windows\temp\upx.zip'
+          Write-Host Creating directory...
+          New-Item -ItemType Directory -Path 'C:\UPX'
+          Write-Host Copying files...
+          Expand-Archive -Path 'C:\Windows\temp\upx.zip' -DestinationPath 'C:\UPX'
+          Write-Host Adding environment variables...
+          $env:PATH = 'C:\UPX\upx-5.0.2-win64;' + $env:PATH
+          [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
+        
+      - name: Download ${{matrix.arch}} artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: UMSKT-WinNT-${{ matrix.arch }}
+          path: .
+      - name: Compress binaries
+        shell: pwsh
+        run: |
+          # Strip symbols
+          strip .\umskt.exe
+
+          # Remove resources
+          llvm-objcopy --remove-section .rsrc umskt.exe umskt_comp.exe
+
+          # Compress with UPX
+          & "C:\UPX\upx-5.0.2-win64\upx.exe" --best --ultra-brute .\umskt_comp.exe
+
+          # Replace original EXE
+          Remove-Item .\umskt.exe
+          Rename-Item -Path .\umskt_comp.exe -NewName umskt.exe
+
+
+    
+      - name: Run tests
+        shell: pwsh
+        run: |
+          Write-Host Test 1 - generating key
+          .\umskt.exe -b 2C -c 365 -s 069420 -v
+          Write-Host Test 2 - generatng confid
+          .\umskt.exe -i 253286028742154311079061239762245184619981623171292574 
+          
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: UMSKT-WinNT-${{ matrix.arch }}-Compressed
+          path: umskt.exe
