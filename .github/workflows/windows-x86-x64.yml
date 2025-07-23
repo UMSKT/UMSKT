@@ -206,10 +206,10 @@ jobs:
         shell: pwsh
         run: |
           strip .\umskt.exe
-          where .\umskt.exe
+          Write-Host $(Get-Location)
           $resourceHackerScript = @"
           [FILENAMES]
-          Exe= 
+          Exe=D:\a\ 
           SaveAs= $outputPath
           
           [DELETE]
