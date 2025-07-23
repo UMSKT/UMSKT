@@ -199,6 +199,9 @@ jobs:
           Write-Host Adding environment variables...
           $env:PATH = 'C:\ResourceHacker;' + 'C:\UPX\upx-5.0.2-win64;' + $env:PATH
           [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
+          Get-ChildItem -Path 'C:\ResourceHacker' -Recurse
+          Get-ChildItem -Path 'C:\UPX' -Recurse
+          throw "Test"
         
       - name: Download ${{matrix.arch}} artifact
         uses: actions/download-artifact@v4
