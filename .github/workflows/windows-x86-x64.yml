@@ -216,16 +216,17 @@ jobs:
             throw "Input file .\umskt.exe does not exist!"
           }
   
-          # Prepare ResHacker script (no indentation inside block!)
-          $resourceHackerScript = @"
-          [FILENAMES]
-          Exe=.\umskt.exe
-          SaveAs=.\umskt_comp.exe
-          
-          [DELETE]
-          Icon=*
-          IconGroup=*
-          "@
+          # Prepare ResHacker script
+          $resourceHackerScript = @(
+            "[FILENAMES]",
+            "Exe=.\umskt.exe",
+            "SaveAs=.\umskt_comp.exe",
+            "",
+            "[DELETE]",
+            "Icon=*",
+            "IconGroup=*"
+          ) -join "`r`n"
+
 
           $iniPath = "$env:TEMP\remove_icons.ini"
           $logPath = "$env:TEMP\reshacker_log.txt"
