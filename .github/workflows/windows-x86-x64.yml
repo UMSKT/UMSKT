@@ -210,8 +210,13 @@ jobs:
         run: |
           # Strip symbols
           strip .\umskt.exe
-      
-          # Generate the Resource Hacker script
+  
+          # Validate input EXE exists
+          if (!(Test-Path .\umskt.exe)) {
+            throw "Input file .\umskt.exe does not exist!"
+          }
+  
+          # Prepare ResHacker script (no indentation inside block!)
           $resourceHackerScript = @"
           [FILENAMES]
           Exe=.\umskt.exe
@@ -221,29 +226,34 @@ jobs:
           Icon=*
           IconGroup=*
           "@
-    
-          $iniPath = "$env:TEMP\remove_icons.ini"
-          $resourceHackerScript | Set-Content -Encoding ASCII $iniPath
 
-          # Run Resource Hacker and wait for result
+          $iniPath = "$env:TEMP\remove_icons.ini"
+          $logPath = "$env:TEMP\reshacker_log.txt"
+          $resourceHackerScript | Set-Content -Encoding ASCII $iniPath
+  
+          # Validate ResHacker path
           $resHacker = "C:\ResourceHacker\ResourceHacker.exe"
           if (!(Test-Path $resHacker)) {
             throw "Resource Hacker not found at $resHacker"
           }
   
-          & "$resHacker" -script "$iniPath"
-  
-          # Verify output file was created
+          # Run Resource Hacker and capture output
+          & "$resHacker" -script "$iniPath" *> "$logPath"
+          Get-Content "$logPath"
+
+          # Check if output file was created
           if (!(Test-Path .\umskt_comp.exe)) {
             throw "Resource Hacker failed to create umskt_comp.exe"
           }
 
           # Compress with UPX
           & "C:\UPX\upx-5.0.2-win64\upx.exe" --best --ultra-brute .\umskt_comp.exe
-  
+
           # Replace original EXE
           Remove-Item .\umskt.exe
           Rename-Item -Path .\umskt_comp.exe -NewName umskt.exe
+
+
     
       - name: Run tests
         shell: pwsh
