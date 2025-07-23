@@ -208,22 +208,43 @@ jobs:
       - name: Compress binaries
         shell: pwsh
         run: |
+          # Strip symbols
           strip .\umskt.exe
+      
+          # Generate the Resource Hacker script
           $resourceHackerScript = @"
           [FILENAMES]
-          Exe=D:\a\UMSKT\UMSKT\umskt.exe
-          SaveAs=D:\a\UMSKT\UMSKT\umskt_comp.exe
+          Exe=.\umskt.exe
+          SaveAs=.\umskt_comp.exe
           
           [DELETE]
           Icon=*
           IconGroup=*
-          "@ 
-          $resourceHackerScript | Set-Content -Encoding ASCII "$env:TEMP\remove_icons.ini"
-          C:\ResourceHacker\ResourceHacker.exe -script $("$env:TEMP\remove_icons.ini")
-          C:\UPX\upx-5.0.2-win64\upx.exe --best --ultra-brute .\umskt_comp.exe
+          "@
+    
+          $iniPath = "$env:TEMP\remove_icons.ini"
+          $resourceHackerScript | Set-Content -Encoding ASCII $iniPath
+
+          # Run Resource Hacker and wait for result
+          $resHacker = "C:\ResourceHacker\ResourceHacker.exe"
+          if (!(Test-Path $resHacker)) {
+            throw "Resource Hacker not found at $resHacker"
+          }
+  
+          & "$resHacker" -script "$iniPath"
+  
+          # Verify output file was created
+          if (!(Test-Path .\umskt_comp.exe)) {
+            throw "Resource Hacker failed to create umskt_comp.exe"
+          }
+
+          # Compress with UPX
+          & "C:\UPX\upx-5.0.2-win64\upx.exe" --best --ultra-brute .\umskt_comp.exe
+  
+          # Replace original EXE
           Remove-Item .\umskt.exe
           Rename-Item -Path .\umskt_comp.exe -NewName umskt.exe
-          
+    
       - name: Run tests
         shell: pwsh
         run: |
