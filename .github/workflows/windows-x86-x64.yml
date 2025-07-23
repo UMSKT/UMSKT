@@ -186,15 +186,18 @@ jobs:
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
           [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
           
-      - name: Download Resource Hacker
+      - name: Setup compression tools
         run: |
           Invoke-WebRequest -Uri 'https://www.angusj.com/resourcehacker/resource_hacker.zip' -OutFile 'C:\Windows\temp\resource_hacker.zip'
+          Invoke-WebRequest -Uri 'https://github.com/upx/upx/releases/download/v5.0.2/upx-5.0.2-win64.zip' -OutFile 'C:\Windows\temp\upx.zip'
           Write-Host Creating directory...
           New-Item -ItemType Directory -Path 'C:\ResourceHacker'
+          New-Item -ItemType Directory -Path 'C:\UPX'
           Write-Host Copying files...
           Start-Process '7z' -ArgumentList 'x C:\Windows\temp\resource_hacker.zip -oC:\ResourceHacker -y' -Wait
+          Start-Process '7z' -ArgumentList 'x C:\Windows\temp\upx.zip -o C:\UPX -y' -Wait
           Write-Host Adding environment variables...
-          $env:PATH = 'C:\ResourceHacker;' + $env:PATH
+          $env:PATH = 'C:\ResourceHacker;' + 'C:\UPX\upx-5.0.2-win64;' + $env:PATH
           [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
         
       - name: Download ${{matrix.arch}} artifact
@@ -206,17 +209,20 @@ jobs:
         shell: pwsh
         run: |
           strip .\umskt.exe
-          Write-Host $(Get-Location)
           $resourceHackerScript = @"
           [FILENAMES]
-          Exe=D:\a\ 
-          SaveAs= $outputPath
+          Exe=D:\a\UMSKT\UMSKT\umskt.exe
+          SaveAs=D:\a\UMSKT\UMSKT\umskt_comp.exe
           
           [DELETE]
           Icon=*
           IconGroup=*
           "@ 
-
+          $resourceHackerScript | Set-Content -Encoding ASCII "$env:TEMP\remove_icons.ini"
+          ResourceHacker -script $("$env:TEMP\remove_icons.ini")
+          upx --best --ultra-brute .\umskt_comp.exe
+          Remove-Item .\umskt.exe
+          Rename-Item -Path .\umskt_comp.exe -NewName umskt.exe
           
       - name: Run tests
         shell: pwsh
@@ -225,3 +231,9 @@ jobs:
           .\umskt.exe -b 2C -c 365 -s 069420 -v
           Write-Host Test 2 - generatng confid
           .\umskt.exe -i 253286028742154311079061239762245184619981623171292574 
+          
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: UMSKT-WinNT-${{ matrix.arch }}-Compressed
+          path: umskt.exe
