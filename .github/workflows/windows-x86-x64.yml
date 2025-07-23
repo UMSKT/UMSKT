@@ -194,8 +194,8 @@ jobs:
           New-Item -ItemType Directory -Path 'C:\ResourceHacker'
           New-Item -ItemType Directory -Path 'C:\UPX'
           Write-Host Copying files...
-          Start-Process '7z' -ArgumentList 'x C:\Windows\temp\resource_hacker.zip -oC:\ResourceHacker -y' -Wait
-          Start-Process '7z' -ArgumentList 'x C:\Windows\temp\upx.zip -o C:\UPX -y' -Wait
+          Expand-Archive -Path 'C:\Windows\temp\resource_hacker.zip' -DestinationPath 'C:\ResourceHacker'
+          Expand-Archive -Path 'C:\Windows\temp\upx.zip' -DestinationPath 'C:\UPX'
           Write-Host Adding environment variables...
           $env:PATH = 'C:\ResourceHacker;' + 'C:\UPX\upx-5.0.2-win64;' + $env:PATH
           [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
