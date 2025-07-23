@@ -199,7 +199,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: UMSKT-DOS-x86
-          path: .\uncomp\
+          path: .
+
       - name: Install UPX
         uses: crazy-max/ghaction-upx@v3
         with:
@@ -208,7 +209,7 @@ jobs:
       - name: Compress binary
         shell: pwsh
         run: |
-          upx .\uncomp\umskt.exe --best --ultra-brute -v
+          upx umskt.exe --best --ultra-brute -v
           
       - name: Setup DOSBox test environment
         run: |
