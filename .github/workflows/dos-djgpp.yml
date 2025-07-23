@@ -214,7 +214,7 @@ jobs:
       - name: Setup DOSBox test environment
         run: |
           mkdir -p dosbox_test
-          cp uncomp/umskt.exe dosbox_test/
+          cp umskt.exe dosbox_test/
           # Download DPMI server directly
           # wget https://github.com/UMSKT/winactiontest/raw/refs/heads/main/CWSDPMI.EXE -O dosbox_test/CWSDPMI.EXE
           # Create test batch file
@@ -293,7 +293,7 @@ jobs:
       - name: Move executable to upload directory
         run: |
           mkdir build/actions_upload
-          mv build/umskt.exe build/actions_upload/
+          mv umskt.exe build/actions_upload/
           
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.6.2
