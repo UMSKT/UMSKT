@@ -219,8 +219,8 @@ jobs:
           IconGroup=*
           "@ 
           $resourceHackerScript | Set-Content -Encoding ASCII "$env:TEMP\remove_icons.ini"
-          ResourceHacker -script $("$env:TEMP\remove_icons.ini")
-          upx --best --ultra-brute .\umskt_comp.exe
+          C:\ResourceHacker.exe -script $("$env:TEMP\remove_icons.ini")
+          C:\UPX\upx-5.0.2-win64\upx.exe --best --ultra-brute .\umskt_comp.exe
           Remove-Item .\umskt.exe
           Rename-Item -Path .\umskt_comp.exe -NewName umskt.exe
           
