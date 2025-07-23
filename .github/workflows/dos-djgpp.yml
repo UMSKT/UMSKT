@@ -195,6 +195,11 @@ jobs:
     strategy:
       fail-fast: false
     steps:
+      - name: Setup test environment
+        run: |
+          sudo apt -y update
+          sudo apt -y  dosbox
+          
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
@@ -249,6 +254,7 @@ jobs:
           EOL
 
       - name: Run tests in DOSBox
+      
         run: |
           cd dosbox_test
           timeout 30s dosbox -conf dosbox.conf -nogui -exit
