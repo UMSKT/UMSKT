@@ -98,9 +98,9 @@ jobs:
           cd openssl-1.1.1
 
           if [[ ${{ matrix.arch }} == "x86" ]]; then
-              /usr/bin/perl Configure mingw --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-${{ matrix.arch }} --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-32 no-tests no-sse2 no-asm no-threads -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i686 -mtune=generic
+              /usr/bin/perl Configure mingw --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-${{ matrix.arch }} --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-32 no-tests no-sse2 no-asm no-threads -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i686 -mtune=generic -Os -s -fno-exceptions -fno-rtti -fno-unwind-tables -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections -fno-stack-protector
           else
-              /usr/bin/perl Configure mingw64 --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-${{ matrix.arch }} --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-64 no-tests no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx
+              /usr/bin/perl Configure mingw64 --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-${{ matrix.arch }} --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-64 no-tests no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -Os -s -fno-exceptions -fno-rtti -fno-unwind-tables -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections -fno-stack-protector
           fi
           mingw32-make -j
           mingw32-make install_sw
