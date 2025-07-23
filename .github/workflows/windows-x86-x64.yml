@@ -199,9 +199,6 @@ jobs:
           Write-Host Adding environment variables...
           $env:PATH = 'C:\ResourceHacker;' + 'C:\UPX\upx-5.0.2-win64;' + $env:PATH
           [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
-          Get-ChildItem -Path 'C:\ResourceHacker' -Recurse
-          Get-ChildItem -Path 'C:\UPX' -Recurse
-          throw "Test"
         
       - name: Download ${{matrix.arch}} artifact
         uses: actions/download-artifact@v4
@@ -222,7 +219,7 @@ jobs:
           IconGroup=*
           "@ 
           $resourceHackerScript | Set-Content -Encoding ASCII "$env:TEMP\remove_icons.ini"
-          C:\ResourceHacker.exe -script $("$env:TEMP\remove_icons.ini")
+          C:\ResourceHacker\ResourceHacker.exe -script $("$env:TEMP\remove_icons.ini")
           C:\UPX\upx-5.0.2-win64\upx.exe --best --ultra-brute .\umskt_comp.exe
           Remove-Item .\umskt.exe
           Rename-Item -Path .\umskt_comp.exe -NewName umskt.exe
