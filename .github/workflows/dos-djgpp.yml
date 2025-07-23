@@ -198,7 +198,7 @@ jobs:
       - name: Setup test environment
         run: |
           sudo apt -y update
-          sudo apt -y  dosbox
+          sudo apt -y install dosbox
           
       - name: Download artifact
         uses: actions/download-artifact@v4
