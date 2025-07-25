@@ -59,7 +59,33 @@ FNEXPORT int PIDGEN2_GenerateOEM(char* year, char* day, char* oem, char* keyout)
     return PIDGEN2::GenerateOEM(year, day, oem, keyout);
 }
 
-// RNG utility functions
+// RNG implementation
+std::mt19937_64& UMSKT::get_rng() {
+    static std::mt19937_64 rng = []() {
+        // Seed the generator with multiple entropy sources
+        std::random_device rd;
+        std::array<std::uint64_t, std::mt19937_64::state_size> seed_data;
+        
+        // Mix in random_device entropy
+        std::generate(seed_data.begin(), seed_data.end(), std::ref(rd));
+        
+        // Mix in high-resolution time
+        auto now = std::chrono::high_resolution_clock::now();
+        auto nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            now.time_since_epoch()
+        ).count();
+        seed_data[0] ^= static_cast<std::uint64_t>(nanos);
+        
+        // Create a seed sequence
+        std::seed_seq seq(seed_data.begin(), seed_data.end());
+        
+        // Initialize RNG with the seed sequence
+        std::mt19937_64 generator(seq);
+        return generator;
+    }();
+    return rng;
+}
+
 int UMSKT::umskt_rand_bytes(unsigned char *buf, int num) {
 #if UMSKT_RNG_DJGPP
     // DOS-compatible RNG using DJGPP's random() function
@@ -89,14 +115,20 @@ int UMSKT::umskt_rand_bytes(unsigned char *buf, int num) {
     }
     return 1;
 #else
-    // Use OpenSSL's RAND_bytes for non-DOS systems
-    return RAND_bytes(buf, num);
+    // Use C++ std::uniform_int_distribution for better randomness
+    std::uniform_int_distribution<unsigned short> dist(0, 255);
+    auto& rng = get_rng();
+    
+    for (int i = 0; i < num; i++) {
+        buf[i] = static_cast<unsigned char>(dist(rng));
+    }
+    return 1;
 #endif
 }
 
 int UMSKT::umskt_bn_rand(BIGNUM *rnd, int bits, int top, int bottom) {
 #if UMSKT_RNG_DJGPP
-    // DOS-compatible RNG implementation for BIGNUMs
+    // Keep existing DOS-compatible implementation
     unsigned char *buf = (unsigned char *)malloc((bits + 7) / 8);
     if (!buf) return 0;
     
@@ -129,7 +161,37 @@ int UMSKT::umskt_bn_rand(BIGNUM *rnd, int bits, int top, int bottom) {
     
     return 1;
 #else
-    // Use OpenSSL's BN_rand for non-DOS systems
-    return BN_rand(rnd, bits, top, bottom);
+    // Generate random bytes using C++ RNG
+    unsigned char *buf = (unsigned char *)malloc((bits + 7) / 8);
+    if (!buf) return 0;
+    
+    // Generate random bytes
+    umskt_rand_bytes(buf, (bits + 7) / 8);
+    
+    // Convert to BIGNUM
+    if (!BN_bin2bn(buf, (bits + 7) / 8, rnd)) {
+        free(buf);
+        return 0;
+    }
+    
+    free(buf);
+    
+    // Apply top/bottom constraints
+    if (top != -1) {
+        if (top) {
+            if (bits == 0) {
+                BN_zero(rnd);
+                return 1;
+            }
+            BN_set_bit(rnd, bits - 1);
+        }
+        BN_mask_bits(rnd, bits);
+    }
+    
+    if (bottom) {
+        BN_set_bit(rnd, 0);
+    }
+    
+    return 1;
 #endif
 }
