@@ -28,13 +28,16 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <random>
+#include <chrono>
+#include <algorithm>
+#include <array>
 
 #include <openssl/bn.h>
 #include <openssl/ec.h>
-#include <openssl/sha.h>
 #include <openssl/evp.h>
-#include <openssl/rand.h>
 
+#include "sha1/sha1.h"
 #include <fmt/core.h>
 #include <fmt/format.h>
 
@@ -75,6 +78,9 @@ extern "C" {
 #endif
 
 class UMSKT {
+private:
+    static std::mt19937_64& get_rng();
+
 public:
     static std::FILE* debug;
     class PIDGEN2;

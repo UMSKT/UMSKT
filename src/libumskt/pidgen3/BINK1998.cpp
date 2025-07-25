@@ -154,7 +154,7 @@ bool PIDGEN3::BINK1998::Verify(
     memcpy((void *)&msgBuffer[4 + FIELD_BYTES], (void *)yBin, FIELD_BYTES);
 
     // compHash = SHA1(pSerial || P.x || P.y)
-    SHA1(msgBuffer, SHA_MSG_LENGTH_XP, msgDigest);
+    SHA1_DIGEST(msgBuffer, SHA_MSG_LENGTH_XP, msgDigest);
 
     // Translate the byte digest into a 32-bit integer - this is our computed hash.
     // Truncate the hash to 28 bits.
@@ -226,7 +226,7 @@ void PIDGEN3::BINK1998::Generate(
         memcpy((void *)&msgBuffer[4 + FIELD_BYTES], (void *)yBin, FIELD_BYTES);
 
         // pHash = SHA1(pSerial || R.x || R.y)
-        SHA1(msgBuffer, SHA_MSG_LENGTH_XP, msgDigest);
+        SHA1_DIGEST(msgBuffer, SHA_MSG_LENGTH_XP, msgDigest);
 
         // Translate the byte digest into a 32-bit integer - this is our computed pHash.
         // Truncate the pHash to 28 bits.

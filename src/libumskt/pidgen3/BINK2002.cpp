@@ -127,7 +127,7 @@ bool PIDGEN3::BINK2002::Verify(
     msgBuffer[0x0A] = 0x00;
 
     // newSignature = SHA1(5D || Channel ID || Hash || AuthInfo || 00 00)
-    SHA1(msgBuffer, 11, msgDigest);
+    SHA1_DIGEST(msgBuffer, 11, msgDigest);
 
     // Translate the byte digest into a 64-bit integer - this is our computed intermediate signature.
     // As the signature is only 62 bits long at most, we have to truncate it by shifting the high DWORD right 2 bits (per spec).
@@ -185,7 +185,7 @@ bool PIDGEN3::BINK2002::Verify(
     memcpy((void *)&msgBuffer[3 + FIELD_BYTES_2003], (void *)yBin, FIELD_BYTES_2003);
 
     // compHash = SHA1(79 || Channel ID || p.x || p.y)
-    SHA1(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
+    SHA1_DIGEST(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
 
     // Translate the byte digest into a 32-bit integer - this is our computed hash.
     // Truncate the hash to 31 bits.
@@ -263,7 +263,7 @@ void PIDGEN3::BINK2002::Generate(
         memcpy((void *)&msgBuffer[3 + FIELD_BYTES_2003], (void *)yBin, FIELD_BYTES_2003);
 
         // pHash = SHA1(79 || Channel ID || R.x || R.y)
-        SHA1(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
+        SHA1_DIGEST(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
 
         // Translate the byte digest into a 32-bit integer - this is our computed hash.
         // Truncate the hash to 31 bits.
@@ -283,7 +283,7 @@ void PIDGEN3::BINK2002::Generate(
         msgBuffer[0x0A] = 0x00;
 
         // newSignature = SHA1(5D || Channel ID || Hash || AuthInfo || 00 00)
-        SHA1(msgBuffer, 11, msgDigest);
+        SHA1_DIGEST(msgBuffer, 11, msgDigest);
 
         // Translate the byte digest into a 64-bit integer - this is our computed intermediate signature.
         // As the signature is only 62 bits long at most, we have to truncate it by shifting the high DWORD right 2 bits (per spec).
