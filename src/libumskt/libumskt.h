@@ -35,10 +35,9 @@
 
 #include <openssl/bn.h>
 #include <openssl/ec.h>
-#include <openssl/sha.h>
 #include <openssl/evp.h>
-// Remove openssl/rand.h since we're replacing it
 
+#include "sha1/sha1.h"
 #include <fmt/core.h>
 #include <fmt/format.h>
 
