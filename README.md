@@ -2,7 +2,7 @@
 
 <h1 align="center"><b>U</b>niversal <b>MS</b> <b>K</b>ey <b>T</b>oolkit (UMSKT)</h1>
 
-<p align="center">An open source toolkit designed to generate licence keys for MS products circa 1998 - 2006</p>
+<p align="center">An open source toolkit designed to research Microsoft Pre-Vista licensing mechanisms</p>
 <hr />
 
 **Connect with us**
