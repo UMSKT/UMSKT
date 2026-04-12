@@ -115,13 +115,14 @@ int PIDGEN3::BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen) {
     if (a == nullptr || to == nullptr)
         return 0;
 
-    int len = BN_bn2bin(a, to);
+    int len = BN_num_bytes(a);
 
     if (len > tolen)
         return -1;
 
-    // Choke point inside BN_bn2lebinpad: OpenSSL uses len instead of tolen.
+    memset(to, 0, tolen);
+    BN_bn2bin(a, to + tolen - len);
+    
     endian(to, tolen);
-
     return len;
 }
