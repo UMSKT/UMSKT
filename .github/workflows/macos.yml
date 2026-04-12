@@ -73,7 +73,8 @@ jobs:
             -DOPENSSL_ROOT_DIR=$OPENSSL_ROOT_DIR \
             -DOPENSSL_INCLUDE_DIR=$OPENSSL_INCLUDE_DIR \
             -DOPENSSL_USE_STATIC_LIBS=TRUE \
-            -DBUILD_SHARED_LIBS=OFF
+            -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
           make
 
       - name: Move files to correct directory

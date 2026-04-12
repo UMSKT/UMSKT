@@ -71,7 +71,7 @@ jobs:
       if: ${{ matrix.use_alpine }}
       uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
       with:
-        options: MUSL_STATIC=ON
+        options: MUSL_STATIC=ON CMAKE_POLICY_VERSION_MINIMUM=3.5
         run-build: true
         shell: alpine-target.sh {0}
 
@@ -79,7 +79,7 @@ jobs:
       if: ${{ !matrix.use_alpine }}
       uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
       with:
-        options: MUSL_STATIC=ON
+        options: MUSL_STATIC=ON CMAKE_POLICY_VERSION_MINIMUM=3.5
         run-build: true
 
     - name: Test UMSKT (Alpine)
@@ -116,7 +116,7 @@ jobs:
       if: ${{ matrix.use_alpine }}
       uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
       with:
-        options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=OFF
+        options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=OFF CMAKE_POLICY_VERSION_MINIMUM=3.5
         run-build: true
         shell: alpine-target.sh {0}
 
@@ -124,7 +124,7 @@ jobs:
       if: ${{ !matrix.use_alpine }}
       uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
       with:
-        options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=OFF
+        options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=OFF CMAKE_POLICY_VERSION_MINIMUM=3.5
         run-build: true
 
     - name: Test static internal deps UMSKT (Alpine)
@@ -150,7 +150,7 @@ jobs:
       if: ${{ matrix.use_alpine }}
       uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
       with:
-        options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=ON
+        options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=ON CMAKE_POLICY_VERSION_MINIMUM=3.5
         run-build: true
         shell: alpine-target.sh {0}
 
@@ -158,7 +158,7 @@ jobs:
       if: ${{ !matrix.use_alpine }}
       uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
       with:
-        options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=ON
+        options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=ON CMAKE_POLICY_VERSION_MINIMUM=3.5
         run-build: true
 
     - name: Test shared deps UMSKT (Alpine)
