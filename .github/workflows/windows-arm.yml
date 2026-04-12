@@ -33,10 +33,10 @@ jobs:
         fail-fast: false
         matrix:
             include:
-              - arch: arm32
-                arch_compilename: amd64_arm
-                vcpkg_arch: arm-windows-static
-                cmake_arch: ARM
+           #   - arch: arm32
+           #     arch_compilename: amd64_arm
+           #     vcpkg_arch: arm-windows-static
+           #     cmake_arch: ARM
               - arch: arm64
                 arch_compilename: amd64_arm64
                 vcpkg_arch: arm64-windows-static
