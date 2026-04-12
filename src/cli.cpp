@@ -432,8 +432,8 @@ int CLI::BINK1998Generate() {
 
     // using user-provided serial
     if (this->options.serialSet) {
-        // just in case, make sure it's less than 999999
-        int serialRnd = (this->options.serial % 999999);
+        // just in case, make sure it's less than 1000000
+        int serialRnd = (this->options.serial % 1000000);
         nRaw += serialRnd;
     } else {
         // generate a random number to use as a serial
@@ -444,7 +444,7 @@ int CLI::BINK1998Generate() {
         char *cRaw = BN_bn2dec(bnrand);
 
         sscanf(cRaw, "%d", &oRaw);
-        nRaw += (oRaw % 999999); // ensure our serial is less than 999999
+        nRaw += (oRaw % 1000000); // ensure our serial is less than 1000000
 	BN_free(bnrand);
     }
 
