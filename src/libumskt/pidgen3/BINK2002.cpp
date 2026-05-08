@@ -78,6 +78,7 @@ bool PIDGEN3::BINK2002::Verify(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
+           DWORD *pSerial,
             char (&cdKey)[25]
 ) {
     BN_CTX *context = BN_CTX_new();
@@ -99,14 +100,6 @@ bool PIDGEN3::BINK2002::Verify(
     Unpack(bKey, pUpgrade, pChannelID, pHash, pSignature, pAuthInfo);
 
     pData = pChannelID << 1 | pUpgrade;
-
-    fmt::print(UMSKT::debug, "Validation results:\n");
-    fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", pUpgrade);
-    fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", pChannelID);
-    fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
-    fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
-    fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", pAuthInfo);
-    fmt::print(UMSKT::debug, "\n");
 
     BYTE    msgDigest[SHA_DIGEST_LENGTH]{},
             msgBuffer[SHA_MSG_LENGTH_2003]{},
@@ -187,6 +180,18 @@ bool PIDGEN3::BINK2002::Verify(
     // compHash = SHA1(79 || Channel ID || p.x || p.y)
     SHA1(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
 
+    DWORD serial = (((BYDWORD(msgDigest + 4) >> 13) << 1) | (BYDWORD(msgDigest) >> 31)) & BITMASK(20);
+    if (pSerial != nullptr) *pSerial = serial;
+
+    fmt::print(UMSKT::debug, "Validation results:\n");
+    fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", pUpgrade);
+    fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", pChannelID);
+    fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
+    fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
+    fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", pAuthInfo);
+    fmt::print(UMSKT::debug, "    Serial: {:06d}\n", serial);
+    fmt::print(UMSKT::debug, "\n");
+
     // Translate the byte digest into a 32-bit integer - this is our computed hash.
     // Truncate the hash to 31 bits.
     DWORD compHash = BYDWORD(msgDigest) & BITMASK(31);
@@ -214,6 +219,8 @@ void PIDGEN3::BINK2002::Generate(
            DWORD pChannelID,
            DWORD pAuthInfo,
             BOOL pUpgrade,
+           DWORD serMin,
+           DWORD serMax,
             char (&pKey)[25]
 ) {
     BN_CTX *numContext = BN_CTX_new();
@@ -265,8 +272,18 @@ void PIDGEN3::BINK2002::Generate(
         // pHash = SHA1(79 || Channel ID || R.x || R.y)
         SHA1(msgBuffer, SHA_MSG_LENGTH_2003, msgDigest);
 
+        // Derive serial value from byte digest and do bounds checks.
+        // This is important in some cases since serial can technically exceed 999999, affecting the derived Channel ID.
+
+        DWORD serial = (((BYDWORD(msgDigest + 4) >> 13) << 1) | (BYDWORD(msgDigest) >> 31)) & BITMASK(20);
+
+        if (serial < serMin || serial > serMax) {
+            continue;
+        }
+
         // Translate the byte digest into a 32-bit integer - this is our computed hash.
         // Truncate the hash to 31 bits.
+
         DWORD pHash = BYDWORD(msgDigest) & BITMASK(31);
 
         // Assemble the second SHA message.
@@ -365,6 +382,7 @@ void PIDGEN3::BINK2002::Generate(
         fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
         fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
         fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", pAuthInfo);
+        fmt::print(UMSKT::debug, "    Serial: {:06d}\n", serial);
         fmt::print(UMSKT::debug, "\n");
 
         EC_POINT_free(r);

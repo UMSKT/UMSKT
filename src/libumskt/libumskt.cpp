@@ -43,12 +43,12 @@ FNEXPORT void PIDGEN3_BINK1998_Generate(EC_GROUP *eCurve, EC_POINT *basePoint, B
     return PIDGEN3::BINK1998::Generate(eCurve, basePoint, genOrder, privateKey, pSerial, pUpgrade, pKey);
 }
 
-FNEXPORT bool PIDGEN3_BINK2002_Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *publicKey, char (&cdKey)[25]) {
-    return PIDGEN3::BINK2002::Verify(eCurve, basePoint, publicKey, cdKey);
+FNEXPORT bool PIDGEN3_BINK2002_Verify(EC_GROUP *eCurve, EC_POINT *basePoint, EC_POINT *publicKey, DWORD *pSerial, char (&cdKey)[25]) {
+    return PIDGEN3::BINK2002::Verify(eCurve, basePoint, publicKey, pSerial, cdKey);
 }
 
-FNEXPORT void PIDGEN3_BINK2002_Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *genOrder, BIGNUM *privateKey, DWORD pChannelID, DWORD pAuthInfo, BOOL pUpgrade, char (&pKey)[25]) {
-    return PIDGEN3::BINK2002::Generate(eCurve, basePoint, genOrder, privateKey, pChannelID, pAuthInfo, pUpgrade, pKey);
+FNEXPORT void PIDGEN3_BINK2002_Generate(EC_GROUP *eCurve, EC_POINT *basePoint, BIGNUM *genOrder, BIGNUM *privateKey, DWORD pChannelID, DWORD pAuthInfo, BOOL pUpgrade, DWORD serMin, DWORD serMax, char (&pKey)[25]) {
+    return PIDGEN3::BINK2002::Generate(eCurve, basePoint, genOrder, privateKey, pChannelID, pAuthInfo, pUpgrade, serMin, serMax, pKey);
 }
 
 FNEXPORT int PIDGEN2_GenerateRetail(char* channelID, char* &keyout) {
