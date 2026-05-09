@@ -21,12 +21,12 @@
  name: FreeBSD
   
  on: 
-  #push:
-  #  branches: [ "*" ]
-  #  paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
-  #pull_request:
-  #  branches: [ "*" ]
-  #  paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
+  push:
+    branches: [ "*" ]
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
+  pull_request:
+    branches: [ "*" ]
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
 
   workflow_dispatch:
   
@@ -41,13 +41,12 @@
        id: test 
        uses: vmactions/freebsd-vm@v1 
        with: 
-         envs: 'MYTOKEN MYTOKEN2' 
          usesh: true 
          prepare: | 
            pkg install -y cmake openssl git bash 
   
          run: | 
-           mkdir build 
+           mkdir -p build 
            cd build 
            cmake .. 
            make 
