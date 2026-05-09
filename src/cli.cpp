@@ -67,7 +67,7 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
-    fmt::print("\t-s --serial\tspecifies a serial to use in the product ID (defaults to random, BINK1998 only)\n");
+    fmt::print("\t-s --serial\tspecifies a serial (eg. 123456) or comma-separated serial range (recommended for BINK2002, eg. 1234,5678) to use in the product ID (defaults to 0,999999)\n");
     fmt::print("\t-u --upgrade\tspecifies the Product Key will be an \"Upgrade\" version\n");
     fmt::print("\t-V --validate\tproduct key to validate signature\n");
     fmt::print("\t-N --nonewlines\tdisables newlines (for easier embedding in other apps)\n");
@@ -86,6 +86,7 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
             "",
             640,
             0,
+            999999,
             1,
             false,
             false,
@@ -149,12 +150,20 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
                 break;
             }
 
-            int serial_val;
-            if (!sscanf(argv[i+1], "%d", &serial_val)) {
-                options->error = true;
-            } else {
+            int serial_min;
+            int serial_max;
+            if (strchr(argv[i+1], ',') && sscanf(argv[i + 1], "%d,%d", &serial_min, &serial_max)) {
                 options->serialSet = true;
-                options->serial = serial_val;
+                options->serialMin = serial_min;
+                options->serialMax = serial_max;
+            }
+            else if (sscanf(argv[i + 1], "%d", &serial_min)) {
+                options->serialSet = true;
+                options->serialMin = serial_min;
+                options->serialMax = serial_min;
+            }
+            else {
+                options->error = true;
             }
             i++;
 	} else if (arg == "-u" || arg == "--upgrade") {
@@ -293,8 +302,13 @@ int CLI::validateCommandLine(Options* options, char *argv[], json *keys) {
     }
 
     // don't allow any serial not between 0 and 999999
-    if (options->serial > 999999 || options->serial < 0) {
+    if (options->serialMin > 999999 || options->serialMin < 0 || options->serialMax < 0 || options->serialMax > 999999) {
         fmt::print("ERROR: refusing to create a key with a Serial not between 000000 and 999999\n");
+        return 1;
+    }
+    
+    if (options->serialMin > options->serialMax) {
+        fmt::print("ERROR: serial minimum cannot be greater than serial maximum\n");
         return 1;
     }
 
@@ -429,11 +443,13 @@ CLI::CLI(Options options, json keys) {
 int CLI::BINK1998Generate() {
     // raw PID/serial value
     DWORD nRaw = this->options.channelID * 1'000'000 ; /* <- change */
+    DWORD serMin = this->options.serialMin;
+    DWORD serMax = this->options.serialMax;
 
     // using user-provided serial
-    if (this->options.serialSet) {
+    if ((serMin == serMax) && this->options.serialSet) {
         // just in case, make sure it's less than 1000000
-        int serialRnd = (this->options.serial % 1000000);
+        int serialRnd = (this->options.serialMin % 1000000);
         nRaw += serialRnd;
     } else {
         // generate a random number to use as a serial
@@ -444,8 +460,8 @@ int CLI::BINK1998Generate() {
         char *cRaw = BN_bn2dec(bnrand);
 
         sscanf(cRaw, "%d", &oRaw);
-        nRaw += (oRaw % 1000000); // ensure our serial is less than 1000000
-	BN_free(bnrand);
+        nRaw += serMin + (oRaw % (serMax - serMin + 1)); // ensure our serial is within specified range
+	    BN_free(bnrand);
     }
 
     if (this->options.verbose) {
@@ -506,9 +522,9 @@ int CLI::BINK2002Generate() {
             fmt::print("> AuthInfo: {}\n", pAuthInfo);
         }
 
-        PIDGEN3::BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, options.upgrade, this->pKey);
+        PIDGEN3::BINK2002::Generate(this->eCurve, this->genPoint, this->genOrder, this->privateKey, pChannelID, pAuthInfo, options.upgrade, this->options.serialMin, this->options.serialMax, this->pKey);
 
-        bool isValid = PIDGEN3::BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, this->pKey);
+        bool isValid = PIDGEN3::BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, NULL, this->pKey);
         if (isValid) {
             CLI::printKey(this->pKey);
             if (i < this->total - 1 || this->options.verbose) { // check if end of list or verbose
@@ -567,7 +583,7 @@ int CLI::BINK2002Validate() {
 
     CLI::printKey(product_key);
     fmt::print("\n");
-    if (!PIDGEN3::BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, product_key)) {
+    if (!PIDGEN3::BINK2002::Verify(this->eCurve, this->genPoint, this->pubPoint, nullptr, product_key)) {
         fmt::print("ERROR: Product key is invalid! Wrong BINK ID?\n");
         return 1;
     }

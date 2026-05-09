@@ -49,6 +49,7 @@ public:
             EC_GROUP *eCurve,
             EC_POINT *basePoint,
             EC_POINT *publicKey,
+               DWORD *pSerial,
                 char (&cdKey)[25]
     );
 
@@ -60,6 +61,8 @@ public:
                DWORD pChannelID,
                DWORD pAuthInfo,
                 BOOL pUpgrade,
+               DWORD serMin,
+               DWORD serMax,
                 char (&pKey)[25]
     );
 };

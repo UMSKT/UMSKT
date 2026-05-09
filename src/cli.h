@@ -59,7 +59,8 @@ struct Options {
     std::string keyToCheck;
     std::string productid;
     int channelID;
-    int serial;
+    int serialMin;
+    int serialMax;
     int numKeys;
     bool upgrade;
     bool serialSet;
