@@ -1,163 +1,330 @@
 {
   "Products": {
     "Windows CE Platform Builder 3": {
-      "BINK": ["00", "01", "0E", "0D", "0F"]
+      "BINK": {
+        "00": {},
+        "01": {},
+        "0E": {},
+        "0D": {},
+        "0F": {}
+      }
     },
     "Windows CE .Net Platform Builder 4": {
-      "BINK": ["00", "01"]
+      "BINK": {
+        "00": {},
+        "01": {}
+      }
     },
     "Windows 98 (all)": {
-      "BINK": ["02","03"]
+      "BINK": {
+        "02": {},
+        "03": {}
+      }
     },
     "Office 2000": {
-      "BINK": ["04", "05"]
+      "BINK": {
+        "04": {},
+        "05": {}
+      }
     },
     "Internet Security and Acceleration (ISA) Server 2004": {
-      "BINK": ["06", "07"]
+      "BINK": {
+        "06": {},
+        "07": {}
+      }
     },
     "PLUS! for Windows XP": {
-      "BINK": ["08", "09"]
+      "BINK": {
+        "08": {},
+        "09": {}
+      }
     },
     "Windows 2000 Server (all)": {
-      "BINK": ["0A", "13"]
+      "BINK": {
+        "0A": {},
+        "13": {}
+      }
     },
     "Office Communicator 2007": {
-      "BINK": ["0C", "0D"]
+      "BINK": {
+        "0C": {},
+        "0D": {}
+      }
     },
     "Windows Embedded POSReady 2009": {
-      "BINK": ["0D", "0D"]
+      "BINK": {
+        "0D": {},
+        "0D": {}
+      }
     },
     "Windows CE .Net Platform Builder 5": {
-      "BINK": ["0D", "0D"]
+      "BINK": {
+        "0D": {},
+        "0D": {}
+      }
     },
     "Commerce Server 2002": {
-      "BINK": ["0E", "0F"]
+      "BINK": {
+        "0E": {},
+        "0F": {}
+      }
     },
     "Passport Manager": {
       "BINK": ["10"]
     },
     "Windows 2000 Professional": {
-      "BINK": ["12", "13"]
+      "BINK": {
+        "12": {},
+        "13": {}
+      }
     },
     "Office for Mac 2004 / 2008": {
-      "BINK": ["18", "19"]
+      "BINK": {
+        "18": {},
+        "19": {}
+      }
     },
     "Windows ME": {
-      "BINK": ["1C", "1D"]
+      "BINK": {
+        "1C": {},
+        "1D": {}
+      }
     },
     "Office XP Applications": {
-      "BINK": ["20", "21"]
+      "BINK": {
+        "20": {},
+        "21": {}
+      }
     },
     "Works Suite 2003 and 2004": {
-      "BINK": ["20", "21"]
+      "BINK": {
+        "20": {},
+        "21": {}
+      }
     },
     "Office XP": {
-      "BINK": ["22", "23"]
+      "BINK": {
+        "22": {},
+        "23": {}
+      }
     },
     "Visual Studio .Net / .Net 2003": {
-      "BINK": ["24", "25"]
+      "BINK": {
+        "24": {},
+        "25": {}
+      }
     },
     "Windows XP Professional Evaluation": {
-      "BINK": ["28", "29"]
+      "BINK": {
+        "28": {},
+        "29": {}
+      }
     },
     "Windows XP Home": {
-      "BINK": ["2A", "2B"]
+      "BINK": {
+        "2A": {},
+        "2B": {}
+      }
     },
     "Windows XP Pro": {
-      "BINK": ["2C", "2D"]
+      "BINK": {
+        "2C": {
+          "Retail": [[5, 90], [95, 99], [114, 116], [311, 334], 336, [370, 385], [755, 779], [785, 789]],
+          "TablePC": [111, 112, [337, 369]]
+        },
+        "2D": {
+          "OEM": [[100, 110], 114, [120, 269], [271, 336], [370, 665], [667, 754], [780, 799], [803, 979]],
+          "OEM-SLP": [90, 113, 119]
+        }
+      }
     },
     "Windows XP Pro IA-64": {
-      "BINK": ["2C", "2D"]
+      "BINK": {
+        "2C": {},
+        "2D": {}
+      }
     },
     "Windows XP Pro VLK": {
-      "BINK": ["2E", "2F"]
+      "BINK": {
+        "2E": {},
+        "2F": {}
+      }
     },
     "Windows XP Fundamentals for Legacy PCs": {
-      "BINK": ["2E", "2F"]
+      "BINK": {
+        "2E": {},
+        "2F": {}
+      }
     },
     "Windows XP Professional K": {
-      "BINK": ["30", "31"]
+      "BINK": {
+        "30": {},
+        "31": {}
+      }
     },
     "Windows XP Starter Edition": {
-      "BINK": ["32", "33"]
+      "BINK": {
+        "32": {},
+        "33": {}
+      }
     },
     "Windows Longhorn (6.0.3683.0 -> 6.0.4029.0)": {
-      "BINK": ["40", "41"]
+      "BINK": {
+        "40": {},
+        "41": {}
+      }
     },
     "Halo: Combat Evolved": {
-      "BINK": ["50", "51"]
+      "BINK": {
+        "50": {},
+        "51": {}
+      }
     },
     "Halo: Custom Edition": {
-      "BINK": ["50", "51"]
+      "BINK": {
+        "50": {},
+        "51": {}
+      }
     },
     "Visual Studio 2005": {
-      "BINK": ["52", "53"]
+      "BINK": {
+        "52": {},
+        "53": {}
+      }
     },
     "Plus! Digital Media Edition for Windows XP": {
-      "BINK": ["52", "53"]
+      "BINK": {
+        "52": {},
+        "53": {}
+      }
     },
     "Windows Longhorn (6.0.4033.0)": {
-      "BINK": ["54", "55"]
+      "BINK": {
+        "54": {},
+        "55": {}
+      }
     },
     "Windows Server 2003": {
-      "BINK": ["54", "55", "58", "59"]
+      "BINK": {
+        "54": {},
+        "55": {},
+        "58": {},
+        "59": {}
+      }
     },
     "Windows Server 2003 VLK": {
-      "BINK": ["5A", "5B"]
+      "BINK": {
+        "5A": {},
+        "5B": {}
+      }
     },
     "Windows XP Pro 64 Bit Edition VLK": {
-      "BINK": ["64", "65"]
+      "BINK": {
+        "64": {},
+        "65": {}
+      }
     },
     "Windows XP Pro 64 Bit Edition": {
-      "BINK": ["66", "67"]
+      "BINK": {
+        "66": {
+          "Retail": [[306, 370]],
+          "TablePC": [[371, 410]]
+        },
+        "67": {
+          "OEM": [[5, 118]]
+        }
+      }
     },
     "Windows Server 2003 64 Bit": {
-      "BINK": ["68", "69", "6C", "6D"]
+      "BINK": {
+        "68": {},
+        "69": {},
+        "6C": {},
+        "6D": {}
+      }
     },
     "Windows Server 2003 64 Bit VLK": {
-      "BINK": ["68", "69", "6C", "6D"]
+      "BINK": {
+        "68": {},
+        "69": {},
+        "6C": {},
+        "6D": {}
+      }
     },
     "Office 2003 Applications": {
-      "BINK": ["6E", "6F"]
+      "BINK": {
+        "6E": {},
+        "6F": {}
+      }
     },
     "Office 2003 Small Business": {
-      "BINK": ["70", "71"]
+      "BINK": {
+        "70": {},
+        "71": {}
+      }
     },
     "Office 2003 Student and Teacher": {
-      "BINK": ["70", "71"]
+      "BINK": {
+        "70": {},
+        "71": {}
+      }
     },
     "Office 2003 Professional": {
-      "BINK": ["72", "73"]
+      "BINK": {
+        "72": {},
+        "73": {}
+      }
     },
     "Windows Longhorn (6.0.4039.0 -> Pre PIDGENX)": {
-      "BINK": ["74", "75"]
+      "BINK": {
+        "74": {},
+        "75": {}
+      }
     },
     "Expression Web 2007 / Sharepoint Server 2007": {
       "BINK": ["76", "77"]
     },
     "Identity Lifecycle Manager 2007": {
-      "BINK": ["78", "79"]
+      "BINK": {
+        "78": {},
+        "79": {}
+      }
     },
     "Visual Studio 2008": {
-      "BINK": ["78", "79"]
+      "BINK": {
+        "78": {},
+        "79": {}
+      }
     },
     "Sharepoint Designer 2007": {
       "BINK": ["7C", "7D"]
     },
     "Office 2007 Applications": {
-      "BINK": ["7E", "7F"]
+      "BINK": {
+        "7E": {},
+        "7F": {}
+      }
     },
     "Office 2007 Basic / Small Business": {
-      "BINK": ["80", "81"]
+      "BINK": {
+        "80": {},
+        "81": {}
+      }
     },
     "Office 2007 Standard / Professional / Ultimate / Enterprise": {
-      "BINK": ["82", "83"]
+      "BINK": {
+        "82": {},
+        "83": {}
+      }
     },
     "Office 2007 Hybrid": {
       "BINK": ["84", "85"]
     },
     "Office 2007 Home & Student": {
-      "BINK": ["88", "89"]
+      "BINK": {
+        "88": {},
+        "89": {}
+      }
     }
   },
   "BINK": {
