@@ -19,7 +19,7 @@
 | [![Windows ARM](https://github.com/UMSKT/UMSKT/actions/workflows/windows-arm.yml/badge.svg)](../../actions/workflows/windows-arm.yml) |
 | [![macOS](https://github.com/UMSKT/UMSKT/actions/workflows/macos.yml/badge.svg)](../../actions/workflows/macos.yml) |
 | [![Linux](https://github.com/UMSKT/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml) |
-| [![FreeBSD](https://github.com/UMSKT/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/freebsd.yml) |
+| [![FreeBSD](https://img.shields.io/badge/FreeBSD-unmaintained-D3D3D3?logo=github)](../../actions/workflows/freebsd.yml) |
 | [![DOS DJGPP](https://github.com/UMSKT/UMSKT/actions/workflows/dos-djgpp.yml/badge.svg)](../../actions/workflows/dos-djgpp.yml) |
 
 ------
