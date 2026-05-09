@@ -160,6 +160,7 @@ jobs:
             if [ -f TEST3.TXT ]; then
               echo "Test 3 output:"
               cat TEST3.TXT
+            fi
             exit 1
           fi
           # Verify test outputs
@@ -289,6 +290,7 @@ jobs:
             if [ -f TEST3.TXT ]; then
               echo "Test 3 output:"
               cat TEST3.TXT
+            fi
             exit 1
           fi
           # Verify test outputs
