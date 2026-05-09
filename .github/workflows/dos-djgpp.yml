@@ -102,7 +102,7 @@ jobs:
       - name: Setup DOSBox test environment
         run: |
           mkdir -p dosbox_test
-          cp umskt.exe dosbox_test/
+          cp build/umskt.exe dosbox_test/
           # Download DPMI server directly
           # wget https://github.com/UMSKT/winactiontest/raw/refs/heads/main/CWSDPMI.EXE -O dosbox_test/CWSDPMI.EXE
           # Create test batch file
