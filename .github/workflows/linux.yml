@@ -90,7 +90,7 @@ jobs:
         ./umskt -b 2C -c 365 -s 069420,999999 -v
         echo Test 2 - generating key \(BINK2002\)
         ./umskt -b 5A -c 640 -s 069420,999999 -v
-        echo Test 2 - generating confid
+        echo Test 3 - generating confid
         ./umskt -i 253286028742154311079061239762245184619981623171292574
       shell: alpine-target.sh {0}
 
@@ -102,7 +102,7 @@ jobs:
         ./umskt -b 2C -c 365 -s 069420,999999 -v
         echo Test 2 - generating key \(BINK2002\)
         ./umskt -b 5A -c 640 -s 069420,999999 -v
-        echo Test 2 - generating confid
+        echo Test 3 - generating confid
         ./umskt -i 253286028742154311079061239762245184619981623171292574
 
     - name: Move files to correct directory
@@ -139,7 +139,7 @@ jobs:
         ./umskt -b 2C -c 365 -s 069420,999999 -v
         echo Test 2 - generating key \(BINK2002\)
         ./umskt -b 5A -c 640 -s 069420,999999 -v
-        echo Test 2 - generating confid
+        echo Test 3 - generating confid
         ./umskt -i 253286028742154311079061239762245184619981623171292574
       shell: alpine-target.sh {0}
 
@@ -151,7 +151,7 @@ jobs:
         ./umskt -b 2C -c 365 -s 069420,999999 -v
         echo Test 2 - generating key \(BINK2002\)
         ./umskt -b 5A -c 640 -s 069420,999999 -v
-        echo Test 2 - generating confid
+        echo Test 3 - generating confid
         ./umskt -i 253286028742154311079061239762245184619981623171292574
 
     - name: Configure and build shared deps UMSKT (Alpine)
@@ -177,7 +177,7 @@ jobs:
         ./umskt -b 2C -c 365 -s 069420,999999 -v
         echo Test 2 - generating key \(BINK2002\)
         ./umskt -b 5A -c 640 -s 069420,999999 -v
-        echo Test 2 - generating confid
+        echo Test 3 - generating confid
         ./umskt -i 253286028742154311079061239762245184619981623171292574
       shell: alpine-target.sh {0}
 
@@ -189,5 +189,5 @@ jobs:
         ./umskt -b 2C -c 365 -s 069420,999999 -v
         echo Test 2 - generating key \(BINK2002\)
         ./umskt -b 5A -c 640 -s 069420,999999 -v
-        echo Test 2 - generating confid
+        echo Test 3 - generating confid
         ./umskt -i 253286028742154311079061239762245184619981623171292574
