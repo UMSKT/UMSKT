@@ -238,6 +238,7 @@ void PIDGEN3::BINK2002::Generate(
     DWORD pData = pChannelID << 1 | pUpgrade;
 
     BOOL noSquare;
+    BOOL serialInRange;
 
     do {
         EC_POINT *r = EC_POINT_new(eCurve);
@@ -276,10 +277,8 @@ void PIDGEN3::BINK2002::Generate(
         // This is important in some cases since serial can technically exceed 999999, affecting the derived Channel ID.
 
         DWORD serial = (((BYDWORD(msgDigest + 4) >> 13) << 1) | (BYDWORD(msgDigest) >> 31)) & BITMASK(20);
-
-        if (serial < serMin || serial > serMax) {
-            continue;
-        }
+        serialInRange = (serial >= serMin) && (serial <= serMax);
+        if (!serialInRange) continue;
 
         // Translate the byte digest into a 32-bit integer - this is our computed hash.
         // Truncate the hash to 31 bits.
@@ -386,7 +385,7 @@ void PIDGEN3::BINK2002::Generate(
         fmt::print(UMSKT::debug, "\n");
 
         EC_POINT_free(r);
-    } while (pSignature > BITMASK(62) || noSquare);
+    } while (pSignature > BITMASK(62) || noSquare || !serialInRange);
     // ↑ ↑ ↑
     // The signature can't be longer than 62 bits, else it will
     // overlap with the AuthInfo segment next to it.
