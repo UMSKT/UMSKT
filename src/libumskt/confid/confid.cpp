@@ -695,7 +695,7 @@ void ConfirmationID::sha1_single_block(unsigned char input[64], unsigned char ou
 
 void ConfirmationID::decode_iid_new_version(unsigned char* iid, unsigned char* hwid, int* version)
 {
-    QWORD buffer[5];
+    DWORD buffer[5];
     int i;
     for (i = 0; i < 5; i++)
         memcpy(&buffer[i], (iid + (4 * i)), 4);
