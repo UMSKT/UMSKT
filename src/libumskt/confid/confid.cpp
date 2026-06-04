@@ -128,6 +128,7 @@ QWORD ConfirmationID::ui128_quotient_mod(QWORD lo, QWORD hi)
 			__umul128(lo, 0x4FA8E4A40CDAE44A, &prod1);
 			break;
 		case 4:
+		case 5:
 			__umul128(lo, 0x2C5C4D3654A594F0, &prod1);
 	}
 	QWORD part1hi;
@@ -142,6 +143,7 @@ QWORD ConfirmationID::ui128_quotient_mod(QWORD lo, QWORD hi)
 			part1lo = __umul128(lo, 0x2CBAF12A59BBE, &part1hi);
 			break;
 		case 4:
+		case 5:
 			part1lo = __umul128(lo, 0x2D36C691A4EA5, &part1hi);
 	}
 	QWORD part2hi;
@@ -156,6 +158,7 @@ QWORD ConfirmationID::ui128_quotient_mod(QWORD lo, QWORD hi)
 			part2lo = __umul128(hi, 0x4FA8E4A40CDAE44A, &part2hi);
 			break;
 		case 4:
+		case 5:
 			part2lo = __umul128(hi, 0x2C5C4D3654A594F0, &part2hi);
 	}
 	QWORD sum1 = part1lo + part2lo;
@@ -175,6 +178,7 @@ QWORD ConfirmationID::ui128_quotient_mod(QWORD lo, QWORD hi)
 			prod3lo = __umul128(hi, 0x2CBAF12A59BBE, &prod3hi);
 			break;
 		case 4:
+		case 5:
 			prod3lo = __umul128(hi, 0x2D36C691A4EA5, &prod3hi);
 	}
 	prod3lo += prod2;
@@ -724,6 +728,7 @@ void ConfirmationID::Mix(unsigned char* buffer, size_t bufSize, const unsigned c
 				break;
 			case 2:
 			case 3:
+			case 5:
 				sha1_input[0] = 0x79;
 				memcpy(sha1_input + 1, buffer + half, half);
 				memcpy(sha1_input + 1 + half, key, keySize);
@@ -764,6 +769,7 @@ void ConfirmationID::Unmix(unsigned char* buffer, size_t bufSize, const unsigned
 				break;
 			case 2:
 			case 3:
+			case 5:
 				sha1_input[0] = 0x79;
 				memcpy(sha1_input + 1, buffer, half);
 				memcpy(sha1_input + 1 + half, key, keySize);
@@ -812,6 +818,7 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 			f[5] = 0x1;
 			break;
 		case 4:
+		case 5:
 			MOD = 0x16A5DABA0605983;
 			NON_RESIDUE = 2;
 			f[0] = 0x334F24F75CAA0E;
@@ -821,7 +828,7 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 			f[4] = 0x163694F26056DB;
 			f[5] = 0x1;
 	}
-	unsigned char installation_id[19]; // 10**45 < 256**19
+	unsigned char installation_id[20]; // 10**45 < 256**19
 	size_t installation_id_len = 0;
 	const char* p = installation_id_str;
 	size_t count = 0, totalCount = 0;
@@ -845,7 +852,7 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 		check += (count % 2 ? d * 2 : d);
 		count++;
 		totalCount++;
-		if (totalCount > 45)
+		if (totalCount > 50)
 			return ERR_TOO_LARGE;
 		unsigned char carry = d;
 		for (i = 0; i < installation_id_len; i++) {
@@ -866,6 +873,7 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 	switch (activationMode) {
 		case 0:
 		case 4:
+		case 5:
 			iid_key[0] = 0x6A;
 			iid_key[1] = 0xC8;
 			iid_key[2] = 0x5E;
@@ -880,7 +888,9 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 			iid_key[3] = 0xF3;
 	}
 	Unmix(installation_id, totalCount == 41 ? 17 : 19, iid_key, 4);
-	if (installation_id[18] >= 0x10 && overrideVersion == false)
+	if (activationMode != 5 && installation_id[18] >= 0x10 && overrideVersion == false)
+		return ERR_UNKNOWN_VERSION;
+	if (activationMode == 5 && installation_id[19] != 0xB)
 		return ERR_UNKNOWN_VERSION;
 
 #pragma pack(push, 1)
@@ -918,6 +928,13 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 			}
 
 			break;
+		case 5:
+			memcpy(&parsed, installation_id, sizeof(parsed));
+			productID[0] = parsed.ProductIDLow & ((1 << 17) - 1);
+			productID[1] = (parsed.ProductIDLow >> 17) & ((1 << 10) - 1);
+			productID[2] = (parsed.KeySHA1 << 8) | parsed.ProductIDHigh;
+			productID[3] = (parsed.ProductIDLow >> 27) & ((1 << 17) - 1);
+			break;
 		case 2:
 		case 3:
 			decode_iid_new_version(installation_id, hardwareID, &version);
@@ -950,8 +967,8 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 				productID[2] = stoi(productid.substr(10,7));
 				productID[3] = stoi(productid.substr(18,5));
 			}
-		//fmt::print("ProductID: {}-{}-{}-{} \n", productID[0], productID[1], productID[2], productID[3]);
 	}
+	// fmt::print("ProductID: {}-{}-{}-{} \n", productID[0], productID[1], productID[2], productID[3]);
 	
 	unsigned char keybuf[16];
 	memcpy(keybuf, &parsed.HardwareID, 8);
@@ -974,6 +991,7 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 			case 0:
 			case 1:
 			case 4:
+			case 5:
 				u.buffer[7] = attempt;
 				break;
 			case 2:
@@ -1001,6 +1019,7 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 			divisor_mul128(&d, 0xEFE0302A1F7A5341, 0x01FB8CF48A70DF, &d);
 			break;
 		case 4:
+		case 5:
 			divisor_mul128(&d, 0x7C4254C43A5D1181, 0x01C61212ECE610, &d);
 	}
 	union {

@@ -97,7 +97,7 @@ In light of the recent exponential interest in this project I've decided to put 
 
 
 * Select the **telephone activation** method, then, run `umskt -i <Installation ID>` using the `Installation ID` the activation Wizard provides for you
-   * If you're activating a non-Windows product, use `umskt -i <Installation ID> -m <Product>`, where `<Product>` is one of `OFFICEXP`, `OFFICE2K3`, `OFFICE2K7`, or `PLUSDME`
+   * If you're activating a non-Windows product, use `umskt -i <Installation ID> -m <Product>`, where `<Product>` is one of `OFFICEXP`, `OFFICE2K3`, `OFFICE2K7`, `PLUSDME`, or `OFFICEACC`
    * If activating Office 2003/2007, use `umskt -i <Installation ID> -m <Product> -p <Product ID>`
 
 #### 4. Profit!

@@ -94,7 +94,10 @@
       "BINK": ["52", "53"]
     },
     "Plus! Digital Media Edition for Windows XP": {
-      "BINK": ["52", "53"]
+      "BINK": [ "52", "53" ]
+    },
+    "Office Accounting 2006 / 2007 / 2008 / 2009": {
+      "BINK": [ "52", "53" ]
     },
     "Windows Longhorn (6.0.4033.0)": {
       "BINK": ["54", "55"]
