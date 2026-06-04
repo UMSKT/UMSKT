@@ -42,6 +42,7 @@ enum ACTIVATION_ALGORITHM {
     OFFICE_2K3  = 2,
     OFFICE_2K7  = 3,
     PLUS_DME    = 4,
+    OFFICE_ACC  = 5,
 };
 
 enum MODE {

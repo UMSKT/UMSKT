@@ -62,12 +62,12 @@ void CLI::showHelp(char *argv[]) {
     fmt::print("\t-n --number\tnumber of keys to generate (defaults to 1)\n");
     fmt::print("\t-f --file\tspecify which keys file to load\n");
     fmt::print("\t-i --instid\tinstallation ID used to generate confirmation ID (reads from stdin if no argument provided)\n");
-    fmt::print("\t-m --mode\tproduct family to activate.\n\t\t\tvalid options are \"WINDOWS\", \"OFFICEXP\", \"OFFICE2K3\", \"OFFICE2K7\" or \"PLUSDME\"\n\t\t\t(defaults to \"WINDOWS\")\n");
+    fmt::print("\t-m --mode\tproduct family to activate.\n\t\t\tvalid options are \"WINDOWS\", \"OFFICEXP\", \"OFFICE2K3\", \"OFFICE2K7\", \"PLUSDME\", or \"OFFICEACC\"\n\t\t\t(defaults to \"WINDOWS\")\n");
     fmt::print("\t-p --productid\tthe product ID of the Program to activate. only required for Office 2K3 and Office 2K7 programs\n");
     fmt::print("\t-b --binkid\tspecify which BINK identifier to load (defaults to 2E)\n");
     fmt::print("\t-l --list\tshow which products/binks can be loaded\n");
     fmt::print("\t-c --channelid\tspecify which Channel Identifier to use (defaults to 640)\n");
-    fmt::print("\t-s --serial\tspecifies a serial (eg. 123456) or comma-separated serial range (recommended for BINK2002, eg. 1234,5678) to use in the product ID (defaults to 0,999999)\n");
+    fmt::print("\t-s --serial\tspecifies a serial (eg. 123456) or comma-separated serial range\n\t\t\t(recommended for BINK2002, eg. 1234,5678) to use in the product ID (defaults to 0,999999)\n");
     fmt::print("\t-u --upgrade\tspecifies the Product Key will be an \"Upgrade\" version\n");
     fmt::print("\t-V --validate\tproduct key to validate signature\n");
     fmt::print("\t-N --nonewlines\tdisables newlines (for easier embedding in other apps)\n");
@@ -198,11 +198,13 @@ int CLI::parseCommandLine(int argc, char* argv[], Options* options) {
                 options->activationMode = OFFICE_XP;
 	    } else if (strcmp(p, "OFFICE2K3") == 0) {
                 options->activationMode = OFFICE_2K3;
-            } else if (strcmp(p, "OFFICE2K7") == 0) {
+        } else if (strcmp(p, "OFFICE2K7") == 0) {
                 options->activationMode = OFFICE_2K7;
 	    } else if (strcmp(p, "PLUSDME") == 0) {
                 options->activationMode = PLUS_DME;
-	    }
+        } else if (strcmp(p, "OFFICEACC") == 0) {
+                options->activationMode = OFFICE_ACC;
+        }
             i++;
         } else if (arg == "-p" || arg == "--productid") {
 	    if (i == argc -1) {
