@@ -61,11 +61,8 @@ In light of the recent exponential interest in this project I've decided to put 
 > [!WARNING]
 > Processors barely meeting the minimum system requirements for XP may not work. Use the MS-DOS version via NTVDM in that case.
 
-#### Windows (ARM32/64)
+#### Windows (ARM64)
 * Windows 11 21H2 or later
-
-> [!NOTE]
-> This is just all we can test. Try to get it to run on Windows RT, make an issue if it doesn't run and we'll try to fix it.
 #### macOS
 * Apple Silicon or x86_64 processor
 * Latest version of macOS
