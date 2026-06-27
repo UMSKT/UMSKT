@@ -140,7 +140,7 @@ jobs:
             -DOPENSSL_SSL_LIBRARY="$OPENSSL_LIB/libssl.a" `
             -DCMAKE_C_FLAGS="$env:CMAKE_FLAGS" `
             -DCMAKE_CXX_FLAGS="$env:CMAKE_FLAGS" `
-            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 `
+            -DCMAKE_POLICY_VERSION_MINIMUM="3.5" `
             .
 
       - name: Build UMSKT
