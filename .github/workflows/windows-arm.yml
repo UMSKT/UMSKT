@@ -106,7 +106,7 @@ jobs:
       - name: Configure UMSKT
         shell: pwsh
         run: |
-          cmake -G "Visual Studio 17 2022" `
+          cmake -G "Visual Studio 18 2026" `
             -A ${{ matrix.cmake_arch }} `
             -DWINDOWS_ARM=ON `
             -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
