@@ -111,6 +111,7 @@ jobs:
             -DWINDOWS_ARM=ON `
             -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
             -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_arch }} `
+            -DCMAKE_POLICY_VERSION_MINIMUM="3.5" `
             .
 
       - name: Build UMSKT
