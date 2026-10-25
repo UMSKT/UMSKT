@@ -5,7 +5,7 @@
  *
  * RAND_bytes for every target. Windows stirs kernel32 timers and, when the
  * DLL is present, CryptGenRandom via GetProcAddress. Other systems read
- * /dev/urandom. DJGPP uses its C library plus the BIOS timer.
+ * /dev/urandom. DJGPP seeds from gettimeofday.
  */
 
 #include "mini_openssl.h"
@@ -143,10 +143,9 @@ int RAND_bytes(unsigned char *buf, int num) {
     }
     if (!rng_ready) {
         struct timeval tv;
-        unsigned long ticks = *(volatile unsigned long *)0x0040001CL;
         int seed;
         gettimeofday(&tv, NULL);
-        seed = (int)((tv.tv_sec ^ tv.tv_usec) ^ (ticks * 100000));
+        seed = (int)(tv.tv_sec ^ tv.tv_usec);
         srandom(seed);
         srand(seed ^ 0x1234ABCD);
         rng_mix((uint32_t)seed);
