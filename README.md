@@ -53,18 +53,18 @@ In light of the recent exponential interest in this project I've decided to put 
 * i386 processor or better
 * MS-DOS 6.22 or later
 * Any DOS-based version of Windows
-* The DOS build also runs under NTVDM on Windows NT
+* Windows NT 4.0 or later (via NTVDM)
 #### Windows (x86)
 * Pentium processor or better
-* Windows 98, Windows NT 4.0 SP6a, or any later 32-bit Windows
+* Windows 98 First Edition or later
+* Windows NT 4.0 SP6a or later
 #### Windows (x64)
-* Windows XP Professional x64, Windows Server 2003 x64, or later
-
+* Windows MT 5.2 (Windows XP x64, Windows Server 2003) or later
 #### Windows (ARM64)
-* Windows 11 21H2 or later
+* Winodws 11 21H2 or later
 #### macOS
 * Apple Silicon or x86_64 processor
-* Latest version of macOS
+* macOS 26 Tahoe or later
 #### Linux
 * modern ARM, x86, or x86_64 processor
 * Latest version of your Linux distro

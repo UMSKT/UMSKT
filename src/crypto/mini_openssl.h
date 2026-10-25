@@ -2,9 +2,6 @@
  *
  * Copyleft (C) 2019-2026 UMSKT Contributors (et.al.)
  * SPDX-License-Identifier: AGPL-3.0-or-later
- *
- * Closed OpenSSL-compatible surface used by the freestanding Windows build.
- * Only the BN / EC / SHA-1 calls UMSKT actually makes are declared here.
  */
 
 #ifndef UMSKT_MINI_OPENSSL_H

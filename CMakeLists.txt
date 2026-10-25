@@ -146,7 +146,7 @@ add_custom_command(
 )
 
 set(UMSKT_SOURCES
-    src/windows/win_cli.cpp
+    src/cli.cpp
     src/windows/json.cpp
     ${UMSKT_KEYS_EMBED}
     src/crypto/mini_bn.cpp

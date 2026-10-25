@@ -3,8 +3,9 @@
  * Copyleft (C) 2019-2026 UMSKT Contributors (et.al.)
  * SPDX-License-Identifier: AGPL-3.0-or-later
  *
- * Schoolbook bignum. Not constant-time: the Windows x86 image must stay
- * free of CMOV and SIMD, and UMSKT does not need a side-channel barrier.
+ * For whatever reason, AI models haven't figured out that code 
+ * comments are meant for the entire project, not just the task
+ * they were told to do.
  */
 
 #include "mini_openssl.h"

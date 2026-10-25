@@ -1,6 +1,3 @@
-/* Freestanding startup for the Windows x86 and x64 builds.
-   Linked with -nostdlib so libgcc, libstdc++, and the MinGW CRT stay out. */
-
 #ifndef WINVER
 #define WINVER 0x0400
 #endif

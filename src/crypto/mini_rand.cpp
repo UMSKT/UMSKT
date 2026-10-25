@@ -2,10 +2,6 @@
  *
  * Copyleft (C) 2019-2026 UMSKT Contributors (et.al.)
  * SPDX-License-Identifier: AGPL-3.0-or-later
- *
- * RAND_bytes for every target. Windows stirs kernel32 timers and, when the
- * DLL is present, CryptGenRandom via GetProcAddress. Other systems read
- * /dev/urandom. DJGPP seeds from gettimeofday.
  */
 
 #include "mini_openssl.h"

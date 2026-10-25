@@ -1,6 +1,3 @@
-/* Kernel32 declarations for freestanding Windows sources.
-   windows.h is not included here: it redefines UMSKT's BYTE/DWORD/BOOL. */
-
 #ifndef UMSKT_WIN32_MIN_H
 #define UMSKT_WIN32_MIN_H
 
