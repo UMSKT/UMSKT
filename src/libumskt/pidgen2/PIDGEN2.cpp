@@ -22,6 +22,18 @@
 
 #include "PIDGEN2.h"
 
+static int parse_i(const char *text) {
+    int value = 0;
+    if (!text) {
+        return 0;
+    }
+    while (*text >= '0' && *text <= '9') {
+        value = value * 10 + (*text - '0');
+        text++;
+    }
+    return value;
+}
+
 const char* channelIDBlacklist [7]  = {"333", "444", "555", "666", "777", "888", "999"};
 const char* validYears[8] = { "95", "96", "97", "98", "99", "00", "01", "02"};
 
@@ -93,7 +105,7 @@ bool PIDGEN2::isValidDay(char* day) {
         return false;
     }
 
-    int iDay = std::stoi(day);
+    int iDay = parse_i(day);
     if (iDay == 0 || iDay >= 365) {
         return false;
     }
@@ -117,7 +129,9 @@ int PIDGEN2::GenerateOEM(char* year, char* day, char* oem, char* &keyout) {
         int mod = addDigits(oem);
         mod += mod % 21;
 
-        strcpy(oem, fmt::format("{:07d}", mod).c_str());
+        char formatted[16];
+        snprintf(formatted, sizeof(formatted), "%07d", mod);
+        strcpy(oem, formatted);
     }
 
     if (!isValidYear(year)) {
@@ -125,11 +139,16 @@ int PIDGEN2::GenerateOEM(char* year, char* day, char* oem, char* &keyout) {
     }
 
     if (!isValidDay(day)) {
-        int iday = std::stoi(day);
+        int iday = parse_i(day);
         iday = (iday + 1) % 365;
+        (void)iday;
     }
 
-    strcpy(keyout, fmt::format("{}{}-OEM-{}-{}", year, day, oem, oem).c_str());
+    {
+        char formatted[64];
+        snprintf(formatted, sizeof(formatted), "%s%s-OEM-%s-%s", year, day, oem, oem);
+        strcpy(keyout, formatted);
+    }
 
     return 0;
 }

@@ -58,9 +58,6 @@ jobs:
           cmake
           git
           musl-dev
-          openssl-dev
-          openssl-libs-static
-          zlib-dev
         arch: ${{ matrix.arch }}
         shell-name: alpine-target.sh
 
@@ -68,7 +65,7 @@ jobs:
       if: ${{ !matrix.use_alpine }}
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake git libssl-dev zlib1g-dev
+        sudo apt-get install -y build-essential cmake git
 
     - name: Configure and build UMSKT (Alpine)
       if: ${{ matrix.use_alpine }}

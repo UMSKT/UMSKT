@@ -43,7 +43,7 @@
        with: 
          usesh: true 
          prepare: | 
-           pkg install -y cmake openssl git bash 
+           pkg install -y cmake git bash 
   
          run: | 
            mkdir -p build 

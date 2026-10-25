@@ -53,13 +53,12 @@ In light of the recent exponential interest in this project I've decided to put 
 * i386 processor or better
 * MS-DOS 6.22 or later
 * Any DOS-based version of Windows
-* Windows NT 4.0 or later (via NTVDM)
-#### Windows (x86/x64)
-* i686 processor or better
-* Windows XP or later
-
-> [!WARNING]
-> Processors barely meeting the minimum system requirements for XP may not work. Use the MS-DOS version via NTVDM in that case.
+* The DOS build also runs under NTVDM on Windows NT
+#### Windows (x86)
+* Pentium processor or better
+* Windows 98, Windows NT 4.0 SP6a, or any later 32-bit Windows
+#### Windows (x64)
+* Windows XP Professional x64, Windows Server 2003 x64, or later
 
 #### Windows (ARM64)
 * Windows 11 21H2 or later

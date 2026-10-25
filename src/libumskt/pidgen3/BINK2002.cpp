@@ -183,14 +183,14 @@ bool PIDGEN3::BINK2002::Verify(
     DWORD serial = (((BYDWORD(msgDigest + 4) >> 13) << 1) | (BYDWORD(msgDigest) >> 31)) & BITMASK(20);
     if (pSerial != nullptr) *pSerial = serial;
 
-    fmt::print(UMSKT::debug, "Validation results:\n");
-    fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", pUpgrade);
-    fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", pChannelID);
-    fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
-    fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
-    fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", pAuthInfo);
-    fmt::print(UMSKT::debug, "    Serial: {:06d}\n", serial);
-    fmt::print(UMSKT::debug, "\n");
+    UMSKT::debugf("Validation results:\n");
+    UMSKT::debugf("   Upgrade: 0x%08x\n", (unsigned)pUpgrade);
+    UMSKT::debugf("Channel ID: 0x%08x\n", (unsigned)pChannelID);
+    UMSKT::debugf("      Hash: 0x%08x\n", (unsigned)pHash);
+    UMSKT::debugf(" Signature: 0x%08llx\n", (unsigned long long)pSignature);
+    UMSKT::debugf("  AuthInfo: 0x%08x\n", (unsigned)pAuthInfo);
+    UMSKT::debugf("    Serial: %06u\n", (unsigned)serial);
+    UMSKT::debugf("\n");
 
     // Translate the byte digest into a 32-bit integer - this is our computed hash.
     // Truncate the hash to 31 bits.
@@ -375,14 +375,14 @@ void PIDGEN3::BINK2002::Generate(
         // Pack product key.
         Pack(pRaw, pUpgrade, pChannelID, pHash, pSignature, pAuthInfo);
 
-        fmt::print(UMSKT::debug, "Generation results:\n");
-        fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", pUpgrade);
-        fmt::print(UMSKT::debug, "Channel ID: 0x{:08x}\n", pChannelID);
-        fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
-        fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
-        fmt::print(UMSKT::debug, "  AuthInfo: 0x{:08x}\n", pAuthInfo);
-        fmt::print(UMSKT::debug, "    Serial: {:06d}\n", serial);
-        fmt::print(UMSKT::debug, "\n");
+        UMSKT::debugf("Generation results:\n");
+        UMSKT::debugf("   Upgrade: 0x%08x\n", (unsigned)pUpgrade);
+        UMSKT::debugf("Channel ID: 0x%08x\n", (unsigned)pChannelID);
+        UMSKT::debugf("      Hash: 0x%08x\n", (unsigned)pHash);
+        UMSKT::debugf(" Signature: 0x%08llx\n", (unsigned long long)pSignature);
+        UMSKT::debugf("  AuthInfo: 0x%08x\n", (unsigned)pAuthInfo);
+        UMSKT::debugf("    Serial: %06u\n", (unsigned)serial);
+        UMSKT::debugf("\n");
 
         EC_POINT_free(r);
     } while (pSignature > BITMASK(62) || noSquare || !serialInRange);

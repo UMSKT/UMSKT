@@ -94,12 +94,12 @@ bool PIDGEN3::BINK1998::Verify(
     // Extract RPK, hash and signature from bytecode.
     Unpack(pRaw, pUpgrade, pSerial, pHash, pSignature);
 
-    fmt::print(UMSKT::debug, "Validation results:\n");
-    fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", pUpgrade);
-    fmt::print(UMSKT::debug, "    Serial: 0x{:08x}\n", pSerial);
-    fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
-    fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
-    fmt::print(UMSKT::debug, "\n");
+    UMSKT::debugf("Validation results:\n");
+    UMSKT::debugf("   Upgrade: 0x%08x\n", (unsigned)pUpgrade);
+    UMSKT::debugf("    Serial: 0x%08x\n", (unsigned)pSerial);
+    UMSKT::debugf("      Hash: 0x%08x\n", (unsigned)pHash);
+    UMSKT::debugf(" Signature: 0x%08llx\n", (unsigned long long)pSignature);
+    UMSKT::debugf("\n");
 
     pData = pSerial << 1 | pUpgrade;
 
@@ -264,12 +264,12 @@ void PIDGEN3::BINK1998::Generate(
         // Pack product key.
         Pack(pRaw, pUpgrade, pSerial, pHash, pSignature);
 
-        fmt::print(UMSKT::debug, "Generation results:\n");
-        fmt::print(UMSKT::debug, "   Upgrade: 0x{:08x}\n", pUpgrade);
-        fmt::print(UMSKT::debug, "    Serial: 0x{:08x}\n", pSerial);
-        fmt::print(UMSKT::debug, "      Hash: 0x{:08x}\n", pHash);
-        fmt::print(UMSKT::debug, " Signature: 0x{:08x}\n", pSignature);
-        fmt::print(UMSKT::debug, "\n");
+        UMSKT::debugf("Generation results:\n");
+        UMSKT::debugf("   Upgrade: 0x%08x\n", (unsigned)pUpgrade);
+        UMSKT::debugf("    Serial: 0x%08x\n", (unsigned)pSerial);
+        UMSKT::debugf("      Hash: 0x%08x\n", (unsigned)pHash);
+        UMSKT::debugf(" Signature: 0x%08llx\n", (unsigned long long)pSignature);
+        UMSKT::debugf("\n");
 
         EC_POINT_free(r);
     } while (pSignature > BITMASK(55));

@@ -63,83 +63,15 @@ jobs:
       - name: Checkout Source Tree
         uses: actions/checkout@v4
 
-      - name: Cache OpenSSL 1.1.1
-        uses: actions/cache/restore@v4
-        id: cache-openssl
-        with:
-          path: |
-            ${{ github.workspace }}/OpenSSL-TDM-${{ matrix.arch }}
-          key: openssl-1.1.1-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}
-
-      - name: Setup MSYS2
-        if: steps.cache-openssl.outputs.cache-hit != 'true'
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: ${{ matrix.arch == 'x86' && 'MINGW32' || 'MINGW64' }}
-          update: true
-          install: >-
-            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-gcc
-            mingw-w64-${{ matrix.arch == 'x86' && 'i686' || 'x86_64' }}-make
-            mingw-w64-x86_64-perl
-            perl
-            git
-
-      - name: Checkout and Compile OpenSSL 1.1.1
-        if: steps.cache-openssl.outputs.cache-hit != 'true'
-        shell: msys2 {0}
-        run: |
-          # Clone UMSKT's OpenSSL fork
-          echo "Cloning UMSKT OpenSSL fork..."
-          git clone https://github.com/UMSKT/openssl.git --branch OpenSSL_1_1_1-stable --depth 1 openssl-1.1.1
-          # Set up proper MSYS2 environment
-          export MSYS=winsymlinks:nativestrict
-          export MSYS2_PATH_TYPE=strict
-          export LANG=en_US.UTF-8
-          export PATH="/usr/bin:/mingw64/bin:$PATH"
-          export PATH="/c/TDM-GCC-64/bin:$PATH"
-          export MSYSTEM=${{ matrix.msystem }}
-          cd openssl-1.1.1
-
-          if [[ ${{ matrix.arch }} == "x86" ]]; then
-              /usr/bin/perl Configure mingw --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-${{ matrix.arch }} --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-32 no-tests no-sse2 no-asm no-threads -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i686 -mtune=generic -Os -s -fno-exceptions -fno-rtti -fno-unwind-tables -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections -fno-stack-protector
-          else
-              /usr/bin/perl Configure mingw64 --prefix=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-${{ matrix.arch }} --openssldir=$(cygpath -u "$GITHUB_WORKSPACE")/OpenSSL-TDM-64 no-tests no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -Os -s -fno-exceptions -fno-rtti -fno-unwind-tables -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections -fno-stack-protector
-          fi
-          mingw32-make -j
-          mingw32-make install_sw
-          cd ..
-      
-      - name: Save OpenSSL 1.1.1
-        if: steps.cache-openssl.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ${{ github.workspace }}/OpenSSL-TDM-${{ matrix.arch }}
-          key: openssl-1.1.1-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}
-
-      - name: Set OpenSSL Environment
-        shell: pwsh
-        run: |
-          echo "OPENSSL_ROOT=$env:GITHUB_WORKSPACE/OpenSSL-TDM-${{ matrix.arch }}" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "OPENSSL_LIBDIR=lib" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "CMAKE_FLAGS=${{ matrix.cmake_flag }}" | Out-File -FilePath $env:GITHUB_ENV -Append
-
       - name: Configure UMSKT
         shell: pwsh
         run: |
           $env:PATH = 'C:\TDM-GCC-64\bin;' + $env:PATH
-          $OPENSSL_ROOT = "$env:OPENSSL_ROOT"
-          $OPENSSL_LIB = "$OPENSSL_ROOT/$env:OPENSSL_LIBDIR"
-          $OPENSSL_INC = "$OPENSSL_ROOT/include"
           cmake -G "MinGW Makefiles" `
             -DCMAKE_C_COMPILER="gcc" `
             -DCMAKE_CXX_COMPILER="g++" `
-            -DOPENSSL_ROOT_DIR="$OPENSSL_ROOT" `
-            -DOPENSSL_INCLUDE_DIR="$OPENSSL_INC" `
-            -DOPENSSL_CRYPTO_LIBRARY="$OPENSSL_LIB/libcrypto.a" `
-            -DOPENSSL_SSL_LIBRARY="$OPENSSL_LIB/libssl.a" `
-            -DCMAKE_C_FLAGS="$env:CMAKE_FLAGS" `
-            -DCMAKE_CXX_FLAGS="$env:CMAKE_FLAGS" `
+            -DCMAKE_C_FLAGS="${{ matrix.cmake_flag }}" `
+            -DCMAKE_CXX_FLAGS="${{ matrix.cmake_flag }}" `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" `
             .
 
@@ -153,9 +85,20 @@ jobs:
         shell: pwsh
         run: |
           Write-Host Test 1 - generating key
-          .\umskt.exe -b 2C -c 365 -s 069420 -v
-          Write-Host Test 2 - generatng confid
-          .\umskt.exe -i 253286028742154311079061239762245184619981623171292574
+          $key = (.\umskt.exe -b 2C -c 365 -s 069420).Trim()
+          if ($LASTEXITCODE -ne 0 -or $key -notmatch '^[BCDFGHJKMPQRTVWXY2346789-]{29}$') {
+            Write-Host "key generation failed: $key"
+            exit 1
+          }
+          Write-Host Test 2 - validating that key
+          .\umskt.exe -b 2C -V $key
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Write-Host Test 3 - confirmation ID
+          $cid = (.\umskt.exe -i 253286028742154311079061239762245184619981623171292574).Trim()
+          if ($LASTEXITCODE -ne 0 -or $cid -ne '020052-539422-707952-510766-409626-387731-998883') {
+            Write-Host "confirmation ID mismatch: $cid"
+            exit 1
+          }
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.6.2
@@ -209,11 +152,9 @@ jobs:
       - name: Compress binaries
         shell: pwsh
         run: |
-          # Strip symbols
+          # Strip symbols. Keep .rsrc: it holds the embedded keys.json.
           strip .\umskt.exe
-
-          # Remove resources
-          llvm-objcopy --remove-section .rsrc umskt.exe umskt_comp.exe
+          Copy-Item .\umskt.exe .\umskt_comp.exe
 
           # Compress with UPX
           & "C:\UPX\upx-5.0.2-win64\upx.exe" --best --ultra-brute .\umskt_comp.exe
