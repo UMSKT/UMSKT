@@ -49,7 +49,7 @@ jobs:
           arch: ${{ matrix.arch_compilename }}
 
       - name: Checkout Source Tree
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configure UMSKT
         shell: pwsh
@@ -66,7 +66,7 @@ jobs:
           cmake --build . --config Release
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7
         with:
           name: UMSKT-WinNT-${{ matrix.arch }}
           path: Release/umskt.exe
@@ -80,7 +80,7 @@ jobs:
         arch: [arm64]
     steps:
       - name: Download ARM64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: UMSKT-WinNT-${{ matrix.arch }}
           path: .

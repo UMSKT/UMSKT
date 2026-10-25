@@ -39,7 +39,7 @@ jobs:
           - arch: arm64
     steps:
       - name: Checkout Source Tree
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Rosetta
         if: matrix.arch == 'x86_64'
@@ -72,7 +72,7 @@ jobs:
           ./umskt -i 253286028742154311079061239762245184619981623171292574
 
       - name: Upload platform-specific build
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7
         with:
           name: UMSKT-macOS-${{ matrix.arch }}
           path: build/actions_upload
@@ -82,12 +82,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Download x86_64 slice
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: UMSKT-macOS-x86_64
           path: x86
       - name: Download arm64 slice
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: UMSKT-macOS-arm64
           path: arm
@@ -98,7 +98,7 @@ jobs:
           lipo -create x86/umskt arm/umskt -output fat/umskt
           lipo -info fat/umskt
       - name: Upload universal build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with: 
           name: UMSKT-macOS-universal
           path: fat

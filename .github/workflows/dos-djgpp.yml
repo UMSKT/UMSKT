@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source Tree
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup build environment
         run: |
@@ -164,7 +164,7 @@ jobs:
           mv build/umskt.exe build/actions_upload/
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7
         with:
           name: UMSKT-DOS-x86
           path: build/actions_upload

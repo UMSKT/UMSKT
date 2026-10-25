@@ -35,7 +35,7 @@
      runs-on: ubuntu-latest
      name: build-x86_64 
      steps: 
-     - uses: actions/checkout@v4
+     - uses: actions/checkout@v7
   
      - name: Build & Test in FreeBSD 
        id: test 
@@ -63,7 +63,7 @@
            mv build/umskt build/actions_upload/umskt 
   
      - name: Upload build artifact 
-       uses: actions/upload-artifact@v4.6.2
+       uses: actions/upload-artifact@v7
        with: 
          name: UMSKT-FreeBSD 
          path: build/actions_upload

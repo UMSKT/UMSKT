@@ -46,7 +46,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
     - name: Checkout Source Tree
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Setup latest Alpine Linux
       if: ${{ matrix.use_alpine }}
@@ -69,7 +69,7 @@ jobs:
 
     - name: Configure and build UMSKT (Alpine)
       if: ${{ matrix.use_alpine }}
-      uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
+      uses: threeal/cmake-action@v1
       with:
         options: MUSL_STATIC=ON CMAKE_POLICY_VERSION_MINIMUM=3.5
         run-build: true
@@ -77,7 +77,7 @@ jobs:
 
     - name: Configure and build UMSKT (Ubuntu)
       if: ${{ !matrix.use_alpine }}
-      uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
+      uses: threeal/cmake-action@v1
       with:
         options: MUSL_STATIC=ON CMAKE_POLICY_VERSION_MINIMUM=3.5
         run-build: true
@@ -111,14 +111,14 @@ jobs:
           mv build/umskt build/actions_upload/umskt
 
     - name: Upload build artifact
-      uses: actions/upload-artifact@v4.6.2
+      uses: actions/upload-artifact@v7
       with:
         name: UMSKT-Linux-${{ matrix.arch }}-static
         path: build/actions_upload
 
     - name: Configure and build static internal deps UMSKT (Alpine)
       if: ${{ matrix.use_alpine }}
-      uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
+      uses: threeal/cmake-action@v1
       with:
         options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=OFF CMAKE_POLICY_VERSION_MINIMUM=3.5
         run-build: true
@@ -126,7 +126,7 @@ jobs:
 
     - name: Configure and build static internal deps UMSKT (Ubuntu)
       if: ${{ !matrix.use_alpine }}
-      uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
+      uses: threeal/cmake-action@v1
       with:
         options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=OFF CMAKE_POLICY_VERSION_MINIMUM=3.5
         run-build: true
@@ -156,7 +156,7 @@ jobs:
 
     - name: Configure and build shared deps UMSKT (Alpine)
       if: ${{ matrix.use_alpine }}
-      uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
+      uses: threeal/cmake-action@v1
       with:
         options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=ON CMAKE_POLICY_VERSION_MINIMUM=3.5
         run-build: true
@@ -164,7 +164,7 @@ jobs:
 
     - name: Configure and build shared deps UMSKT (Ubuntu)
       if: ${{ !matrix.use_alpine }}
-      uses: threeal/cmake-action@7ef2eb8da6e5ec0a6de6b1ddc96987080bed06e8
+      uses: threeal/cmake-action@v1
       with:
         options: MUSL_STATIC=OFF BUILD_SHARED_LIBS=ON CMAKE_POLICY_VERSION_MINIMUM=3.5
         run-build: true
