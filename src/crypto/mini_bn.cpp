@@ -638,37 +638,233 @@ int BN_mod_sqr(BIGNUM *r, const BIGNUM *a, const BIGNUM *m, BN_CTX *ctx) {
     return BN_mod_mul(r, a, a, m, ctx);
 }
 
-static int bn_mod_exp(BIGNUM *r, const BIGNUM *base, const BIGNUM *exp, const BIGNUM *m) {
-    BIGNUM *result = BN_new();
-    BIGNUM *value = BN_new();
-    BIGNUM *power = BN_dup(exp);
-    int ok = result && value && power;
-    if (!ok) {
-        BN_free(result);
-        BN_free(value);
-        BN_free(power);
+int BN_mod_inverse(BIGNUM *r, const BIGNUM *a, const BIGNUM *m) {
+    BIGNUM *u;
+    BIGNUM *v;
+    BIGNUM *x;
+    BIGNUM *y;
+    BIGNUM *tmp;
+    int ok;
+    int guard;
+    if (!r || !a || !m || BN_is_zero(m) || (m->d[0] & 1u) == 0) {
         return 0;
     }
-    BN_set_word(result, 1);
-    ok = bn_mod(value, base, m);
-    while (ok && !BN_is_zero(power)) {
-        if (BN_is_odd(power)) {
-            ok = BN_mod_mul(result, result, value, m, NULL);
+    u = BN_new();
+    v = BN_dup(m);
+    x = BN_new();
+    y = BN_new();
+    tmp = BN_new();
+    ok = u && v && x && y && tmp && BN_set_word(x, 1) && BN_zero(y) && bn_mod_abs(u, a, m);
+    if (ok && BN_is_zero(u)) {
+        ok = 0;
+    }
+    guard = BN_num_bits(m) * 4 + 8;
+    while (ok && !BN_is_zero(u) && guard-- > 0) {
+        while (ok && !BN_is_zero(u) && !BN_is_odd(u)) {
+            ok = BN_rshift1(u, u);
+            if (ok && BN_is_odd(x)) {
+                ok = bn_uadd(tmp, x, m) && BN_rshift1(x, tmp);
+            } else if (ok) {
+                ok = BN_rshift1(x, x);
+            }
         }
-        if (ok) {
-            ok = BN_mod_mul(value, value, value, m, NULL);
+        while (ok && !BN_is_odd(v)) {
+            ok = BN_rshift1(v, v);
+            if (ok && BN_is_odd(y)) {
+                ok = bn_uadd(tmp, y, m) && BN_rshift1(y, tmp);
+            } else if (ok) {
+                ok = BN_rshift1(y, y);
+            }
         }
-        if (ok) {
-            ok = BN_rshift1(power, power);
+        if (!ok || BN_is_zero(u)) {
+            break;
         }
+        if (BN_ucmp(u, v) >= 0) {
+            ok = bn_usub(tmp, u, v) && BN_copy(u, tmp);
+            if (ok && BN_ucmp(x, y) >= 0) {
+                ok = bn_usub(tmp, x, y) && BN_copy(x, tmp);
+            } else if (ok) {
+                ok = bn_usub(tmp, y, x) && bn_usub(x, m, tmp);
+            }
+        } else {
+            ok = bn_usub(tmp, v, u) && BN_copy(v, tmp);
+            if (ok && BN_ucmp(y, x) >= 0) {
+                ok = bn_usub(tmp, y, x) && BN_copy(y, tmp);
+            } else if (ok) {
+                ok = bn_usub(tmp, x, y) && bn_usub(y, m, tmp);
+            }
+        }
+    }
+    if (ok && (BN_is_zero(u) == 0 || v->top != 1 || v->d[0] != 1)) {
+        ok = 0;
     }
     if (ok) {
-        ok = BN_copy(r, result);
+        ok = BN_copy(r, y);
     }
-    BN_free(result);
-    BN_free(value);
-    BN_free(power);
+    BN_free(u);
+    BN_free(v);
+    BN_free(x);
+    BN_free(y);
+    BN_free(tmp);
     return ok;
+}
+
+static uint32_t mont_n0(uint32_t n0) {
+    uint32_t inv = n0;
+    inv *= 2u - n0 * inv;
+    inv *= 2u - n0 * inv;
+    inv *= 2u - n0 * inv;
+    inv *= 2u - n0 * inv;
+    inv *= 2u - n0 * inv;
+    return 0u - inv;
+}
+
+static void mont_load(uint32_t *dst, const BIGNUM *src, int nw) {
+    int i;
+    for (i = 0; i < nw; i++) {
+        dst[i] = (src && i < src->top) ? src->d[i] : 0;
+    }
+}
+
+static void mont_mul(uint32_t *r, const uint32_t *a, const uint32_t *b, const uint32_t *n, uint32_t n0, int nw) {
+    uint32_t tmp[34];
+    int i;
+    int j;
+    int ge;
+    for (i = 0; i < nw + 2; i++) {
+        tmp[i] = 0;
+    }
+    for (i = 0; i < nw; i++) {
+        uint64_t carry = 0;
+        uint32_t m;
+        for (j = 0; j < nw; j++) {
+            carry += (uint64_t)tmp[j] + (uint64_t)a[j] * b[i];
+            tmp[j] = (uint32_t)carry;
+            carry >>= 32;
+        }
+        carry += tmp[nw];
+        tmp[nw] = (uint32_t)carry;
+        tmp[nw + 1] = (uint32_t)(carry >> 32);
+        m = tmp[0] * n0;
+        carry = 0;
+        for (j = 0; j < nw; j++) {
+            carry += (uint64_t)tmp[j] + (uint64_t)m * n[j];
+            tmp[j] = (uint32_t)carry;
+            carry >>= 32;
+        }
+        carry += tmp[nw];
+        tmp[nw] = (uint32_t)carry;
+        tmp[nw + 1] += (uint32_t)(carry >> 32);
+        for (j = 0; j <= nw; j++) {
+            tmp[j] = tmp[j + 1];
+        }
+        tmp[nw + 1] = 0;
+    }
+    ge = tmp[nw] != 0;
+    if (!ge) {
+        for (i = nw - 1; i >= 0; i--) {
+            if (tmp[i] != n[i]) {
+                ge = tmp[i] > n[i];
+                break;
+            }
+            if (i == 0) {
+                ge = 1;
+            }
+        }
+    }
+    if (ge) {
+        uint32_t borrow = 0;
+        for (i = 0; i < nw; i++) {
+            uint64_t sub = (uint64_t)n[i] + borrow;
+            r[i] = (uint32_t)((uint64_t)tmp[i] - sub);
+            borrow = (uint64_t)tmp[i] < sub;
+        }
+    } else {
+        for (i = 0; i < nw; i++) {
+            r[i] = tmp[i];
+        }
+    }
+}
+
+static int bn_to_mont_rr(BIGNUM *rr, const BIGNUM *m, int nw) {
+    return BN_set_word(rr, 1) && BN_lshift(rr, rr, nw * 64) && bn_mod(rr, rr, m);
+}
+
+static int bn_mod_exp(BIGNUM *r, const BIGNUM *base, const BIGNUM *exp, const BIGNUM *m) {
+    BIGNUM *reduced;
+    BIGNUM *rr;
+    uint32_t n[32];
+    uint32_t base_m[32];
+    uint32_t acc[32];
+    uint32_t cur[32];
+    uint32_t rr_w[32];
+    uint32_t n0;
+    int nw;
+    int bits;
+    int i;
+    int ok;
+    if (!m || m->top == 0 || m->top > 32 || (m->d[0] & 1u) == 0) {
+        return 0;
+    }
+    if (BN_is_zero(exp)) {
+        return BN_set_word(r, 1);
+    }
+    nw = m->top;
+    reduced = BN_new();
+    rr = BN_new();
+    ok = reduced && rr && bn_mod(reduced, base, m) && bn_to_mont_rr(rr, m, nw);
+    if (!ok) {
+        BN_free(reduced);
+        BN_free(rr);
+        return 0;
+    }
+    mont_load(n, m, nw);
+    mont_load(rr_w, rr, nw);
+    mont_load(base_m, reduced, nw);
+    n0 = mont_n0(n[0]);
+    mont_mul(base_m, base_m, rr_w, n, n0, nw);
+    mont_mul(acc, rr_w, rr_w, n, n0, nw);
+    /* acc was R^2 * R^2 * R^{-1} = R^3. Montgomery form of 1 is R, from 1 * R^2 * R^{-1}. */
+    {
+        uint32_t one[32];
+        for (i = 0; i < nw; i++) {
+            one[i] = 0;
+        }
+        one[0] = 1;
+        mont_mul(acc, one, rr_w, n, n0, nw);
+    }
+    bits = BN_num_bits(exp);
+    for (i = bits - 1; i >= 0; i--) {
+        mont_mul(cur, acc, acc, n, n0, nw);
+        if (BN_is_bit_set(exp, i)) {
+            mont_mul(acc, cur, base_m, n, n0, nw);
+        } else {
+            for (int w = 0; w < nw; w++) {
+                acc[w] = cur[w];
+            }
+        }
+    }
+    {
+        uint32_t one[32];
+        for (i = 0; i < nw; i++) {
+            one[i] = i == 0 ? 1u : 0u;
+        }
+        mont_mul(cur, acc, one, n, n0, nw);
+    }
+    if (!bn_wexpand(r, nw)) {
+        BN_free(reduced);
+        BN_free(rr);
+        return 0;
+    }
+    for (i = 0; i < nw; i++) {
+        r->d[i] = cur[i];
+    }
+    r->top = nw;
+    r->neg = 0;
+    bn_fix_top(r);
+    BN_free(reduced);
+    BN_free(rr);
+    return 1;
 }
 
 static int bn_legendre_is_one(const BIGNUM *a, const BIGNUM *p) {

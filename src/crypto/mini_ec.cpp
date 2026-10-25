@@ -68,32 +68,7 @@ static int field_mul_small(const EC_GROUP *g, BIGNUM *r, const BIGNUM *a, BN_ULO
 }
 
 static int field_inv(const EC_GROUP *g, BIGNUM *r, const BIGNUM *a) {
-    BIGNUM *result = BN_new();
-    BIGNUM *value = BN_new();
-    BIGNUM *power = BN_dup(g->p);
-    int ok = result && value && power && BN_sub_word(power, 2);
-    if (ok) {
-        BN_set_word(result, 1);
-        ok = field_reduce(g, value, a);
-    }
-    while (ok && !BN_is_zero(power)) {
-        if (BN_is_odd(power)) {
-            ok = field_mul(g, result, result, value);
-        }
-        if (ok) {
-            ok = field_sqr(g, value, value);
-        }
-        if (ok) {
-            ok = BN_rshift1(power, power);
-        }
-    }
-    if (ok) {
-        ok = BN_copy(r, result);
-    }
-    BN_free(result);
-    BN_free(value);
-    BN_free(power);
-    return ok;
+    return BN_mod_inverse(r, a, g->p);
 }
 
 static void jfree(struct jpoint *p) {

@@ -91,9 +91,11 @@ IF(DJGPP)
     SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
     SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
     SET(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
-    # Maximum compatibility flags for DOS/NTVDM
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=i386 -mtune=i386 -mno-sse -mno-sse2 -mno-mmx -mno-3dnow -mno-ssse3 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -mno-fma -mno-fma4")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=i386 -mtune=i386 -mno-sse -mno-sse2 -mno-mmx -mno-3dnow -mno-ssse3 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -mno-fma -mno-fma4")
+    # The DOS workflow has no CMAKE_BUILD_TYPE, so without an explicit -O the
+    # i386 binary is unoptimized and DOSBox 0.74 cannot finish key generation
+    # inside its 30 second timeout.
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -march=i386 -mtune=i386 -mno-sse -mno-sse2 -mno-mmx -mno-3dnow -mno-ssse3 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -mno-fma -mno-fma4")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -march=i386 -mtune=i386 -mno-sse -mno-sse2 -mno-mmx -mno-3dnow -mno-ssse3 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx -mno-avx2 -mno-fma -mno-fma4")
     
     MESSAGE(STATUS "[UMSKT] Using i386 target for DOS DGJPP with stub: ${CWSDSTUB_LOCATION}")
 ENDIF()

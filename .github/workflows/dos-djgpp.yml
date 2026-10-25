@@ -110,7 +110,7 @@ jobs:
       - name: Run tests in DOSBox
         run: |
           cd dosbox_test
-          timeout 30s dosbox -conf dosbox.conf -nogui -exit
+          timeout 2m dosbox -conf dosbox.conf -nogui -exit
           # Check if the test completed successfully
           if [ ! -f DONE.TXT ]; then
             echo "Tests did not complete successfully"
@@ -240,7 +240,7 @@ jobs:
       
         run: |
           cd dosbox_test
-          timeout 30s dosbox -conf dosbox.conf -nogui -exit
+          timeout 2m dosbox -conf dosbox.conf -nogui -exit
           # Check if the test completed successfully
           if [ ! -f DONE.TXT ]; then
             echo "Tests did not complete successfully"
