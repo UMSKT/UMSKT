@@ -29,19 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef UMSKT_FREESTANDING
 #include "../crypto/mini_openssl.h"
-#else
-#include <openssl/bn.h>
-#include <openssl/ec.h>
-#include <openssl/sha.h>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
-#endif
-
-#ifdef __DJGPP__
-#include <sys/time.h>
-#endif
 
 // Algorithm macros
 #define PK_LENGTH               25
@@ -64,17 +52,6 @@
 #define BYDWORD(n)                     (DWORD)(*((n) + 0) | *((n) + 1) << 8 | *((n) + 2) << 16 | *((n) + 3) << 24)
 #define BITMASK(n)                     ((1ULL << (n)) - 1)
 
-// RNG utility functions
-#ifdef __DJGPP__
-#define UMSKT_RNG_DJGPP 1
-extern "C" {
-    long int random(void);
-    int srandom(int seed);
-}
-#else
-#define UMSKT_RNG_DJGPP 0
-#endif
-
 class UMSKT {
 public:
     class PIDGEN2;
@@ -83,11 +60,10 @@ public:
 
 #ifdef UMSKT_FREESTANDING
     static int debug_on;
-    static void setDebug(int on);
 #else
     static FILE *debug;
-    static void setDebugOutput(FILE *input);
 #endif
+    static void setDebug(int on);
     static void debugf(const char *fmt, ...);
 
     // RNG utility functions

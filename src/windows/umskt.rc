@@ -75,13 +75,6 @@ END
 // remains consistent on all systems.
 IDI_ICON1               ICON                    "icon.ico"
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// Embedded keys.json
-//
-
-IDR_KEYS                RCDATA                  "../../keys.json"
-
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 

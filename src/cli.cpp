@@ -557,7 +557,7 @@ int CLI::BINK2002Generate() {
 }
 
 int CLI::BINK1998Validate() {
-    char product_key[PK_LENGTH]{};
+    char product_key[PK_LENGTH + NULL_TERMINATOR]{};
 
     if (!CLI::stripKey(this->options.keyToCheck.c_str(), product_key)) {
         fmt::print("ERROR: Product key is in an incorrect format!\n");
@@ -576,7 +576,7 @@ int CLI::BINK1998Validate() {
 }
 
 int CLI::BINK2002Validate() {
-    char product_key[PK_LENGTH]{};
+    char product_key[PK_LENGTH + NULL_TERMINATOR]{};
 
     if (!CLI::stripKey(this->options.keyToCheck.c_str(), product_key)) {
         fmt::print("ERROR: Product key is in an incorrect format!\n");

@@ -76,8 +76,8 @@ void PIDGEN3::base24(char *cdKey, BYTE *byteSeq) {
     // Convert reversed byte sequence to BigNum z.
     z = BN_bin2bn(rbyteSeq, length, nullptr);
 
-    // Divide z by 24 and convert the remainder to a CD-key char.
-    cdKey[25] = 0;
+    // 25 key characters plus the terminator. Callers pass PK_LENGTH + NULL_TERMINATOR.
+    cdKey[PK_LENGTH] = 0;
 
     for (int i = 24; i >= 0; i--)
         cdKey[i] = pKeyCharset[BN_div_word(z, 24)];

@@ -82,21 +82,33 @@ jobs:
           mingw32-make
 
       - name: Run tests
+        timeout-minutes: 2
         shell: pwsh
         run: |
+          $PSNativeCommandUseErrorActionPreference = $false
           Write-Host Test 1 - generating key
-          $key = (.\umskt.exe -b 2C -c 365 -s 069420).Trim()
-          if ($LASTEXITCODE -ne 0 -or $key -notmatch '^[BCDFGHJKMPQRTVWXY2346789-]{29}$') {
-            Write-Host "key generation failed: $key"
+          $keyRaw = & .\umskt.exe -b 2C -c 365 -s 069420 2>&1 | Out-String
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "key generation exited ${LASTEXITCODE}: $keyRaw"
+            exit 1
+          }
+          $key = $keyRaw.Trim()
+          if ($key -notmatch '^[BCDFGHJKMPQRTVWXY2346789-]{29}$') {
+            Write-Host "key generation produced no key on stdout: [$key]"
             exit 1
           }
           Write-Host Test 2 - validating that key
           .\umskt.exe -b 2C -V $key
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Write-Host Test 3 - confirmation ID
-          $cid = (.\umskt.exe -i 253286028742154311079061239762245184619981623171292574).Trim()
-          if ($LASTEXITCODE -ne 0 -or $cid -ne '020052-539422-707952-510766-409626-387731-998883') {
-            Write-Host "confirmation ID mismatch: $cid"
+          $cidRaw = & .\umskt.exe -i 253286028742154311079061239762245184619981623171292574 2>&1 | Out-String
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "confirmation ID exited ${LASTEXITCODE}: $cidRaw"
+            exit 1
+          }
+          $cid = $cidRaw.Trim()
+          if ($cid -ne '020052-539422-707952-510766-409626-387731-998883') {
+            Write-Host "confirmation ID mismatch: [$cid]"
             exit 1
           }
 

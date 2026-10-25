@@ -3,8 +3,8 @@
  * Copyleft (C) 2019-2026 UMSKT Contributors (et.al.)
  * SPDX-License-Identifier: AGPL-3.0-or-later
  *
- * Windows CLI shared by the freestanding x86 and x64 images.
- * Same flags as the hosted build, without fmt, nlohmann, or std::filesystem.
+ * One CLI for every target. Windows 98 uses Win32 file calls. Every other
+ * target uses the C library. Neither path uses fmt, nlohmann, or OpenSSL.
  */
 
 #include "../libumskt/libumskt.h"
@@ -14,8 +14,10 @@
 #include "../libumskt/pidgen3/BINK2002.h"
 #include "../libumskt/confid/confid.h"
 #include "json.h"
-#include "resource.h"
+#include "../keys_embed.h"
+#ifdef UMSKT_FREESTANDING
 #include "win32_min.h"
+#endif
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -64,16 +66,20 @@ struct Options {
 };
 
 static void out_text(const char *text) {
-    uint32_t wrote = 0;
-    void *handle;
     if (!text) {
         return;
     }
-    handle = GetStdHandle(UMSKT_STD_OUTPUT_HANDLE);
+#ifdef UMSKT_FREESTANDING
+    uint32_t wrote = 0;
+    void *handle = GetStdHandle(UMSKT_STD_OUTPUT_HANDLE);
     if (handle == NULL || handle == UMSKT_INVALID_HANDLE) {
         return;
     }
     WriteFile(handle, text, (uint32_t)strlen(text), &wrote, NULL);
+#else
+    fputs(text, stdout);
+    fflush(stdout);
+#endif
 }
 
 static void outf(const char *fmt, ...) {
@@ -176,64 +182,94 @@ static char *json_string_dup(const JsonSpan *value) {
 }
 
 static char *read_all(const char *path, int *length) {
-    void *file;
-    uint32_t size;
-    uint32_t read = 0;
     char *data;
+    size_t size;
+#ifdef UMSKT_FREESTANDING
+    void *file;
+    uint32_t read = 0;
+    uint32_t file_size;
     file = CreateFileA(path, UMSKT_GENERIC_READ, UMSKT_FILE_SHARE_READ, NULL, UMSKT_OPEN_EXISTING, UMSKT_FILE_ATTRIBUTE_NORMAL, NULL);
     if (file == UMSKT_INVALID_HANDLE) {
         return NULL;
     }
-    size = GetFileSize(file, NULL);
-    if (size == UMSKT_INVALID_FILE_SIZE || size > 16 * 1024 * 1024) {
+    file_size = GetFileSize(file, NULL);
+    if (file_size == UMSKT_INVALID_FILE_SIZE || file_size > 16 * 1024 * 1024) {
         CloseHandle(file);
         return NULL;
     }
-    data = (char *)malloc((size_t)size + 1);
+    size = file_size;
+    data = (char *)malloc(size + 1);
     if (!data) {
         CloseHandle(file);
         return NULL;
     }
-    if (!ReadFile(file, data, size, &read, NULL) || read != size) {
+    if (!ReadFile(file, data, (uint32_t)size, &read, NULL) || read != (uint32_t)size) {
         free(data);
         CloseHandle(file);
         return NULL;
     }
     CloseHandle(file);
+#else
+    FILE *file = fopen(path, "rb");
+    long file_size;
+    if (!file) {
+        return NULL;
+    }
+    if (fseek(file, 0, SEEK_END) != 0) {
+        fclose(file);
+        return NULL;
+    }
+    file_size = ftell(file);
+    if (file_size < 0 || file_size > 16 * 1024 * 1024) {
+        fclose(file);
+        return NULL;
+    }
+    size = (size_t)file_size;
+    if (fseek(file, 0, SEEK_SET) != 0) {
+        fclose(file);
+        return NULL;
+    }
+    data = (char *)malloc(size + 1);
+    if (!data) {
+        fclose(file);
+        return NULL;
+    }
+    if (fread(data, 1, size, file) != size) {
+        free(data);
+        fclose(file);
+        return NULL;
+    }
+    fclose(file);
+#endif
     data[size] = 0;
     *length = (int)size;
     return data;
 }
 
 static char *read_embedded(int *length) {
-    void *resource = FindResourceA(NULL, (const char *)(uintptr_t)IDR_KEYS, UMSKT_RT_RCDATA);
-    uint32_t size;
-    void *loaded;
-    const void *bytes;
     char *data;
-    if (!resource) {
+    if (umskt_keys_json_size <= 0) {
         return NULL;
     }
-    size = SizeofResource(NULL, resource);
-    loaded = LoadResource(NULL, resource);
-    bytes = loaded ? LockResource(loaded) : NULL;
-    if (!bytes || size == 0) {
-        return NULL;
-    }
-    data = (char *)malloc((size_t)size + 1);
+    data = (char *)malloc((size_t)umskt_keys_json_size + 1);
     if (!data) {
         return NULL;
     }
-    memcpy(data, bytes, size);
-    data[size] = 0;
-    *length = (int)size;
+    memcpy(data, umskt_keys_json, (size_t)umskt_keys_json_size);
+    data[umskt_keys_json_size] = 0;
+    *length = umskt_keys_json_size;
     return data;
 }
 
 static int read_stdin(char *dst, int cap) {
-    void *input = GetStdHandle(UMSKT_STD_INPUT_HANDLE);
     int used = 0;
-    if (input == NULL || input == UMSKT_INVALID_HANDLE || cap < 2) {
+    if (cap < 2) {
+        dst[0] = 0;
+        return 0;
+    }
+#ifdef UMSKT_FREESTANDING
+    void *input = GetStdHandle(UMSKT_STD_INPUT_HANDLE);
+    if (input == NULL || input == UMSKT_INVALID_HANDLE) {
         dst[0] = 0;
         return 0;
     }
@@ -250,6 +286,17 @@ static int read_stdin(char *dst, int cap) {
             dst[used++] = ch;
         }
     }
+#else
+    if (!fgets(dst, cap, stdin)) {
+        dst[0] = 0;
+        return 0;
+    }
+    used = (int)strlen(dst);
+    while (used > 0 && (dst[used - 1] == '\n' || dst[used - 1] == '\r')) {
+        dst[--used] = 0;
+    }
+    return 1;
+#endif
     dst[used] = 0;
     return 1;
 }
@@ -593,9 +640,10 @@ static int run_keys(Options *options, const char *json, int length) {
     EC_POINT *genPoint = NULL;
     EC_POINT *pubPoint = NULL;
     EC_GROUP *eCurve = NULL;
-    char pKey[25];
+    char pKey[PK_LENGTH + NULL_TERMINATOR];
     int count = 0;
     int total = options->numKeys;
+    int gaveUp = 0;
     int i;
     int bink_id = 0;
     memset(pKey, 0, sizeof(pKey));
@@ -665,6 +713,10 @@ static int run_keys(Options *options, const char *json, int length) {
                     }
                 }
                 total++;
+                if (total > options->numKeys + 64) {
+                    gaveUp = 1;
+                    break;
+                }
             }
         }
     } else if (options->applicationMode == MODE_BINK2002_GENERATE) {
@@ -696,10 +748,14 @@ static int run_keys(Options *options, const char *json, int length) {
                     }
                 }
                 total++;
+                if (total > options->numKeys + 64) {
+                    gaveUp = 1;
+                    break;
+                }
             }
         }
     } else if (options->applicationMode == MODE_BINK1998_VALIDATE || options->applicationMode == MODE_BINK2002_VALIDATE) {
-        char product_key[PK_LENGTH];
+        char product_key[PK_LENGTH + NULL_TERMINATOR];
         memset(product_key, 0, sizeof(product_key));
         if (!strip_key(options->keyToCheck, product_key)) {
             out_text("ERROR: Product key is in an incorrect format!\n");
@@ -744,6 +800,16 @@ static int run_keys(Options *options, const char *json, int length) {
         return 0;
     }
 
+    if (gaveUp || count < options->numKeys) {
+        out_text("ERROR: failed to generate a valid product key\n");
+        curve_free(&curve);
+        BN_free(privateKey);
+        BN_free(genOrder);
+        EC_GROUP_free(eCurve);
+        EC_POINT_free(genPoint);
+        EC_POINT_free(pubPoint);
+        return 1;
+    }
     if (options->verbose) {
         outf("\nSuccess count: %d/%d", count, total);
     }

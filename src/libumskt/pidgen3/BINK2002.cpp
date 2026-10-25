@@ -79,7 +79,7 @@ bool PIDGEN3::BINK2002::Verify(
         EC_POINT *basePoint,
         EC_POINT *publicKey,
            DWORD *pSerial,
-            char (&cdKey)[25]
+            char (&cdKey)[PK_LENGTH + NULL_TERMINATOR]
 ) {
     BN_CTX *context = BN_CTX_new();
 
@@ -221,7 +221,7 @@ void PIDGEN3::BINK2002::Generate(
             BOOL pUpgrade,
            DWORD serMin,
            DWORD serMax,
-            char (&pKey)[25]
+            char (&pKey)[PK_LENGTH + NULL_TERMINATOR]
 ) {
     BN_CTX *numContext = BN_CTX_new();
 
@@ -233,6 +233,7 @@ void PIDGEN3::BINK2002::Generate(
 
     QWORD pRaw[2]{},
           pSignature = 0;
+    int tries = 0;
 
     // Data segment of the RPK.
     DWORD pData = pChannelID << 1 | pUpgrade;
@@ -369,8 +370,12 @@ void PIDGEN3::BINK2002::Generate(
         // s /= 2 (s >>= 1)
         BN_rshift1(s, s);
 
-        // Translate resulting scalar into a 64-bit integer (the byte order is little-endian).
-        BN_bn2lebinpad(s, (BYTE *)&pSignature, BN_num_bytes(s));
+        // Low 64 bits only. The scalar is wider than this field, and the
+        // destination is an 8-byte QWORD.
+        BN_mask_bits(s, 64);
+        pSignature = 0;
+        BN_bn2lebinpad(s, (BYTE *)&pSignature, (int)sizeof(pSignature));
+        tries++;
 
         // Pack product key.
         Pack(pRaw, pUpgrade, pChannelID, pHash, pSignature, pAuthInfo);
@@ -385,7 +390,7 @@ void PIDGEN3::BINK2002::Generate(
         UMSKT::debugf("\n");
 
         EC_POINT_free(r);
-    } while (pSignature > BITMASK(62) || noSquare || !serialInRange);
+    } while (tries < 4096 && (pSignature > BITMASK(62) || noSquare || !serialInRange));
     // ↑ ↑ ↑
     // The signature can't be longer than 62 bits, else it will
     // overlap with the AuthInfo segment next to it.

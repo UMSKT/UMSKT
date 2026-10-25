@@ -50,8 +50,10 @@ FILE *UMSKT::debug = fopen("NUL:", "w");
 FILE *UMSKT::debug = fopen("/dev/null", "w");
 #endif
 
-void UMSKT::setDebugOutput(FILE *input) {
-    debug = input;
+void UMSKT::setDebug(int on) {
+    if (on) {
+        debug = stderr;
+    }
 }
 
 void UMSKT::debugf(const char *fmt, ...) {

@@ -75,7 +75,7 @@ bool PIDGEN3::BINK1998::Verify(
         EC_GROUP *eCurve,
         EC_POINT *basePoint,
         EC_POINT *publicKey,
-            char (&pKey)[25]
+            char (&pKey)[PK_LENGTH + NULL_TERMINATOR]
 ) {
     BN_CTX *numContext = BN_CTX_new();
 
@@ -182,7 +182,7 @@ void PIDGEN3::BINK1998::Generate(
           BIGNUM *privateKey,
            DWORD pSerial,
             BOOL pUpgrade,
-            char (&pKey)[25]
+            char (&pKey)[PK_LENGTH + NULL_TERMINATOR]
 ) {
     BN_CTX *numContext = BN_CTX_new();
 
@@ -196,6 +196,7 @@ void PIDGEN3::BINK1998::Generate(
 
     // Data segment of the RPK.
     DWORD pData = pSerial << 1 | pUpgrade;
+    int tries = 0;
 
     do {
         EC_POINT *r = EC_POINT_new(eCurve);
@@ -258,8 +259,12 @@ void PIDGEN3::BINK1998::Generate(
         // s += c (mod n)
         BN_mod_add(s, s, c, genOrder, numContext);
 
-        // Translate resulting scalar into a 64-bit integer (the byte order is little-endian).
-        BN_bn2lebinpad(s, (BYTE *)&pSignature, BN_num_bytes(s));
+        // Low 64 bits only. The scalar is wider than this field, and the
+        // destination is an 8-byte QWORD.
+        BN_mask_bits(s, 64);
+        pSignature = 0;
+        BN_bn2lebinpad(s, (BYTE *)&pSignature, (int)sizeof(pSignature));
+        tries++;
 
         // Pack product key.
         Pack(pRaw, pUpgrade, pSerial, pHash, pSignature);
@@ -272,7 +277,7 @@ void PIDGEN3::BINK1998::Generate(
         UMSKT::debugf("\n");
 
         EC_POINT_free(r);
-    } while (pSignature > BITMASK(55));
+    } while (tries < 4096 && pSignature > BITMASK(55));
     // ↑ ↑ ↑
     // The signature can't be longer than 55 bits, else it will
     // make the CD-key longer than 25 characters.
