@@ -42,6 +42,9 @@
     "Office for Mac 2004 / 2008": {
       "BINK": ["18", "19"]
     },
+    "Virtual PC for Mac 7": {
+      "BINK": [ "18", "19" ]
+    },
     "Windows ME": {
       "BINK": ["1C", "1D"]
     },
@@ -88,6 +91,15 @@
       "BINK": ["50", "51"]
     },
     "Halo: Custom Edition": {
+      "BINK": ["50", "51"]
+    },
+    "Fable: The Lost Chapters": {
+      "BINK": ["50", "51"]
+    },
+    "Age of Mythology": {
+      "BINK": ["50", "51"]
+    },
+    "Age of Empires III": {
       "BINK": ["50", "51"]
     },
     "Visual Studio 2005": {
