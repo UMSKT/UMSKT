@@ -226,6 +226,7 @@ void PIDGEN3::BINK2002::Generate(
     BN_CTX *numContext = BN_CTX_new();
 
     BIGNUM *c = BN_new(),
+           *c4 = BN_new(),
            *e = BN_new(),
            *s = BN_new(),
            *x = BN_new(),
@@ -238,19 +239,16 @@ void PIDGEN3::BINK2002::Generate(
     // Data segment of the RPK.
     DWORD pData = pChannelID << 1 | pUpgrade;
 
-    BOOL noSquare;
-    BOOL serialInRange;
+    BOOL noSquare = true;
+    BOOL serialInRange = false;
+
+    // One random scalar. Further candidates are c+1, c+2, ... so each extra
+    // attempt adds G instead of multiplying the curve again.
+    EC_POINT *r = EC_POINT_new(eCurve);
+    UMSKT::umskt_bn_rand(c, FIELD_BITS_2003, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
+    EC_POINT_mul(eCurve, r, nullptr, basePoint, c, numContext);
 
     do {
-        EC_POINT *r = EC_POINT_new(eCurve);
-
-        // Generate a random number c consisting of 512 bits without any constraints.
-        UMSKT::umskt_bn_rand(c, FIELD_BITS_2003, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
-
-        // R = cG
-        EC_POINT_mul(eCurve, r, nullptr, basePoint, c, numContext);
-
-        // Acquire its coordinates.
         // x = R.x; y = R.y;
         EC_POINT_get_affine_coordinates(eCurve, r, x, y, numContext);
 
@@ -279,7 +277,15 @@ void PIDGEN3::BINK2002::Generate(
 
         DWORD serial = (((BYDWORD(msgDigest + 4) >> 13) << 1) | (BYDWORD(msgDigest) >> 31)) & BITMASK(20);
         serialInRange = (serial >= serMin) && (serial <= serMax);
-        if (!serialInRange) continue;
+        if (!serialInRange) {
+            noSquare = true;
+            tries++;
+            if (tries < 4096) {
+                EC_POINT_add(eCurve, r, r, basePoint, numContext);
+                BN_add_word(c, 1);
+            }
+            continue;
+        }
 
         // Translate the byte digest into a 32-bit integer - this is our computed hash.
         // Truncate the hash to 31 bits.
@@ -346,11 +352,12 @@ void PIDGEN3::BINK2002::Generate(
         // s = (ek (mod n))²
         BN_mod_sqr(s, s, genOrder, numContext);
 
-        // c *= 4 (c <<= 2)
-        BN_lshift(c, c, 2);
+        // 4c is a copy. c itself stays the scalar of R for the next step.
+        BN_copy(c4, c);
+        BN_lshift(c4, c4, 2);
 
-        // s += c
-        BN_add(s, s, c);
+        // s += 4c
+        BN_add(s, s, c4);
 
         // Around half of numbers modulo a prime are not squares -> BN_sqrt_mod fails about half of the times,
         // hence if BN_sqrt_mod returns NULL, we need to restart with a different seed.
@@ -389,16 +396,22 @@ void PIDGEN3::BINK2002::Generate(
         UMSKT::debugf("    Serial: %06u\n", (unsigned)serial);
         UMSKT::debugf("\n");
 
-        EC_POINT_free(r);
+        if (tries < 4096 && (pSignature > BITMASK(62) || noSquare || !serialInRange)) {
+            EC_POINT_add(eCurve, r, r, basePoint, numContext);
+            BN_add_word(c, 1);
+        }
     } while (tries < 4096 && (pSignature > BITMASK(62) || noSquare || !serialInRange));
     // ↑ ↑ ↑
     // The signature can't be longer than 62 bits, else it will
     // overlap with the AuthInfo segment next to it.
 
+    EC_POINT_free(r);
+
     // Convert bytecode to Base24 CD-key.
     base24(pKey, (BYTE *)pRaw);
 
     BN_free(c);
+    BN_free(c4);
     BN_free(s);
     BN_free(x);
     BN_free(y);

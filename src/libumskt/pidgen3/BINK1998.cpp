@@ -198,17 +198,14 @@ void PIDGEN3::BINK1998::Generate(
     DWORD pData = pSerial << 1 | pUpgrade;
     int tries = 0;
 
+    // One random scalar. Further candidates are c+1, c+2, ... so each extra
+    // attempt adds G instead of multiplying the curve again. About 1 in 512
+    // signatures fit in 55 bits, and a 386 cannot afford hundreds of multiplications.
+    EC_POINT *r = EC_POINT_new(eCurve);
+    UMSKT::umskt_bn_rand(c, FIELD_BITS, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
+    EC_POINT_mul(eCurve, r, nullptr, basePoint, c, numContext);
+
     do {
-        EC_POINT *r = EC_POINT_new(eCurve);
-
-        // Generate a random number c consisting of 384 bits without any constraints.
-        UMSKT::umskt_bn_rand(c, FIELD_BITS, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
-
-        // Pick a random derivative of the base point on the elliptic curve.
-        // R = cG;
-        EC_POINT_mul(eCurve, r, nullptr, basePoint, c, numContext);
-
-        // Acquire its coordinates.
         // x = R.x; y = R.y;
         EC_POINT_get_affine_coordinates(eCurve, r, x, y, numContext);
 
@@ -276,11 +273,16 @@ void PIDGEN3::BINK1998::Generate(
         UMSKT::debugf(" Signature: 0x%08llx\n", (unsigned long long)pSignature);
         UMSKT::debugf("\n");
 
-        EC_POINT_free(r);
+        if (tries < 4096 && pSignature > BITMASK(55)) {
+            EC_POINT_add(eCurve, r, r, basePoint, numContext);
+            BN_add_word(c, 1);
+        }
     } while (tries < 4096 && pSignature > BITMASK(55));
     // ↑ ↑ ↑
     // The signature can't be longer than 55 bits, else it will
     // make the CD-key longer than 25 characters.
+
+    EC_POINT_free(r);
 
     // Convert bytecode to Base24 CD-key.
     base24(pKey, (BYTE *)pRaw);
