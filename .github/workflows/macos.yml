@@ -39,43 +39,18 @@ jobs:
           - arch: arm64
     steps:
       - name: Checkout Source Tree
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Rosetta
         if: matrix.arch == 'x86_64'
         run: |
           sudo softwareupdate --install-rosetta --agree-to-license || true
           
-      - name: Install Homebrew for x86_64
-        if: matrix.arch == 'x86_64'
-        env: { NONINTERACTIVE: 1 }
-        run: |
-          arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-      - name: Install x86_64 OpenSSL
-        if: matrix.arch == 'x86_64'
-        run: |
-          arch -x86_64 /usr/local/bin/brew install openssl@3
-          echo "OPENSSL_ROOT_DIR=/usr/local/opt/openssl@3" >> $GITHUB_ENV
-          echo "OPENSSL_INCLUDE_DIR=/usr/local/opt/openssl@3/include" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH=/usr/local/opt/openssl@3/lib/pkgconfig" >> $GITHUB_ENV
-
-      - name: Install arm64 OpenSSL
-        if: matrix.arch == 'arm64'
-        run: |
-          brew install openssl@3
-          echo "OPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3" >> $GITHUB_ENV
-          echo "OPENSSL_INCLUDE_DIR=/opt/homebrew/opt/openssl@3/include" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH=/opt/homebrew/opt/openssl@3/lib/pkgconfig" >> $GITHUB_ENV
-
       - name: Configure and build UMSKT
         run: |
           cd build
           cmake -DCMAKE_BUILD_TYPE=Release .. \
             -DCMAKE_OSX_ARCHITECTURES=${{matrix.arch}} \
-            -DOPENSSL_ROOT_DIR=$OPENSSL_ROOT_DIR \
-            -DOPENSSL_INCLUDE_DIR=$OPENSSL_INCLUDE_DIR \
-            -DOPENSSL_USE_STATIC_LIBS=TRUE \
             -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5
           make
@@ -97,7 +72,7 @@ jobs:
           ./umskt -i 253286028742154311079061239762245184619981623171292574
 
       - name: Upload platform-specific build
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7
         with:
           name: UMSKT-macOS-${{ matrix.arch }}
           path: build/actions_upload
@@ -107,12 +82,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Download x86_64 slice
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: UMSKT-macOS-x86_64
           path: x86
       - name: Download arm64 slice
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: UMSKT-macOS-arm64
           path: arm
@@ -123,7 +98,7 @@ jobs:
           lipo -create x86/umskt arm/umskt -output fat/umskt
           lipo -info fat/umskt
       - name: Upload universal build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with: 
           name: UMSKT-macOS-universal
           path: fat

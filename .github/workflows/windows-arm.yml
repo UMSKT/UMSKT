@@ -38,11 +38,9 @@ jobs:
             include:
            #   - arch: arm32
            #     arch_compilename: amd64_arm
-           #     vcpkg_arch: arm-windows-static
            #     cmake_arch: ARM
               - arch: arm64
                 arch_compilename: amd64_arm64
-                vcpkg_arch: arm64-windows-static
                 cmake_arch: ARM64
     steps:
       - name: Setup MSVC for ${{ matrix.arch }}
@@ -51,57 +49,7 @@ jobs:
           arch: ${{ matrix.arch_compilename }}
 
       - name: Checkout Source Tree
-        uses: actions/checkout@v4
-
-      - name: Cache OpenSSL Binaries
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ${{ github.workspace }}-OpenSSL-MSVC-${{ matrix.arch }}
-          key: openssl-1.1.1-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}
-
-      - name: Checkout and Compile OpenSSL v1.1.1
-        shell: pwsh
-        run: |
-            git clone https://github.com/UMSKT/openssl --branch OpenSSL_1_1_1-stable --depth 1 openssl-src
-            cd openssl-src
-            
-            # Install Perl if needed
-            choco install strawberryperl -y
-            
-            # Configure and build OpenSSL for ARM32
-            $env:PATH = "C:\Strawberry\perl\bin;$env:PATH"
-            
-            # First set up Visual Studio environment
-            $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
-            $vcvarsall = Join-Path $vsPath "VC\Auxiliary\Build\vcvarsall.bat"
-
-            $vcTarget = ""
-            if ("${{ matrix.arch}}" -eq "arm32") {
-              $vcTarget = "VC-WIN32-ARM"
-            } else {
-              $vcTarget = "VC-WIN64-ARM"
-            }
-            
-            # Configure OpenSSL
-            perl Configure $vcTarget no-shared no-asm no-engine --prefix="$env:GITHUB_WORKSPACE/OpenSSL-MSVC-${{ matrix.arch }}"
-            
-            # Build using MSVC ARM32 tools
-            cmd /c "call `"$vcvarsall`" ${{matrix.arch_compilename}} && nmake && nmake install_sw"
-            cd ..
-
-      - name: Save OpenSSL Binaries
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ${{ github.workspace }}/OpenSSL-MSVC-${{ matrix.arch }}
-          key: openssl-1.1.1-${{ matrix.arch }}-${{ hashFiles('**/CMakeLists.txt') }}
-
-      - name: Set OpenSSL Environment
-        shell: pwsh
-        run: |
-          echo "OPENSSL_ROOT=$env:GITHUB_WORKSPACE/OpenSSL-MSVC-${{ matrix.arch }}" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "OPENSSL_LIBDIR=lib" | Out-File -FilePath $env:GITHUB_ENV -Append
+        uses: actions/checkout@v7
 
       - name: Configure UMSKT
         shell: pwsh
@@ -109,8 +57,6 @@ jobs:
           cmake -G "Visual Studio 18 2026" `
             -A ${{ matrix.cmake_arch }} `
             -DWINDOWS_ARM=ON `
-            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" `
-            -DVCPKG_TARGET_TRIPLET=${{ matrix.vcpkg_arch }} `
             -DCMAKE_POLICY_VERSION_MINIMUM="3.5" `
             .
 
@@ -120,7 +66,7 @@ jobs:
           cmake --build . --config Release
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7
         with:
           name: UMSKT-WinNT-${{ matrix.arch }}
           path: Release/umskt.exe
@@ -134,7 +80,7 @@ jobs:
         arch: [arm64]
     steps:
       - name: Download ARM64 artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: UMSKT-WinNT-${{ matrix.arch }}
           path: .

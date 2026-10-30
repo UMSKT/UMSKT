@@ -21,12 +21,12 @@
  name: FreeBSD
   
  on: 
-  #push:
-  #  branches: [ "*" ]
-  #  paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
-  #pull_request:
-  #  branches: [ "*" ]
-  #  paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
+  push:
+    branches: [ "*" ]
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
+  pull_request:
+    branches: [ "*" ]
+    paths-ignore: [ '**.md', 'doc/**', '.idea/**'] # If only these files are edited, skip
 
   workflow_dispatch:
   
@@ -35,7 +35,7 @@
      runs-on: ubuntu-latest
      name: build-x86_64 
      steps: 
-     - uses: actions/checkout@v4
+     - uses: actions/checkout@v7
   
      - name: Build & Test in FreeBSD 
        id: test 
@@ -43,7 +43,7 @@
        with: 
          usesh: true 
          prepare: | 
-           pkg install -y cmake openssl git bash 
+           pkg install -y cmake git bash 
   
          run: | 
            mkdir -p build 
@@ -63,7 +63,7 @@
            mv build/umskt build/actions_upload/umskt 
   
      - name: Upload build artifact 
-       uses: actions/upload-artifact@v4.6.2
+       uses: actions/upload-artifact@v7
        with: 
          name: UMSKT-FreeBSD 
          path: build/actions_upload

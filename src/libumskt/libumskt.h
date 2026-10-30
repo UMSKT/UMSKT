@@ -25,22 +25,11 @@
 
 #include "../typedefs.h"
 
-#include <string>
-#include <iostream>
-#include <sstream>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
-#include <openssl/bn.h>
-#include <openssl/ec.h>
-#include <openssl/sha.h>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
-
-#include <fmt/core.h>
-#include <fmt/format.h>
-
-#ifdef __DJGPP__
-#include <sys/time.h>
-#endif
+#include "../crypto/mini_openssl.h"
 
 // Algorithm macros
 #define PK_LENGTH               25
@@ -63,25 +52,19 @@
 #define BYDWORD(n)                     (DWORD)(*((n) + 0) | *((n) + 1) << 8 | *((n) + 2) << 16 | *((n) + 3) << 24)
 #define BITMASK(n)                     ((1ULL << (n)) - 1)
 
-// RNG utility functions
-#ifdef __DJGPP__
-#define UMSKT_RNG_DJGPP 1
-extern "C" {
-    long int random(void);
-    int srandom(int seed);
-}
-#else
-#define UMSKT_RNG_DJGPP 0
-#endif
-
 class UMSKT {
 public:
-    static std::FILE* debug;
     class PIDGEN2;
     class PIDGEN3;
     class ConfigurationID;
 
-    static void setDebugOutput(std::FILE* input);
+#ifdef UMSKT_FREESTANDING
+    static int debug_on;
+#else
+    static FILE *debug;
+#endif
+    static void setDebug(int on);
+    static void debugf(const char *fmt, ...);
 
     // RNG utility functions
     static int umskt_rand_bytes(unsigned char *buf, int num);

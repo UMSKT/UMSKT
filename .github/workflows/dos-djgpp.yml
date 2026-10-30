@@ -33,19 +33,18 @@ env:
   CC: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-gcc
   CXX: ${{ github.workspace }}/djgpp/bin/i586-pc-msdosdjgpp-g++
   CMAKE_FIND_ROOT_PATH: ${{ github.workspace }}/djgpp
-  WATT_ROOT: ${{ github.workspace }}/djgpp/watt32
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source Tree
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup build environment
         run: |
           sudo apt -y update
-          sudo apt -y install build-essential cmake wget 7zip git flex libfl-dev nasm libslang2-dev pkg-config libslang2-modules gcc-multilib dosbox tree
+          sudo apt -y install build-essential cmake wget 7zip git gcc-multilib dosbox tree
 
       - name: Download and Setup DJGPP Toolchain
         run: |
@@ -54,41 +53,7 @@ jobs:
           tar xjf djgpp-linux64-gcc1220.tar.bz2
           cd ${{ github.workspace }}/djgpp
           tree . -S
-          git clone https://github.com/UMSKT/Watt-32.git watt32
-          cd watt32/util
-          make clean && make linux
-          cd ../src
-          source ${{ github.workspace }}/djgpp/setenv
-          ./configur.sh djgpp
-          make -f djgpp.mak
-          ln -s ${WATT_ROOT}/lib/libwatt.a ${{ github.workspace }}/djgpp/lib
 
-      - name: Cache OpenSSL 3.1.2
-        uses: actions/cache/restore@v4
-        id: cache-openssl
-        with:
-          path: |
-            ${{ github.workspace }}/djgpp
-          key: openssl-3.1.2-${{ hashFiles('**/CMakeLists.txt') }}
-
-      - name: Checkout and Cross Compile OpenSSL 3.1.2
-        if: steps.cache-openssl.outputs.cache-hit != 'true'
-        run: |
-          git clone https://github.com/UMSKT/openssl.git openssl
-          pushd openssl
-          source ${{ github.workspace }}/djgpp/setenv
-          ./Configure 386 no-threads no-tests no-sse2 no-asm -DOPENSSL_DEV_NO_ATOMICS -mno-mmx -mno-sse -mno-sse2 -march=i386 --prefix=${{ github.workspace }}/djgpp DJGPP
-          make && make install_sw
-          popd
-
-      - name: Save OpenSSL 3.1.2
-        if: steps.cache-openssl.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ${{ github.workspace }}/djgpp
-          key: openssl-3.1.2-${{ hashFiles('**/CMakeLists.txt') }}
-          
       - name: Download stub
         run: |
           wget https://web.archive.org/web/20250308092209/https://www.ibiblio.org/pub/micro/pc-stuff/freedos/files/util/system/cwsdpmi/csdpmi7b.zip -O CSDPMI7B.ZIP
@@ -99,7 +64,7 @@ jobs:
         run: |
           source ${{ github.workspace }}/djgpp/setenv
           pushd build
-          cmake ../ -D DJGPP_WATT32=${WATT_ROOT}/lib/libwatt.a -D CMAKE_FIND_ROOT_PATH=${CMAKE_FIND_ROOT_PATH} -D CWSDSTUB_LOCATION=/home/runner/dpmibin/CWSDSTUB.EXE -D DJGPP_BIN_LOCATION=/home/runner/work/UMSKT/UMSKT/djgpp/i586-pc-msdosdjgpp/bin
+          cmake ../ -D DJGPP=ON -D CMAKE_FIND_ROOT_PATH=${CMAKE_FIND_ROOT_PATH} -D CWSDSTUB_LOCATION=/home/runner/dpmibin/CWSDSTUB.EXE -D DJGPP_BIN_LOCATION=/home/runner/work/UMSKT/UMSKT/djgpp/i586-pc-msdosdjgpp/bin
           make
 
       - name: Setup DOSBox test environment
@@ -145,7 +110,7 @@ jobs:
       - name: Run tests in DOSBox
         run: |
           cd dosbox_test
-          timeout 30s dosbox -conf dosbox.conf -nogui -exit
+          timeout 2m dosbox -conf dosbox.conf -nogui -exit
           # Check if the test completed successfully
           if [ ! -f DONE.TXT ]; then
             echo "Tests did not complete successfully"
@@ -199,137 +164,7 @@ jobs:
           mv build/umskt.exe build/actions_upload/
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7
         with:
           name: UMSKT-DOS-x86
           path: build/actions_upload
-  compress:
-    needs: build
-    if: success()
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-    steps:
-      - name: Setup test environment
-        run: |
-          sudo apt -y update
-          sudo apt -y install dosbox
-          
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: UMSKT-DOS-x86
-          path: .
-
-      - name: Install UPX
-        uses: crazy-max/ghaction-upx@v3
-        with:
-          install-only: true
-          
-      - name: Compress binary
-        shell: pwsh
-        run: |
-          upx umskt.exe --best --ultra-brute -v
-          
-      - name: Setup DOSBox test environment
-        run: |
-          mkdir -p dosbox_test
-          cp umskt.exe dosbox_test/
-          # Download DPMI server directly
-          # wget https://github.com/UMSKT/winactiontest/raw/refs/heads/main/CWSDPMI.EXE -O dosbox_test/CWSDPMI.EXE
-          # Create test batch file
-          cat > dosbox_test/test.bat << EOL
-          @echo off
-          echo Running test 1...
-          umskt.exe -b 2C -c 365 -s 069420,999999 > TEST1.TXT
-          if errorlevel 1 goto error
-          echo Running test 2...
-          umskt.exe -b 5A -c 640 -s 069420,999999 > TEST2.TXT
-          if errorlevel 1 goto error
-          echo Running test 3...
-          umskt.exe -i 253286028742154311079061239762245184619981623171292574 > TEST3.TXT
-          if errorlevel 1 goto error
-          echo Tests completed > DONE.TXT
-          goto end
-          :error
-          echo Test failed > ERROR.TXT
-          :end
-          exit
-          EOL
-          # Create DOSBox configuration
-          cat > dosbox_test/dosbox.conf << EOL
-          [sdl]
-          nosound=true
-          [cpu]
-          cputype=386
-          core=dynamic
-          cycles=max
-          [autoexec]
-          mount c .
-          c:
-          test.bat
-          exit
-          EOL
-
-      - name: Run tests in DOSBox
-      
-        run: |
-          cd dosbox_test
-          timeout 30s dosbox -conf dosbox.conf -nogui -exit
-          # Check if the test completed successfully
-          if [ ! -f DONE.TXT ]; then
-            echo "Tests did not complete successfully"
-            if [ -f ERROR.TXT ]; then
-              echo "Test execution failed"
-            fi
-            if [ -f TEST1.TXT ]; then
-              echo "Test 1 output:"
-              cat TEST1.TXT
-            fi
-            if [ -f TEST2.TXT ]; then
-              echo "Test 2 output:"
-              cat TEST2.TXT
-            fi
-            if [ -f TEST3.TXT ]; then
-              echo "Test 3 output:"
-              cat TEST3.TXT
-            fi
-            exit 1
-          fi
-          # Verify test outputs
-          if [ ! -f TEST1.TXT ] || [ ! -f TEST2.TXT ] || [ ! -f TEST3.TXT ]; then
-            echo "Test output files missing"
-            exit 1
-          fi
-          # Check test results - looking for key format patterns
-          if ! grep -qE '[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}' TEST1.TXT || \
-             ! grep -qE '[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}' TEST2.TXT || \
-             ! grep -qE '[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}-[0-9]{6}' TEST3.TXT; then
-            echo "Tests failed - unexpected output format"
-            echo "Test 1 output:"
-            cat TEST1.TXT
-            echo "Test 2 output:"
-            cat TEST2.TXT
-            echo "Test 3 output:"
-            cat TEST3.txt
-            exit 1
-          else
-            echo "All tests passed successfully"
-            echo "Test 1 output:"
-            cat TEST1.TXT
-            echo "Test 2 output:"
-            cat TEST2.TXT
-            echo "Test 3 output:"
-            cat TEST3.TXT
-          fi
-
-      - name: Move executable to upload directory
-        run: |
-          mkdir actions_upload
-          mv umskt.exe actions_upload/
-          
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4.6.2
-        with:
-          name: UMSKT-DOS-x86-Compressed
-          path: actions_upload

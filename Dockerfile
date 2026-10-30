@@ -27,9 +27,7 @@ RUN apk add --no-cache \
   build-base \
   cmake \
   git \
-  musl-dev \
-  openssl-dev \
-  openssl-libs-static
+  musl-dev
 
 
 # Stage 2: Build

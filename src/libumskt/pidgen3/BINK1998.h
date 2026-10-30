@@ -47,7 +47,7 @@ public:
             EC_GROUP *eCurve,
             EC_POINT *basePoint,
             EC_POINT *publicKey,
-                char (&pKey)[25]
+                char (&pKey)[PK_LENGTH + NULL_TERMINATOR]
     );
 
     static void Generate(
@@ -57,7 +57,7 @@ public:
               BIGNUM *privateKey,
                DWORD pSerial,
                 BOOL pUpgrade,
-                char (&pKey)[25]
+                char (&pKey)[PK_LENGTH + NULL_TERMINATOR]
     );
 };
 

@@ -50,7 +50,7 @@ public:
             EC_POINT *basePoint,
             EC_POINT *publicKey,
                DWORD *pSerial,
-                char (&cdKey)[25]
+                char (&cdKey)[PK_LENGTH + NULL_TERMINATOR]
     );
 
     static void Generate(
@@ -63,7 +63,7 @@ public:
                 BOOL pUpgrade,
                DWORD serMin,
                DWORD serMax,
-                char (&pKey)[25]
+                char (&pKey)[PK_LENGTH + NULL_TERMINATOR]
     );
 };
 

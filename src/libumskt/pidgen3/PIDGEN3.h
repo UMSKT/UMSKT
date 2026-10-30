@@ -34,13 +34,13 @@ public:
     static int BN_bn2lebin(const BIGNUM *a, unsigned char *to, int tolen); // Hello OpenSSL developers, please tell me, where is this function at?
     static void endian(BYTE *data, int length);
     static EC_GROUP* initializeEllipticCurve(
-            std::string pSel,
-            std::string aSel,
-            std::string bSel,
-            std::string generatorXSel,
-            std::string generatorYSel,
-            std::string publicKeyXSel,
-            std::string publicKeyYSel,
+            const char *pSel,
+            const char *aSel,
+            const char *bSel,
+            const char *generatorXSel,
+            const char *generatorYSel,
+            const char *publicKeyXSel,
+            const char *publicKeyYSel,
             EC_POINT *&genPoint,
             EC_POINT *&pubPoint
     );

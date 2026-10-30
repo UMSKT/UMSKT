@@ -789,7 +789,48 @@ void ConfirmationID::Unmix(unsigned char* buffer, size_t bufSize, const unsigned
 	}
 }
 
-int ConfirmationID::Generate(const char* installation_id_str, char confirmation_id[49], int mode, std::string productid, bool overrideVersion)
+static int dec_at(const char *text, int offset, int count) {
+	int value = 0;
+	int index;
+	if (!text) {
+		return 0;
+	}
+	for (index = 0; index < offset; index++) {
+		if (!text[index]) {
+			return 0;
+		}
+	}
+	for (index = 0; index < count; index++) {
+		char ch = text[offset + index];
+		if (ch < '0' || ch > '9') {
+			break;
+		}
+		value = value * 10 + (ch - '0');
+	}
+	return value;
+}
+
+static void take_upper(char *dst, const char *text, int offset, int count) {
+	int index = 0;
+	int seen = 0;
+	if (text) {
+		while (text[seen] && seen < offset) {
+			seen++;
+		}
+		if (seen == offset) {
+			for (; index < count && text[offset + index]; index++) {
+				char ch = text[offset + index];
+				if (ch >= 'a' && ch <= 'z') {
+					ch = (char)(ch - 32);
+				}
+				dst[index] = ch;
+			}
+		}
+	}
+	dst[index] = 0;
+}
+
+int ConfirmationID::Generate(const char* installation_id_str, char confirmation_id[49], int mode, const char *productid, bool overrideVersion)
 {
 	int version;
 	unsigned char hardwareID[8];
@@ -951,21 +992,20 @@ int ConfirmationID::Generate(const char* installation_id_str, char confirmation_
 			    }
 			}
 			memcpy(&parsed, hardwareID, 8);
-			productID[0] = stoi(productid.substr(0,5));
-			std::string channelid = productid.substr(6,3);
-			char *p = &channelid[0];
-			for (; *p; p++) {
-				*p = toupper((unsigned char)*p);
-			}
-			if (strcmp(&channelid[0], "OEM") == 0) {
-				productID[1] = stoi(productid.substr(12,3));
-				productID[2] = (stoi(productid.substr(15,1)) * 100000) + stoi(productid.substr(18,5));
-				productID[2] = calculateCheckDigit(productID[2]);
-				productID[3] = ((stoi(productid.substr(10,2))) * 1000) + productID[3];
-			} else {
-				productID[1] = stoi(productid.substr(6,3));
-				productID[2] = stoi(productid.substr(10,7));
-				productID[3] = stoi(productid.substr(18,5));
+			{
+				char channelid[8];
+				productID[0] = dec_at(productid, 0, 5);
+				take_upper(channelid, productid, 6, 3);
+				if (strcmp(channelid, "OEM") == 0) {
+					productID[1] = dec_at(productid, 12, 3);
+					productID[2] = (dec_at(productid, 15, 1) * 100000) + dec_at(productid, 18, 5);
+					productID[2] = calculateCheckDigit(productID[2]);
+					productID[3] = (dec_at(productid, 10, 2) * 1000) + productID[3];
+				} else {
+					productID[1] = dec_at(productid, 6, 3);
+					productID[2] = dec_at(productid, 10, 7);
+					productID[3] = dec_at(productid, 18, 5);
+				}
 			}
 	}
 	// fmt::print("ProductID: {}-{}-{}-{} \n", productID[0], productID[1], productID[2], productID[3]);

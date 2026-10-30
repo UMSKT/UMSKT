@@ -19,7 +19,7 @@
 | [![Windows ARM](https://github.com/UMSKT/UMSKT/actions/workflows/windows-arm.yml/badge.svg)](../../actions/workflows/windows-arm.yml) |
 | [![macOS](https://github.com/UMSKT/UMSKT/actions/workflows/macos.yml/badge.svg)](../../actions/workflows/macos.yml) |
 | [![Linux](https://github.com/UMSKT/UMSKT/actions/workflows/linux.yml/badge.svg)](../../actions/workflows/linux.yml) |
-| [![FreeBSD](https://img.shields.io/badge/FreeBSD-unmaintained-D3D3D3?logo=github)](../../actions/workflows/freebsd.yml) |
+| [![FreeBSD](https://github.com/UMSKT/UMSKT/actions/workflows/freebsd.yml/badge.svg)](../../actions/workflows/freebsd.yml) |
 | [![DOS DJGPP](https://github.com/UMSKT/UMSKT/actions/workflows/dos-djgpp.yml/badge.svg)](../../actions/workflows/dos-djgpp.yml) |
 
 ------
@@ -54,18 +54,17 @@ In light of the recent exponential interest in this project I've decided to put 
 * MS-DOS 6.22 or later
 * Any DOS-based version of Windows
 * Windows NT 4.0 or later (via NTVDM)
-#### Windows (x86/x64)
-* i686 processor or better
-* Windows XP or later
-
-> [!WARNING]
-> Processors barely meeting the minimum system requirements for XP may not work. Use the MS-DOS version via NTVDM in that case.
-
+#### Windows (x86)
+* Pentium processor or better
+* Windows 98 First Edition or later
+* Windows NT 4.0 SP6a or later
+#### Windows (x64)
+* Windows MT 5.2 (Windows XP x64, Windows Server 2003) or later
 #### Windows (ARM64)
-* Windows 11 21H2 or later
+* Winodws 11 21H2 or later
 #### macOS
 * Apple Silicon or x86_64 processor
-* Latest version of macOS
+* macOS 26 Tahoe or later
 #### Linux
 * modern ARM, x86, or x86_64 processor
 * Latest version of your Linux distro
