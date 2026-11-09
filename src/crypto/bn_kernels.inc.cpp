@@ -3,8 +3,6 @@
  * Copyleft (C) 2019-2026 UMSKT Contributors (et.al.)
  * SPDX-License-Identifier: AGPL-3.0-or-later
  *
- * Shared BN hot kernels. Included from scalar and SSE2 translation units
- * with BN_KERNEL_SUFFIX set to scalar or sse2.
  */
 
 #ifndef BN_KERNEL_SUFFIX

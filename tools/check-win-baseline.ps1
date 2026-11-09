@@ -134,8 +134,6 @@ if ($importHits.Count -gt 0) {
     Fail "imports outside kernel32, or APIs missing on Windows 98 / NT 4: $shown"
 }
 
-# SSE2/AVX2 opcodes are allowed: BN hot kernels are multi-versioned and only entered
-# after CPUID/XGETBV + IsProcessorFeaturePresent succeed. AVX-512 is not shipped.
 $badMnemonic = "(?i)^(vfmadd132pd|vfmadd213pd|vfmadd231pd|v4fmadd|v4fnmadd|vp4dpw|vpopcntd|vpopcntq|vbroadcasti32x|vbroadcasti64x|vbroadcastf32x|vbroadcastf64x|vinserti32x|vinserti64x|vextracti32x|vextracti64x|vpermi2|vpermt2|vpcompress|vpexpand|vpgather[dq][dq]|vpscatter|vgatherpf|vscatterpf)\b"
 $badRegister = "(?i)%zmm[0-9]"
 $insnHits = New-Object System.Collections.Generic.List[string]
@@ -161,7 +159,7 @@ foreach ($line in $disasm) {
     }
 }
 if ($insnHits.Count -gt 0) {
-    Fail ("forbidden AVX-512 instructions:`n" + ($insnHits -join "`n"))
+    Fail ("forbidden instructions:`n" + ($insnHits -join "`n"))
 }
 
 Write-Host "Windows baseline check passed ($Arch, kernel32 only): $Exe"
