@@ -52,13 +52,20 @@
 #define BYDWORD(n)                     (DWORD)(*((n) + 0) | *((n) + 1) << 8 | *((n) + 2) << 16 | *((n) + 3) << 24)
 #define BITMASK(n)                     ((1ULL << (n)) - 1)
 
+enum {
+    UMSKT_PROGRESS_BREAK = 0,
+    UMSKT_PROGRESS_MUL = 1,
+    UMSKT_PROGRESS_GEN = 2,
+    UMSKT_PROGRESS_VERIFY = 3
+};
+
 class UMSKT {
 public:
     class PIDGEN2;
     class PIDGEN3;
     class ConfigurationID;
 
-    typedef void (*ProgressFn)(unsigned current, unsigned total, void *user);
+    typedef void (*ProgressFn)(int phase, unsigned current, unsigned total, void *user);
 
 #ifdef UMSKT_FREESTANDING
     static int debug_on;
@@ -68,7 +75,12 @@ public:
     static void setDebug(int on);
     static void debugf(const char *fmt, ...);
     static void setProgress(ProgressFn fn, void *user);
-    static void reportProgress(unsigned current, unsigned total);
+    static void setMulProgress(int on);
+    static void setEcProgressPhase(int phase);
+    static void setProgressLabel(const char *label);
+    static const char *getProgressLabel(void);
+    static void suspendProgressLine(void);
+    static void reportProgress(int phase, unsigned current, unsigned total);
 
     // RNG utility functions
     static int umskt_rand_bytes(unsigned char *buf, int num);

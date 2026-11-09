@@ -128,10 +128,14 @@ bool PIDGEN3::BINK1998::Verify(
     EC_POINT *p = EC_POINT_new(eCurve);
 
     // t = sG
+    UMSKT::setProgressLabel("s*G");
+    UMSKT::setEcProgressPhase(UMSKT_PROGRESS_VERIFY);
     EC_POINT_mul(eCurve, t, nullptr, basePoint, s, numContext);
 
     // P = eK
+    UMSKT::setProgressLabel("e*K");
     EC_POINT_mul(eCurve, p, nullptr, publicKey, e, numContext);
+    UMSKT::setProgressLabel(NULL);
 
     // P += t
     EC_POINT_add(eCurve, p, t, p, numContext);
@@ -202,10 +206,23 @@ void PIDGEN3::BINK1998::Generate(
     // attempt adds G instead of multiplying the curve again. About 1 in 512
     // signatures fit in 55 bits, and a 386 cannot afford hundreds of multiplications.
     EC_POINT *r = EC_POINT_new(eCurve);
+    unsigned mul_bits;
     UMSKT::umskt_bn_rand(c, FIELD_BITS, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
+    mul_bits = (unsigned)BN_num_bits(c);
+    if (mul_bits == 0) {
+        mul_bits = 1;
+    }
+    UMSKT::setProgressLabel("R=c*G");
+    UMSKT::setEcProgressPhase(UMSKT_PROGRESS_MUL);
+    UMSKT::reportProgress(UMSKT_PROGRESS_MUL, 0, mul_bits);
+    UMSKT::setMulProgress(1);
     EC_POINT_mul(eCurve, r, nullptr, basePoint, c, numContext);
+    UMSKT::setMulProgress(0);
+    UMSKT::setProgressLabel(NULL);
+    UMSKT::reportProgress(UMSKT_PROGRESS_GEN, 0, 4096u);
 
     do {
+        UMSKT::reportProgress(UMSKT_PROGRESS_GEN, (unsigned)tries + 1u, 4096u);
         // x = R.x; y = R.y;
         EC_POINT_get_affine_coordinates(eCurve, r, x, y, numContext);
 
@@ -262,19 +279,19 @@ void PIDGEN3::BINK1998::Generate(
         pSignature = 0;
         BN_bn2lebinpad(s, (BYTE *)&pSignature, (int)sizeof(pSignature));
         tries++;
-        UMSKT::reportProgress((unsigned)tries, 4096u);
+        UMSKT::reportProgress(UMSKT_PROGRESS_GEN, (unsigned)tries, 4096u);
 
         // Pack product key.
         Pack(pRaw, pUpgrade, pSerial, pHash, pSignature);
 
-        UMSKT::debugf("Generation results:\n");
-        UMSKT::debugf("   Upgrade: 0x%08x\n", (unsigned)pUpgrade);
-        UMSKT::debugf("    Serial: 0x%08x\n", (unsigned)pSerial);
-        UMSKT::debugf("      Hash: 0x%08x\n", (unsigned)pHash);
-        UMSKT::debugf(" Signature: 0x%08llx\n", (unsigned long long)pSignature);
-        UMSKT::debugf("\n");
-
-        if (tries < 4096 && pSignature > BITMASK(55)) {
+        if (!(tries < 4096 && pSignature > BITMASK(55))) {
+            UMSKT::debugf("Generation results:\n");
+            UMSKT::debugf("   Upgrade: 0x%08x\n", (unsigned)pUpgrade);
+            UMSKT::debugf("    Serial: 0x%08x\n", (unsigned)pSerial);
+            UMSKT::debugf("      Hash: 0x%08x\n", (unsigned)pHash);
+            UMSKT::debugf(" Signature: 0x%08llx\n", (unsigned long long)pSignature);
+            UMSKT::debugf("\n");
+        } else {
             EC_POINT_add(eCurve, r, r, basePoint, numContext);
             BN_add_word(c, 1);
         }

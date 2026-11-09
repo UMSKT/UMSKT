@@ -151,16 +151,21 @@ bool PIDGEN3::BINK2002::Verify(
     EC_POINT *t = EC_POINT_new(eCurve);
 
     // t = sG
+    UMSKT::setProgressLabel("s*G");
+    UMSKT::setEcProgressPhase(UMSKT_PROGRESS_VERIFY);
     EC_POINT_mul(eCurve, t, nullptr, basePoint, s, context);
 
     // p = eK
+    UMSKT::setProgressLabel("e*K");
     EC_POINT_mul(eCurve, p, nullptr, publicKey, e, context);
 
     // p += t
     EC_POINT_add(eCurve, p, t, p, context);
 
     // p *= s
+    UMSKT::setProgressLabel("s*P");
     EC_POINT_mul(eCurve, p, nullptr, p, s, context);
+    UMSKT::setProgressLabel(NULL);
 
     // x = p.x; y = p.y;
     EC_POINT_get_affine_coordinates(eCurve, p, x, y, context);
@@ -245,10 +250,23 @@ void PIDGEN3::BINK2002::Generate(
     // One random scalar. Further candidates are c+1, c+2, ... so each extra
     // attempt adds G instead of multiplying the curve again.
     EC_POINT *r = EC_POINT_new(eCurve);
+    unsigned mul_bits;
     UMSKT::umskt_bn_rand(c, FIELD_BITS_2003, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY);
+    mul_bits = (unsigned)BN_num_bits(c);
+    if (mul_bits == 0) {
+        mul_bits = 1;
+    }
+    UMSKT::setProgressLabel("R=c*G");
+    UMSKT::setEcProgressPhase(UMSKT_PROGRESS_MUL);
+    UMSKT::reportProgress(UMSKT_PROGRESS_MUL, 0, mul_bits);
+    UMSKT::setMulProgress(1);
     EC_POINT_mul(eCurve, r, nullptr, basePoint, c, numContext);
+    UMSKT::setMulProgress(0);
+    UMSKT::setProgressLabel(NULL);
+    UMSKT::reportProgress(UMSKT_PROGRESS_GEN, 0, 4096u);
 
     do {
+        UMSKT::reportProgress(UMSKT_PROGRESS_GEN, (unsigned)tries + 1u, 4096u);
         // x = R.x; y = R.y;
         EC_POINT_get_affine_coordinates(eCurve, r, x, y, numContext);
 
@@ -280,7 +298,7 @@ void PIDGEN3::BINK2002::Generate(
         if (!serialInRange) {
             noSquare = true;
             tries++;
-            UMSKT::reportProgress((unsigned)tries, 4096u);
+            UMSKT::reportProgress(UMSKT_PROGRESS_GEN, (unsigned)tries, 4096u);
             if (tries < 4096) {
                 EC_POINT_add(eCurve, r, r, basePoint, numContext);
                 BN_add_word(c, 1);
@@ -384,21 +402,21 @@ void PIDGEN3::BINK2002::Generate(
         pSignature = 0;
         BN_bn2lebinpad(s, (BYTE *)&pSignature, (int)sizeof(pSignature));
         tries++;
-        UMSKT::reportProgress((unsigned)tries, 4096u);
+        UMSKT::reportProgress(UMSKT_PROGRESS_GEN, (unsigned)tries, 4096u);
 
         // Pack product key.
         Pack(pRaw, pUpgrade, pChannelID, pHash, pSignature, pAuthInfo);
 
-        UMSKT::debugf("Generation results:\n");
-        UMSKT::debugf("   Upgrade: 0x%08x\n", (unsigned)pUpgrade);
-        UMSKT::debugf("Channel ID: 0x%08x\n", (unsigned)pChannelID);
-        UMSKT::debugf("      Hash: 0x%08x\n", (unsigned)pHash);
-        UMSKT::debugf(" Signature: 0x%08llx\n", (unsigned long long)pSignature);
-        UMSKT::debugf("  AuthInfo: 0x%08x\n", (unsigned)pAuthInfo);
-        UMSKT::debugf("    Serial: %06u\n", (unsigned)serial);
-        UMSKT::debugf("\n");
-
-        if (tries < 4096 && (pSignature > BITMASK(62) || noSquare || !serialInRange)) {
+        if (!(tries < 4096 && (pSignature > BITMASK(62) || noSquare || !serialInRange))) {
+            UMSKT::debugf("Generation results:\n");
+            UMSKT::debugf("   Upgrade: 0x%08x\n", (unsigned)pUpgrade);
+            UMSKT::debugf("Channel ID: 0x%08x\n", (unsigned)pChannelID);
+            UMSKT::debugf("      Hash: 0x%08x\n", (unsigned)pHash);
+            UMSKT::debugf(" Signature: 0x%08llx\n", (unsigned long long)pSignature);
+            UMSKT::debugf("  AuthInfo: 0x%08x\n", (unsigned)pAuthInfo);
+            UMSKT::debugf("    Serial: %06u\n", (unsigned)serial);
+            UMSKT::debugf("\n");
+        } else {
             EC_POINT_add(eCurve, r, r, basePoint, numContext);
             BN_add_word(c, 1);
         }

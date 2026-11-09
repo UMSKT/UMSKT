@@ -110,21 +110,71 @@ struct ProgressCtx {
     unsigned key_index;
     unsigned key_count;
     int last_percent;
+    int last_phase;
     int active;
+    int verbose_layout;
+    int line_open;
 };
 
 static ProgressCtx g_progress_ctx;
+static const unsigned PROGRESS_LINE_WIDTH = 72;
 
-static void progress_clear_line(void) {
-    err_text("\r                                        \r");
+static void progress_write_padded(const char *body) {
+    char line[80];
+    unsigned i;
+    unsigned len = 0;
+    line[0] = '\r';
+    while (body[len] && len < PROGRESS_LINE_WIDTH) {
+        line[1 + len] = body[len];
+        len++;
+    }
+    for (i = len; i < PROGRESS_LINE_WIDTH; i++) {
+        line[1 + i] = ' ';
+    }
+    line[1 + PROGRESS_LINE_WIDTH] = 0;
+    err_text(line);
+    g_progress_ctx.line_open = 1;
 }
 
-static void progress_draw(unsigned current, unsigned total) {
-    char line[80];
+static void progress_clear_line(void) {
+    if (g_progress_ctx.line_open) {
+        progress_write_padded("");
+        err_text("\r");
+        g_progress_ctx.line_open = 0;
+    }
+}
+
+static void progress_break_line(void) {
+    if (g_progress_ctx.line_open) {
+        progress_write_padded("");
+        err_text("\n");
+        g_progress_ctx.line_open = 0;
+    }
+    g_progress_ctx.last_phase = -1;
+    g_progress_ctx.last_percent = -1;
+}
+
+static const char *progress_phase_label(int phase) {
+    const char *op = UMSKT::getProgressLabel();
+    if (g_progress_ctx.verbose_layout && op && op[0]) {
+        return op;
+    }
+    if (phase == UMSKT_PROGRESS_GEN) {
+        return "Generating key";
+    }
+    if (phase == UMSKT_PROGRESS_VERIFY) {
+        return "Validating key";
+    }
+    return "Multiplying elliptic curve";
+}
+
+static void progress_draw_bar(int phase, unsigned current, unsigned total) {
+    char body[80];
     unsigned percent;
     unsigned filled;
     unsigned i;
     const unsigned width = 24;
+    const char *label;
     if (total == 0) {
         return;
     }
@@ -132,33 +182,49 @@ static void progress_draw(unsigned current, unsigned total) {
         current = total;
     }
     percent = (current * 100u) / total;
-    if ((int)percent == g_progress_ctx.last_percent && current != total && current != 0) {
+    if (g_progress_ctx.last_phase == phase &&
+        (int)percent == g_progress_ctx.last_percent &&
+        current != total &&
+        current != 0 &&
+        current != 1) {
         return;
     }
+    g_progress_ctx.last_phase = phase;
     g_progress_ctx.last_percent = (int)percent;
     filled = (current * width) / total;
-    line[0] = '\r';
-    line[1] = '[';
+    body[0] = '[';
     for (i = 0; i < width; i++) {
-        line[2 + i] = (i < filled) ? '#' : '-';
+        body[1 + i] = (i < filled) ? '#' : '-';
     }
-    snprintf(line + 2 + width, sizeof(line) - (2 + width), "] %3u%%", percent);
-    err_text(line);
+    label = progress_phase_label(phase);
+    if (g_progress_ctx.key_count > 1) {
+        snprintf(body + 1 + width, sizeof(body) - (1 + width),
+                 "] %3u%% %s (%u/%u)",
+                 percent, label, g_progress_ctx.key_index + 1, g_progress_ctx.key_count);
+    } else {
+        snprintf(body + 1 + width, sizeof(body) - (1 + width),
+                 "] %3u%% %s", percent, label);
+    }
+    progress_write_padded(body);
 }
 
-static void progress_callback(unsigned current, unsigned total, void *user) {
+static void progress_callback(int phase, unsigned current, unsigned total, void *user) {
     ProgressCtx *ctx = (ProgressCtx *)user;
-    unsigned overall_total;
-    unsigned overall_current;
-    if (!ctx || ctx->key_count == 0 || total == 0) {
+    if (!ctx || !ctx->active) {
         return;
     }
-    overall_total = ctx->key_count * total;
-    overall_current = ctx->key_index * total + current;
-    if (overall_current > overall_total) {
-        overall_current = overall_total;
+    if (phase == UMSKT_PROGRESS_BREAK) {
+        progress_break_line();
+        return;
     }
-    progress_draw(overall_current, overall_total);
+    if (ctx->verbose_layout && ctx->last_phase != -1 && ctx->last_phase != phase) {
+        progress_break_line();
+    }
+    if (phase == UMSKT_PROGRESS_MUL ||
+        phase == UMSKT_PROGRESS_GEN ||
+        phase == UMSKT_PROGRESS_VERIFY) {
+        progress_draw_bar(phase, current, total);
+    }
 }
 
 static int streq(const char *a, const char *b) {
@@ -771,7 +837,10 @@ static int run_keys(Options *options, const char *json, int length) {
             g_progress_ctx.key_index = 0;
             g_progress_ctx.key_count = (unsigned)options->numKeys;
             g_progress_ctx.last_percent = -1;
+            g_progress_ctx.last_phase = -1;
             g_progress_ctx.active = 1;
+            g_progress_ctx.verbose_layout = options->verbose;
+            g_progress_ctx.line_open = 0;
             UMSKT::setProgress(progress_callback, &g_progress_ctx);
         }
         for (i = 0; i < total; i++) {
@@ -779,10 +848,17 @@ static int run_keys(Options *options, const char *json, int length) {
             if (options->progress) {
                 g_progress_ctx.key_index = (unsigned)count;
                 g_progress_ctx.last_percent = -1;
+                g_progress_ctx.last_phase = -1;
             }
             PIDGEN3::BINK1998::Generate(eCurve, genPoint, genOrder, privateKey, nRaw, options->upgrade, pKey);
+            if (options->progress) {
+                UMSKT::setEcProgressPhase(UMSKT_PROGRESS_VERIFY);
+                UMSKT::setMulProgress(1);
+            }
             valid = PIDGEN3::BINK1998::Verify(eCurve, genPoint, pubPoint, pKey);
             if (options->progress) {
+                UMSKT::setMulProgress(0);
+                UMSKT::setProgressLabel(NULL);
                 progress_clear_line();
             }
             if (valid) {
@@ -818,7 +894,10 @@ static int run_keys(Options *options, const char *json, int length) {
             g_progress_ctx.key_index = 0;
             g_progress_ctx.key_count = (unsigned)options->numKeys;
             g_progress_ctx.last_percent = -1;
+            g_progress_ctx.last_phase = -1;
             g_progress_ctx.active = 1;
+            g_progress_ctx.verbose_layout = options->verbose;
+            g_progress_ctx.line_open = 0;
             UMSKT::setProgress(progress_callback, &g_progress_ctx);
         }
         for (i = 0; i < total; i++) {
@@ -832,10 +911,17 @@ static int run_keys(Options *options, const char *json, int length) {
             if (options->progress) {
                 g_progress_ctx.key_index = (unsigned)count;
                 g_progress_ctx.last_percent = -1;
+                g_progress_ctx.last_phase = -1;
             }
             PIDGEN3::BINK2002::Generate(eCurve, genPoint, genOrder, privateKey, (DWORD)options->channelID, pAuthInfo, options->upgrade, (DWORD)options->serialMin, (DWORD)options->serialMax, pKey);
+            if (options->progress) {
+                UMSKT::setEcProgressPhase(UMSKT_PROGRESS_VERIFY);
+                UMSKT::setMulProgress(1);
+            }
             valid = PIDGEN3::BINK2002::Verify(eCurve, genPoint, pubPoint, NULL, pKey);
             if (options->progress) {
+                UMSKT::setMulProgress(0);
+                UMSKT::setProgressLabel(NULL);
                 progress_clear_line();
             }
             if (valid) {

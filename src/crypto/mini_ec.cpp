@@ -12,6 +12,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+extern "C" int umskt_mul_progress_enabled(void);
+extern "C" int umskt_ec_progress_phase(void);
+namespace UMSKT {
+void reportProgress(int phase, unsigned current, unsigned total);
+}
+
 struct ec_group_st {
     BIGNUM *p;
     BIGNUM *a;
@@ -420,6 +426,9 @@ int EC_POINT_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *n, const EC_P
         }
         if (ok && BN_is_bit_set(m, i)) {
             ok = jadd_mixed(group, &acc, q);
+        }
+        if (ok && umskt_mul_progress_enabled() && bits > 0) {
+            UMSKT::reportProgress(umskt_ec_progress_phase(), (unsigned)(bits - i), (unsigned)bits);
         }
     }
     if (ok) {
