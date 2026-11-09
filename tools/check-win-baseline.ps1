@@ -134,9 +134,11 @@ if ($importHits.Count -gt 0) {
     Fail "imports outside kernel32, or APIs missing on Windows 98 / NT 4: $shown"
 }
 
+# SSE/SSE2 opcodes are allowed in the x86 binary: BN hot kernels are dual-compiled
+# and only entered after CPUID + IsProcessorFeaturePresent(SSE2) succeed. AVX is not.
 if ($Arch -eq "x86") {
-    $badMnemonic = "(?i)^(cmov[a-z]*|fcmov[a-z]*|emms|nopl|nopw|fcomi|fcomip|fucomi|fucomip|movaps|movups|movapd|movupd|movdqa|movdqu|movss|movhps|movlps|movlhps|movhlps|xorps|xorpd|andps|andpd|orps|orpd|addps|addpd|addss|addsd|subps|subpd|subss|subsd|mulps|mulpd|mulss|mulsd|divps|divpd|divss|divsd|cvtsi2ss|cvtsi2sd|cvttss2si|cvttsd2si|cvtss2si|cvtsd2si|pshufd|pshuflw|pshufhw|pshufw|punpck[a-z]+|packss[a-z]+|packus[a-z]+|pcmp[a-z]+|padd[bwdq]|psub[bwdq]|pmullw|pmulhw|pmulhuw|pmaddwd|pavgb|pavgw|pextrw|pinsrw|pmovmskb|prefetch[a-z]*|sfence|mfence|lfence|maskmovq|movntq|movntps|lddqu|pause)\b"
-    $badRegister = "(?i)%(mm|xmm|ymm|zmm)[0-9]"
+    $badMnemonic = "(?i)^(vfmadd[a-z0-9]*|vfmsub[a-z0-9]*|vfnmadd[a-z0-9]*|vfnmsub[a-z0-9]*|vadd[a-z]+|vsub[a-z]+|vmul[a-z]+|vdiv[a-z]+|vmov[a-z]+|vxor[a-z]+|vand[a-z]+|vor[a-z]+|vpcm[a-z]+|vpadd[a-z]+|vpsub[a-z]+|vbroadcast[a-z]+|vinsert[a-z]+|vextract[a-z]+|vperm[a-z]+|vgather[a-z]+|vscatter[a-z]+|vzeroall|vzeroupper)\b"
+    $badRegister = "(?i)%(ymm|zmm)[0-9]"
     $insnHits = New-Object System.Collections.Generic.List[string]
     $disasm = & $Objdump -d -M att -- $Exe 2>&1
     if ($LASTEXITCODE -ne 0) {
@@ -160,7 +162,7 @@ if ($Arch -eq "x86") {
         }
     }
     if ($insnHits.Count -gt 0) {
-        Fail ("forbidden instructions:`n" + ($insnHits -join "`n"))
+        Fail ("forbidden AVX instructions:`n" + ($insnHits -join "`n"))
     }
 }
 

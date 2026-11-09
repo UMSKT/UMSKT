@@ -9,9 +9,38 @@
  */
 
 #include "mini_openssl.h"
+#include "bn_kernels.h"
+#include "cpu_features.h"
 
 #include <stdlib.h>
 #include <string.h>
+
+typedef void (*umskt_mont_mul_fn)(uint32_t *r, const uint32_t *a, const uint32_t *b, const uint32_t *n, uint32_t n0, int nw);
+typedef void (*umskt_bn_mul_limbs_fn)(uint32_t *r, const uint32_t *a, int an, const uint32_t *b, int bn);
+
+static umskt_mont_mul_fn g_mont_mul = umskt_mont_mul_scalar;
+static umskt_bn_mul_limbs_fn g_bn_mul_limbs = umskt_bn_mul_limbs_scalar;
+static int g_bn_dispatch_ready = 0;
+
+void umskt_bn_dispatch_init(void) {
+    if (g_bn_dispatch_ready) {
+        return;
+    }
+    umskt_cpu_init();
+#if defined(UMSKT_HAVE_SSE2_KERNELS)
+    if (umskt_cpu_has_sse2()) {
+        g_mont_mul = umskt_mont_mul_sse2;
+        g_bn_mul_limbs = umskt_bn_mul_limbs_sse2;
+    }
+#endif
+    g_bn_dispatch_ready = 1;
+}
+
+static void bn_dispatch_ensure(void) {
+    if (!g_bn_dispatch_ready) {
+        umskt_bn_dispatch_init();
+    }
+}
 
 struct bignum_st {
     uint32_t *d;
@@ -505,8 +534,6 @@ BN_ULONG BN_div_word(BIGNUM *a, BN_ULONG w) {
 }
 
 static int bn_mul(BIGNUM *r, const BIGNUM *a, const BIGNUM *b) {
-    int i;
-    int j;
     int top = a->top + b->top;
     if (a->top == 0 || b->top == 0) {
         return BN_zero(r);
@@ -514,22 +541,8 @@ static int bn_mul(BIGNUM *r, const BIGNUM *a, const BIGNUM *b) {
     if (!bn_wexpand(r, top + 1)) {
         return 0;
     }
-    for (i = 0; i < top + 1; i++) {
-        r->d[i] = 0;
-    }
-    for (i = 0; i < a->top; i++) {
-        uint32_t carry = 0;
-        for (j = 0; j < b->top; j++) {
-            union {
-                uint64_t v;
-                uint32_t p[2];
-            } acc;
-            acc.v = (uint64_t)a->d[i] * b->d[j] + r->d[i + j] + carry;
-            r->d[i + j] = acc.p[0];
-            carry = acc.p[1];
-        }
-        r->d[i + b->top] = carry;
-    }
+    bn_dispatch_ensure();
+    g_bn_mul_limbs(r->d, a->d, a->top, b->d, b->top);
     r->top = top;
     r->neg = (a->neg ^ b->neg) && 1;
     bn_fix_top(r);
@@ -728,63 +741,8 @@ static void mont_load(uint32_t *dst, const BIGNUM *src, int nw) {
 }
 
 static void mont_mul(uint32_t *r, const uint32_t *a, const uint32_t *b, const uint32_t *n, uint32_t n0, int nw) {
-    uint32_t tmp[34];
-    int i;
-    int j;
-    int ge;
-    for (i = 0; i < nw + 2; i++) {
-        tmp[i] = 0;
-    }
-    for (i = 0; i < nw; i++) {
-        uint64_t carry = 0;
-        uint32_t m;
-        for (j = 0; j < nw; j++) {
-            carry += (uint64_t)tmp[j] + (uint64_t)a[j] * b[i];
-            tmp[j] = (uint32_t)carry;
-            carry >>= 32;
-        }
-        carry += tmp[nw];
-        tmp[nw] = (uint32_t)carry;
-        tmp[nw + 1] = (uint32_t)(carry >> 32);
-        m = tmp[0] * n0;
-        carry = 0;
-        for (j = 0; j < nw; j++) {
-            carry += (uint64_t)tmp[j] + (uint64_t)m * n[j];
-            tmp[j] = (uint32_t)carry;
-            carry >>= 32;
-        }
-        carry += tmp[nw];
-        tmp[nw] = (uint32_t)carry;
-        tmp[nw + 1] += (uint32_t)(carry >> 32);
-        for (j = 0; j <= nw; j++) {
-            tmp[j] = tmp[j + 1];
-        }
-        tmp[nw + 1] = 0;
-    }
-    ge = tmp[nw] != 0;
-    if (!ge) {
-        for (i = nw - 1; i >= 0; i--) {
-            if (tmp[i] != n[i]) {
-                ge = tmp[i] > n[i];
-                break;
-            }
-            if (i == 0) {
-                ge = 1;
-            }
-        }
-    }
-    if (ge) {
-        uint32_t borrow = 0;
-        for (i = 0; i < nw; i++) {
-            uint64_t sub = (uint64_t)n[i] + borrow;
-            r[i] = (uint32_t)((uint64_t)tmp[i] - sub);
-            borrow = (uint64_t)tmp[i] < sub;
-        }
-    } else {
-        for (i = 0; i < nw; i++) {
-            r[i] = tmp[i];
-        }
-    }
+    bn_dispatch_ensure();
+    g_mont_mul(r, a, b, n, n0, nw);
 }
 
 static int bn_to_mont_rr(BIGNUM *rr, const BIGNUM *m, int nw) {
