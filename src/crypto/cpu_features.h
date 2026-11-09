@@ -13,6 +13,7 @@ extern "C" {
 
 void umskt_cpu_init(void);
 int umskt_cpu_has_sse2(void);
+int umskt_cpu_has_avx2(void);
 
 #ifdef __cplusplus
 }

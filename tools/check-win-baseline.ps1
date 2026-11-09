@@ -134,36 +134,34 @@ if ($importHits.Count -gt 0) {
     Fail "imports outside kernel32, or APIs missing on Windows 98 / NT 4: $shown"
 }
 
-# SSE/SSE2 opcodes are allowed in the x86 binary: BN hot kernels are dual-compiled
-# and only entered after CPUID + IsProcessorFeaturePresent(SSE2) succeed. AVX is not.
-if ($Arch -eq "x86") {
-    $badMnemonic = "(?i)^(vfmadd[a-z0-9]*|vfmsub[a-z0-9]*|vfnmadd[a-z0-9]*|vfnmsub[a-z0-9]*|vadd[a-z]+|vsub[a-z]+|vmul[a-z]+|vdiv[a-z]+|vmov[a-z]+|vxor[a-z]+|vand[a-z]+|vor[a-z]+|vpcm[a-z]+|vpadd[a-z]+|vpsub[a-z]+|vbroadcast[a-z]+|vinsert[a-z]+|vextract[a-z]+|vperm[a-z]+|vgather[a-z]+|vscatter[a-z]+|vzeroall|vzeroupper)\b"
-    $badRegister = "(?i)%(ymm|zmm)[0-9]"
-    $insnHits = New-Object System.Collections.Generic.List[string]
-    $disasm = & $Objdump -d -M att -- $Exe 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Fail "objdump -d failed"
+# SSE2/AVX2 opcodes are allowed: BN hot kernels are multi-versioned and only entered
+# after CPUID/XGETBV + IsProcessorFeaturePresent succeed. AVX-512 is not shipped.
+$badMnemonic = "(?i)^(vfmadd132pd|vfmadd213pd|vfmadd231pd|v4fmadd|v4fnmadd|vp4dpw|vpopcntd|vpopcntq|vbroadcasti32x|vbroadcasti64x|vbroadcastf32x|vbroadcastf64x|vinserti32x|vinserti64x|vextracti32x|vextracti64x|vpermi2|vpermt2|vpcompress|vpexpand|vpgather[dq][dq]|vpscatter|vgatherpf|vscatterpf)\b"
+$badRegister = "(?i)%zmm[0-9]"
+$insnHits = New-Object System.Collections.Generic.List[string]
+$disasm = & $Objdump -d -M att -- $Exe 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Fail "objdump -d failed"
+}
+foreach ($line in $disasm) {
+    $text = [string]$line
+    $insn = $null
+    if ($text.Contains("`t")) {
+        $parts = $text.Split("`t")
+        $insn = $parts[$parts.Length - 1].Trim()
     }
-    foreach ($line in $disasm) {
-        $text = [string]$line
-        $insn = $null
-        if ($text.Contains("`t")) {
-            $parts = $text.Split("`t")
-            $insn = $parts[$parts.Length - 1].Trim()
-        }
-        if (-not $insn) {
-            continue
-        }
-        if ($insn -match $badMnemonic -or $insn -match $badRegister) {
-            $insnHits.Add($text.Trim())
-            if ($insnHits.Count -ge 20) {
-                break
-            }
+    if (-not $insn) {
+        continue
+    }
+    if ($insn -match $badMnemonic -or $insn -match $badRegister) {
+        $insnHits.Add($text.Trim())
+        if ($insnHits.Count -ge 20) {
+            break
         }
     }
-    if ($insnHits.Count -gt 0) {
-        Fail ("forbidden AVX instructions:`n" + ($insnHits -join "`n"))
-    }
+}
+if ($insnHits.Count -gt 0) {
+    Fail ("forbidden AVX-512 instructions:`n" + ($insnHits -join "`n"))
 }
 
 Write-Host "Windows baseline check passed ($Arch, kernel32 only): $Exe"

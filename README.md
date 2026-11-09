@@ -55,11 +55,12 @@ In light of the recent exponential interest in this project I've decided to put 
 * Any DOS-based version of Windows
 * Windows NT 4.0 or later (via NTVDM)
 #### Windows (x86)
-* Pentium processor or better (Pentium 4 recommended)
+* Pentium processor or better (Pentium 4 recommended, Haswell or equivalent best)
 * Windows 98 First Edition or later
 * Windows NT 4.0 SP6a or later
 #### Windows (x64)
 * Windows NT 5.2 (Windows XP x64, Windows Server 2003) or later
+* Haswell or equivalent recommended
 #### Windows (ARM64)
 * Winodws 11 21H2 or later
 #### macOS

@@ -27,12 +27,21 @@ void umskt_bn_dispatch_init(void) {
         return;
     }
     umskt_cpu_init();
+#if defined(UMSKT_HAVE_AVX2_KERNELS)
+    if (umskt_cpu_has_avx2()) {
+        g_mont_mul = umskt_mont_mul_avx2;
+        g_bn_mul_limbs = umskt_bn_mul_limbs_avx2;
+    } else
+#endif
 #if defined(UMSKT_HAVE_SSE2_KERNELS)
     if (umskt_cpu_has_sse2()) {
         g_mont_mul = umskt_mont_mul_sse2;
         g_bn_mul_limbs = umskt_bn_mul_limbs_sse2;
-    }
+    } else
 #endif
+    {
+        (void)0;
+    }
     g_bn_dispatch_ready = 1;
 }
 

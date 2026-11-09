@@ -21,6 +21,11 @@ void umskt_mont_mul_sse2(uint32_t *r, const uint32_t *a, const uint32_t *b, cons
 void umskt_bn_mul_limbs_sse2(uint32_t *r, const uint32_t *a, int an, const uint32_t *b, int bn);
 #endif
 
+#if defined(UMSKT_HAVE_AVX2_KERNELS)
+void umskt_mont_mul_avx2(uint32_t *r, const uint32_t *a, const uint32_t *b, const uint32_t *n, uint32_t n0, int nw);
+void umskt_bn_mul_limbs_avx2(uint32_t *r, const uint32_t *a, int an, const uint32_t *b, int bn);
+#endif
+
 void umskt_bn_dispatch_init(void);
 
 #ifdef __cplusplus
