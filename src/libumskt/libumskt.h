@@ -58,6 +58,8 @@ public:
     class PIDGEN3;
     class ConfigurationID;
 
+    typedef void (*ProgressFn)(unsigned current, unsigned total, void *user);
+
 #ifdef UMSKT_FREESTANDING
     static int debug_on;
 #else
@@ -65,6 +67,8 @@ public:
 #endif
     static void setDebug(int on);
     static void debugf(const char *fmt, ...);
+    static void setProgress(ProgressFn fn, void *user);
+    static void reportProgress(unsigned current, unsigned total);
 
     // RNG utility functions
     static int umskt_rand_bytes(unsigned char *buf, int num);

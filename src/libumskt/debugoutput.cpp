@@ -22,6 +22,20 @@
 
 #include "libumskt.h"
 
+static UMSKT::ProgressFn g_progress_fn = NULL;
+static void *g_progress_user = NULL;
+
+void UMSKT::setProgress(ProgressFn fn, void *user) {
+    g_progress_fn = fn;
+    g_progress_user = user;
+}
+
+void UMSKT::reportProgress(unsigned current, unsigned total) {
+    if (g_progress_fn) {
+        g_progress_fn(current, total, g_progress_user);
+    }
+}
+
 #ifdef UMSKT_FREESTANDING
 #include "../windows/win32_min.h"
 

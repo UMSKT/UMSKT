@@ -57,6 +57,7 @@ struct Options {
     int nonewlines;
     int overrideVersion;
     int nodashes;
+    int progress;
     int instidFromStdin;
     MODE applicationMode;
     ACTIVATION_ALGORITHM activationMode;
@@ -86,6 +87,78 @@ static void outf(const char *fmt, ...) {
     vsnprintf(buffer, sizeof(buffer), fmt, ap);
     va_end(ap);
     out_text(buffer);
+}
+
+static void err_text(const char *text) {
+    if (!text) {
+        return;
+    }
+#ifdef UMSKT_FREESTANDING
+    uint32_t wrote = 0;
+    void *handle = GetStdHandle(UMSKT_STD_ERROR_HANDLE);
+    if (handle == NULL || handle == UMSKT_INVALID_HANDLE) {
+        return;
+    }
+    WriteFile(handle, text, (uint32_t)strlen(text), &wrote, NULL);
+#else
+    fputs(text, stderr);
+    fflush(stderr);
+#endif
+}
+
+struct ProgressCtx {
+    unsigned key_index;
+    unsigned key_count;
+    int last_percent;
+    int active;
+};
+
+static ProgressCtx g_progress_ctx;
+
+static void progress_clear_line(void) {
+    err_text("\r                                        \r");
+}
+
+static void progress_draw(unsigned current, unsigned total) {
+    char line[80];
+    unsigned percent;
+    unsigned filled;
+    unsigned i;
+    const unsigned width = 24;
+    if (total == 0) {
+        return;
+    }
+    if (current > total) {
+        current = total;
+    }
+    percent = (current * 100u) / total;
+    if ((int)percent == g_progress_ctx.last_percent && current != total && current != 0) {
+        return;
+    }
+    g_progress_ctx.last_percent = (int)percent;
+    filled = (current * width) / total;
+    line[0] = '\r';
+    line[1] = '[';
+    for (i = 0; i < width; i++) {
+        line[2 + i] = (i < filled) ? '#' : '-';
+    }
+    snprintf(line + 2 + width, sizeof(line) - (2 + width), "] %3u%%", percent);
+    err_text(line);
+}
+
+static void progress_callback(unsigned current, unsigned total, void *user) {
+    ProgressCtx *ctx = (ProgressCtx *)user;
+    unsigned overall_total;
+    unsigned overall_current;
+    if (!ctx || ctx->key_count == 0 || total == 0) {
+        return;
+    }
+    overall_total = ctx->key_count * total;
+    overall_current = ctx->key_index * total + current;
+    if (overall_current > overall_total) {
+        overall_current = overall_total;
+    }
+    progress_draw(overall_current, overall_total);
 }
 
 static int streq(const char *a, const char *b) {
@@ -315,7 +388,8 @@ static void show_help(char *argv[]) {
     out_text("\t-V --validate\tproduct key to validate signature\n");
     out_text("\t-N --nonewlines\tdisables newlines (for easier embedding in other apps)\n");
     out_text("\t-o --override\tDisables version check for confirmation IDs, if you need this send an issue on GitHub\n");
-    out_text("\t-D --nodashes\tDisables dashes in product keys and confirmation IDs (for easier copy-pasting)");
+    out_text("\t-D --nodashes\tDisables dashes in product keys and confirmation IDs (for easier copy-pasting)\n");
+    out_text("\t-P --progress\tDisplays progress bar (for long-running operations)\n");
     out_text("\n");
 }
 
@@ -445,6 +519,8 @@ static int parse_command_line(int argc, char *argv[], Options *options) {
             options->overrideVersion = 1;
         } else if (streq(arg, "-D") || streq(arg, "--nodashes")) {
             options->nodashes = 1;
+        } else if (streq(arg, "-P") || streq(arg, "--progress")) {
+            options->progress = 1;
         } else {
             options->error = 1;
         }
@@ -691,10 +767,24 @@ static int run_keys(Options *options, const char *json, int length) {
             print_id(&nRaw);
         }
         BN_sub(privateKey, genOrder, privateKey);
+        if (options->progress) {
+            g_progress_ctx.key_index = 0;
+            g_progress_ctx.key_count = (unsigned)options->numKeys;
+            g_progress_ctx.last_percent = -1;
+            g_progress_ctx.active = 1;
+            UMSKT::setProgress(progress_callback, &g_progress_ctx);
+        }
         for (i = 0; i < total; i++) {
             int valid;
+            if (options->progress) {
+                g_progress_ctx.key_index = (unsigned)count;
+                g_progress_ctx.last_percent = -1;
+            }
             PIDGEN3::BINK1998::Generate(eCurve, genPoint, genOrder, privateKey, nRaw, options->upgrade, pKey);
             valid = PIDGEN3::BINK1998::Verify(eCurve, genPoint, pubPoint, pKey);
+            if (options->progress) {
+                progress_clear_line();
+            }
             if (valid) {
                 print_key(pKey, options->nodashes);
                 if (i < total - 1 || options->verbose) {
@@ -716,9 +806,20 @@ static int run_keys(Options *options, const char *json, int length) {
                 }
             }
         }
+        if (options->progress) {
+            UMSKT::setProgress(NULL, NULL);
+            g_progress_ctx.active = 0;
+        }
     } else if (options->applicationMode == MODE_BINK2002_GENERATE) {
         if (options->verbose) {
             outf("> Channel ID: %03d\n", options->channelID);
+        }
+        if (options->progress) {
+            g_progress_ctx.key_index = 0;
+            g_progress_ctx.key_count = (unsigned)options->numKeys;
+            g_progress_ctx.last_percent = -1;
+            g_progress_ctx.active = 1;
+            UMSKT::setProgress(progress_callback, &g_progress_ctx);
         }
         for (i = 0; i < total; i++) {
             DWORD pAuthInfo = 0;
@@ -728,8 +829,15 @@ static int run_keys(Options *options, const char *json, int length) {
             if (options->verbose) {
                 outf("> AuthInfo: %u\n", pAuthInfo);
             }
+            if (options->progress) {
+                g_progress_ctx.key_index = (unsigned)count;
+                g_progress_ctx.last_percent = -1;
+            }
             PIDGEN3::BINK2002::Generate(eCurve, genPoint, genOrder, privateKey, (DWORD)options->channelID, pAuthInfo, options->upgrade, (DWORD)options->serialMin, (DWORD)options->serialMax, pKey);
             valid = PIDGEN3::BINK2002::Verify(eCurve, genPoint, pubPoint, NULL, pKey);
+            if (options->progress) {
+                progress_clear_line();
+            }
             if (valid) {
                 print_key(pKey, options->nodashes);
                 if (i < total - 1 || options->verbose) {
@@ -750,6 +858,10 @@ static int run_keys(Options *options, const char *json, int length) {
                     break;
                 }
             }
+        }
+        if (options->progress) {
+            UMSKT::setProgress(NULL, NULL);
+            g_progress_ctx.active = 0;
         }
     } else if (options->applicationMode == MODE_BINK1998_VALIDATE || options->applicationMode == MODE_BINK2002_VALIDATE) {
         char product_key[PK_LENGTH + NULL_TERMINATOR];
@@ -798,6 +910,9 @@ static int run_keys(Options *options, const char *json, int length) {
     }
 
     if (gaveUp || count < options->numKeys) {
+        if (options->progress) {
+            progress_clear_line();
+        }
         out_text("ERROR: failed to generate a valid product key\n");
         curve_free(&curve);
         BN_free(privateKey);

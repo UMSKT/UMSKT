@@ -280,6 +280,7 @@ void PIDGEN3::BINK2002::Generate(
         if (!serialInRange) {
             noSquare = true;
             tries++;
+            UMSKT::reportProgress((unsigned)tries, 4096u);
             if (tries < 4096) {
                 EC_POINT_add(eCurve, r, r, basePoint, numContext);
                 BN_add_word(c, 1);
@@ -383,6 +384,7 @@ void PIDGEN3::BINK2002::Generate(
         pSignature = 0;
         BN_bn2lebinpad(s, (BYTE *)&pSignature, (int)sizeof(pSignature));
         tries++;
+        UMSKT::reportProgress((unsigned)tries, 4096u);
 
         // Pack product key.
         Pack(pRaw, pUpgrade, pChannelID, pHash, pSignature, pAuthInfo);

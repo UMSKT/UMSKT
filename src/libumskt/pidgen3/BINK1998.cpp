@@ -262,6 +262,7 @@ void PIDGEN3::BINK1998::Generate(
         pSignature = 0;
         BN_bn2lebinpad(s, (BYTE *)&pSignature, (int)sizeof(pSignature));
         tries++;
+        UMSKT::reportProgress((unsigned)tries, 4096u);
 
         // Pack product key.
         Pack(pRaw, pUpgrade, pSerial, pHash, pSignature);
