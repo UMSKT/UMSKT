@@ -14,9 +14,7 @@
 
 extern "C" int umskt_mul_progress_enabled(void);
 extern "C" int umskt_ec_progress_phase(void);
-namespace UMSKT {
-void reportProgress(int phase, unsigned current, unsigned total);
-}
+extern "C" void umskt_report_progress(int phase, unsigned current, unsigned total);
 
 struct ec_group_st {
     BIGNUM *p;
@@ -428,7 +426,7 @@ int EC_POINT_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *n, const EC_P
             ok = jadd_mixed(group, &acc, q);
         }
         if (ok && umskt_mul_progress_enabled() && bits > 0) {
-            UMSKT::reportProgress(umskt_ec_progress_phase(), (unsigned)(bits - i), (unsigned)bits);
+            umskt_report_progress(umskt_ec_progress_phase(), (unsigned)(bits - i), (unsigned)bits);
         }
     }
     if (ok) {

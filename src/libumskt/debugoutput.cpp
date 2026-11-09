@@ -67,6 +67,10 @@ extern "C" int umskt_ec_progress_phase(void) {
     return g_ec_progress_phase;
 }
 
+extern "C" void umskt_report_progress(int phase, unsigned current, unsigned total) {
+    UMSKT::reportProgress(phase, current, total);
+}
+
 void UMSKT::suspendProgressLine(void) {
     if (g_progress_fn && !g_progress_suspended) {
         g_progress_fn(UMSKT_PROGRESS_BREAK, 0, 0, g_progress_user);
