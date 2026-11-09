@@ -57,7 +57,7 @@ In light of the recent exponential interest in this project I've decided to put 
 #### Windows (x86)
 * Pentium processor or better (Pentium 4 recommended, Haswell or equivalent best)
 * Windows 98 First Edition or later
-* Windows NT 4.0 SP6a or later
+* Windows NT 4.0 or later
 #### Windows (x64)
 * Windows NT 5.2 (Windows XP x64, Windows Server 2003) or later
 * Haswell or equivalent recommended
