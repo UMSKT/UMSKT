@@ -149,6 +149,8 @@ set(UMSKT_SOURCES
     src/cli.cpp
     src/windows/json.cpp
     ${UMSKT_KEYS_EMBED}
+    src/crypto/cpu_features.cpp
+    src/crypto/bn_kernels_scalar.cpp
     src/crypto/mini_bn.cpp
     src/crypto/mini_ec.cpp
     src/crypto/mini_rand.cpp
@@ -254,6 +256,62 @@ if (UMSKT_FREESTANDING)
         )
     endif()
     target_link_libraries(umskt PRIVATE kernel32)
+
+    if (UMSKT_WIN_X86)
+        add_library(umskt_bn_kernels_sse2 OBJECT src/crypto/bn_kernels_sse2.cpp)
+        target_include_directories(umskt_bn_kernels_sse2 PRIVATE "${CMAKE_SOURCE_DIR}/src/crypto")
+        target_compile_definitions(umskt_bn_kernels_sse2 PRIVATE
+            UMSKT_FREESTANDING
+            UMSKT_HAVE_SSE2_KERNELS
+            NDEBUG
+        )
+        target_compile_options(umskt_bn_kernels_sse2 PRIVATE
+            -m32
+            -O2
+            -ffreestanding
+            -fno-exceptions
+            -fno-rtti
+            -fno-threadsafe-statics
+            -fno-use-cxa-atexit
+            -fno-stack-protector
+            -fno-unwind-tables
+            -fno-asynchronous-unwind-tables
+            -msse2
+            -mfpmath=sse
+        )
+        target_compile_definitions(umskt PRIVATE UMSKT_HAVE_SSE2_KERNELS)
+        target_link_libraries(umskt PRIVATE umskt_bn_kernels_sse2)
+        message(STATUS "[UMSKT] SSE2 BN kernels enabled with runtime CPU/OS dispatch")
+    endif()
+
+    add_library(umskt_bn_kernels_avx2 OBJECT src/crypto/bn_kernels_avx2.cpp)
+    target_include_directories(umskt_bn_kernels_avx2 PRIVATE "${CMAKE_SOURCE_DIR}/src/crypto")
+    target_compile_definitions(umskt_bn_kernels_avx2 PRIVATE
+        UMSKT_FREESTANDING
+        UMSKT_HAVE_AVX2_KERNELS
+        NDEBUG
+    )
+    set(UMSKT_AVX2_FLAGS
+        -O2
+        -ffreestanding
+        -fno-exceptions
+        -fno-rtti
+        -fno-threadsafe-statics
+        -fno-use-cxa-atexit
+        -fno-stack-protector
+        -fno-unwind-tables
+        -fno-asynchronous-unwind-tables
+        -mavx2
+    )
+    if (UMSKT_WIN_X86)
+        list(APPEND UMSKT_AVX2_FLAGS -m32)
+    else()
+        list(APPEND UMSKT_AVX2_FLAGS -m64)
+    endif()
+    target_compile_options(umskt_bn_kernels_avx2 PRIVATE ${UMSKT_AVX2_FLAGS})
+    target_compile_definitions(umskt PRIVATE UMSKT_HAVE_AVX2_KERNELS)
+    target_link_libraries(umskt PRIVATE umskt_bn_kernels_avx2)
+    message(STATUS "[UMSKT] AVX2 BN kernels enabled with runtime CPU/OS dispatch")
 
     get_filename_component(UMSKT_GCC_BIN "${CMAKE_CXX_COMPILER}" DIRECTORY)
     find_program(UMSKT_OBJDUMP NAMES objdump HINTS "${UMSKT_GCC_BIN}")

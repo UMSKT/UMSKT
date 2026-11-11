@@ -15,6 +15,8 @@
 
 extern int main(int argc, char **argv);
 
+extern "C" void umskt_bn_dispatch_init(void);
+
 typedef void (*umskt_ctor)(void);
 
 extern "C" umskt_ctor __init_array_start[] __attribute__((weak));
@@ -680,6 +682,7 @@ extern "C" void mainCRTStartup(void) {
     HANDLE heap = GetProcessHeap();
 
     __main();
+    umskt_bn_dispatch_init();
     if (!command) {
         command = (char *)"";
     }

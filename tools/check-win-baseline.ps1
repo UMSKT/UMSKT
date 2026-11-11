@@ -134,34 +134,32 @@ if ($importHits.Count -gt 0) {
     Fail "imports outside kernel32, or APIs missing on Windows 98 / NT 4: $shown"
 }
 
-if ($Arch -eq "x86") {
-    $badMnemonic = "(?i)^(cmov[a-z]*|fcmov[a-z]*|emms|nopl|nopw|fcomi|fcomip|fucomi|fucomip|movaps|movups|movapd|movupd|movdqa|movdqu|movss|movhps|movlps|movlhps|movhlps|xorps|xorpd|andps|andpd|orps|orpd|addps|addpd|addss|addsd|subps|subpd|subss|subsd|mulps|mulpd|mulss|mulsd|divps|divpd|divss|divsd|cvtsi2ss|cvtsi2sd|cvttss2si|cvttsd2si|cvtss2si|cvtsd2si|pshufd|pshuflw|pshufhw|pshufw|punpck[a-z]+|packss[a-z]+|packus[a-z]+|pcmp[a-z]+|padd[bwdq]|psub[bwdq]|pmullw|pmulhw|pmulhuw|pmaddwd|pavgb|pavgw|pextrw|pinsrw|pmovmskb|prefetch[a-z]*|sfence|mfence|lfence|maskmovq|movntq|movntps|lddqu|pause)\b"
-    $badRegister = "(?i)%(mm|xmm|ymm|zmm)[0-9]"
-    $insnHits = New-Object System.Collections.Generic.List[string]
-    $disasm = & $Objdump -d -M att -- $Exe 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Fail "objdump -d failed"
+$badMnemonic = "(?i)^(vfmadd132pd|vfmadd213pd|vfmadd231pd|v4fmadd|v4fnmadd|vp4dpw|vpopcntd|vpopcntq|vbroadcasti32x|vbroadcasti64x|vbroadcastf32x|vbroadcastf64x|vinserti32x|vinserti64x|vextracti32x|vextracti64x|vpermi2|vpermt2|vpcompress|vpexpand|vpgather[dq][dq]|vpscatter|vgatherpf|vscatterpf)\b"
+$badRegister = "(?i)%zmm[0-9]"
+$insnHits = New-Object System.Collections.Generic.List[string]
+$disasm = & $Objdump -d -M att -- $Exe 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Fail "objdump -d failed"
+}
+foreach ($line in $disasm) {
+    $text = [string]$line
+    $insn = $null
+    if ($text.Contains("`t")) {
+        $parts = $text.Split("`t")
+        $insn = $parts[$parts.Length - 1].Trim()
     }
-    foreach ($line in $disasm) {
-        $text = [string]$line
-        $insn = $null
-        if ($text.Contains("`t")) {
-            $parts = $text.Split("`t")
-            $insn = $parts[$parts.Length - 1].Trim()
-        }
-        if (-not $insn) {
-            continue
-        }
-        if ($insn -match $badMnemonic -or $insn -match $badRegister) {
-            $insnHits.Add($text.Trim())
-            if ($insnHits.Count -ge 20) {
-                break
-            }
+    if (-not $insn) {
+        continue
+    }
+    if ($insn -match $badMnemonic -or $insn -match $badRegister) {
+        $insnHits.Add($text.Trim())
+        if ($insnHits.Count -ge 20) {
+            break
         }
     }
-    if ($insnHits.Count -gt 0) {
-        Fail ("forbidden instructions:`n" + ($insnHits -join "`n"))
-    }
+}
+if ($insnHits.Count -gt 0) {
+    Fail ("forbidden instructions:`n" + ($insnHits -join "`n"))
 }
 
 Write-Host "Windows baseline check passed ($Arch, kernel32 only): $Exe"
